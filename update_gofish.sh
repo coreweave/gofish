@@ -9,7 +9,7 @@ git fetch origin "${PATCH_BRANCH}" || (echo "Patch storage branch not found! Exi
 git checkout "${PATCH_BRANCH}"
 git pull origin "${PATCH_BRANCH}"
 
-# Ensure the patch file exists
+# Ensure the patch file exists in patch-storage
 if [[ ! -f "${PATCH_FILE}" ]]; then
     echo "Patch file not found in ${PATCH_BRANCH}! Exiting."
     exit 1
