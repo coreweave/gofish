@@ -1,0 +1,26 @@
+From ad918fc34cd615a195f366aaa4edef71ad3c3aba Mon Sep 17 00:00:00 2001
+From: Jake Plimack <jplimack@coreweave.com>
+Date: Fri, 7 Mar 2025 12:24:20 +0100
+Subject: [PATCH] Change LocationIndicatorActive from bool to any
+
+Signed-off-by: Jake Plimack <jplimack@coreweave.com>
+---
+ redfish/computersystem.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/redfish/computersystem.go b/redfish/computersystem.go
+index f375dae..2b9362d 100644
+--- a/redfish/computersystem.go
++++ b/redfish/computersystem.go
+@@ -808,7 +808,7 @@ type ComputerSystem struct {
+ 	// resource. A write to this property shall update the value of IndicatorLED in this resource, if supported, to
+ 	// reflect the implementation of the locating function. Modifying this property may modify the
+ 	// LocationIndicatorActive in the containing Chassis resource.
+-	LocationIndicatorActive bool
++	LocationIndicatorActive any
+ 	// logServices shall be a link to a collection of type LogServiceCollection.
+ 	logServices string
+ 	// Manufacturer shall contain a value that represents the manufacturer of the system.
+-- 
+2.48.1
+
