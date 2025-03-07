@@ -2,7 +2,7 @@
 set -euxo pipefail
 
 PATCH_BRANCH="patch-storage"
-PATCH_FILE="location_indicator.patch"
+PATCH_FILE="location_indicator.diff"
 
 # Ensure the patch-storage branch exists and fetch the latest patch
 git fetch origin "${PATCH_BRANCH}" || (echo "Patch storage branch not found! Exiting." && exit 1)
