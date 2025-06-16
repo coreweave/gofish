@@ -1,8 +1,15 @@
 #!/bin/bash
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: $0 PR_BRANCH_NAME"
+    exit 1
+fi
+
 set -euxo pipefail
 
 PATCH_BRANCH="patch-storage"
 PATCH_FILE="location_indicator.diff"
+PR_BRANCH_NAME="$1"
 
 # Ensure the patch-storage branch exists and fetch the latest patch
 git fetch origin "${PATCH_BRANCH}" || (echo "Patch storage branch not found! Exiting." && exit 1)
@@ -21,6 +28,7 @@ git format-patch --stdout HEAD~1 > /tmp/location_indicator.patch
 
 # Switch to main and update from upstream
 git checkout main
+git checkout -b "$PR_BRANCH_NAME"
 git fetch upstream
 git rebase upstream/main
 
@@ -37,6 +45,6 @@ else
 fi
 
 # Merge back into main
-git checkout main
+git checkout "$PR_BRANCH_NAME"
 git merge --no-ff "${APPLY_BRANCH}"
-git push origin main
+git push origin "$PR_BRANCH_NAME"
