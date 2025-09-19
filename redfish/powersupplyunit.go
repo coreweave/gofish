@@ -153,7 +153,7 @@ type PowerSupplyUnit struct {
 	OemActions json.RawMessage
 
 	// rawData holds the original serialized JSON so we can compare updates.
-	rawData []byte
+	RawData []byte
 }
 
 // UnmarshalJSON unmarshals a PowerSupplyUnit object from the raw JSON.
