@@ -688,6 +688,11 @@ func (manager *Manager) NetworkProtocol() (*NetworkProtocolSettings, error) {
 	return GetNetworkProtocol(manager.GetClient(), manager.networkProtocol)
 }
 
+// NetworkProtocolURI returns the URI of this manager's network protocol resource.
+func (manager *Manager) NetworkProtocolURI() string {
+	return manager.networkProtocol
+}
+
 // RemoteAccountService gets the account service resource for the remote manager that this resource represents.
 // This property shall only be present when providing aggregation of a remote manager.
 func (manager *Manager) RemoteAccountService() (*AccountService, error) {

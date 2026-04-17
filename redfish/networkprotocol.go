@@ -24,6 +24,11 @@ type HTTPS struct {
 	certificates string
 }
 
+// CertificatesURI returns the URI of the HTTPS certificate collection.
+func (https *HTTPS) CertificatesURI() string {
+	return https.certificates
+}
+
 func (https *HTTPS) UnmarshalJSON(b []byte) error {
 	type temp HTTPS
 

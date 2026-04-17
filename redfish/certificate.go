@@ -16,7 +16,7 @@ const (
 	// A Privacy Enhanced Mail (PEM)-encoded single certificate.
 	PEMCertificateType CertificateType = "PEM"
 	// A Privacy Enhanced Mail (PEM)-encoded certificate chain.
-	PEMChainCertificateType CertificateType = "PEMChain"
+	PEMChainCertificateType CertificateType = "PEMchain"
 	// A Privacy Enhanced Mail (PEM)-encoded PKCS7 certificate.
 	PKCS7CertificateType CertificateType = "PKCS7"
 )

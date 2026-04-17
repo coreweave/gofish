@@ -58,6 +58,16 @@ func (certificateservice *CertificateService) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// GenerateCSRTarget returns the action target URI for CertificateService.GenerateCSR.
+func (certificateservice *CertificateService) GenerateCSRTarget() string {
+	return certificateservice.generateCSRTarget
+}
+
+// ReplaceCertificateTarget returns the action target URI for CertificateService.ReplaceCertificate.
+func (certificateservice *CertificateService) ReplaceCertificateTarget() string {
+	return certificateservice.replaceCertificateTarget
+}
+
 // CertificateLocations get the certificate locations.
 func (certificateservice *CertificateService) CertificateLocations() (*CertificateLocations, error) {
 	if certificateservice.certificateLocations == "" {
