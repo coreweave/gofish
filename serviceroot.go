@@ -113,7 +113,7 @@ type Service struct {
 	// JsonSchemas shall only contain a reference to a collection of resources
 	// that comply to the SchemaFile schema where the files are Json-Schema
 	// files.
-	JsonSchemasLink common.Link `json:"JSONSchemas"`
+	JSONSchemasLink common.Link `json:"JSONSchemas"`
 	// KeyService shall contain a link to a resource of type KeyService.
 	KeyServiceLink common.Link `json:"KeyService"`
 	// LicenseService shall contain a link to a resource of type LicenseService.

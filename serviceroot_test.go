@@ -143,8 +143,8 @@ func TestServiceRoot(t *testing.T) {
 		t.Errorf("Invalid JobService link: %s", result.JobServiceLink)
 	}
 
-	if result.JsonSchemasLink != "/redfish/v1/JsonSchemas" {
-		t.Errorf("Invalid JsonSchemas link: %s", result.JsonSchemasLink)
+	if result.JSONSchemasLink != "/redfish/v1/JsonSchemas" {
+		t.Errorf("Invalid JsonSchemas link: %s", result.JSONSchemasLink)
 	}
 
 	if result.Links.Sessions != "/redfish/v1/Sessions" {
