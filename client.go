@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -20,14 +21,19 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreweave/gofish/common"
 	"github.com/coreweave/gofish/redfish"
 )
 
-const userAgent = "gofish/1.0"
-const applicationJSON = "application/json"
+const (
+	userAgent       = "gofish/1.0"
+	applicationJSON = "application/json"
+)
+
+var ErrClientCertChanged = errors.New("client cert unexpectedly changed")
 
 // APIClient represents a connection to a Redfish/Swordfish enabled service
 // or device.
@@ -57,6 +63,9 @@ type APIClient struct {
 	keepAlive bool
 
 	Settings common.ClientSettings
+
+	certHashMu sync.Mutex
+	CertHash   string
 }
 
 // Session holds the session ID and auth token needed to identify an
@@ -595,6 +604,18 @@ func (c *APIClient) runRawRequestWithHeaders(method, url string, payloadBuffer i
 	c.releaseSemaphore()
 	if err != nil {
 		return nil, err
+	}
+
+	if resp != nil && resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
+		peerCert := resp.TLS.PeerCertificates[0]
+		c.certHashMu.Lock()
+		if c.CertHash == "" {
+			c.CertHash = string(peerCert.Signature)
+		} else if c.CertHash != string(peerCert.Signature) {
+			defer common.DeferredCleanupHTTPResponse(resp)
+			return nil, ErrClientCertChanged
+		}
+		c.certHashMu.Unlock()
 	}
 
 	// Dump response if needed.
