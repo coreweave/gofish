@@ -64,8 +64,9 @@ type APIClient struct {
 
 	Settings common.ClientSettings
 
-	certHashMu sync.Mutex
-	CertHash   string
+	certHashMu         sync.Mutex
+	certHashMonitoring bool
+	CertHash           string
 }
 
 // Session holds the session ID and auth token needed to identify an
@@ -118,6 +119,9 @@ type ClientConfig struct {
 
 	// AutoExpand enables $expand if supported and automatically falls back if $expand fails.
 	AutoExpand bool
+
+	// EnableTLSHashMonitoring if set monitors the TLS peer signature on every response. If it changes between responses, an error is returned.
+	EnableTLSHashMonitoring bool
 }
 
 // setupClientWithConfig setups the client using the client config
@@ -127,9 +131,10 @@ func setupClientWithConfig(ctx context.Context, config *ClientConfig) (c *APICli
 	}
 
 	client := &APIClient{
-		endpoint:   config.Endpoint,
-		dumpWriter: config.DumpWriter,
-		ctx:        ctx,
+		endpoint:           config.Endpoint,
+		dumpWriter:         config.DumpWriter,
+		ctx:                ctx,
+		certHashMonitoring: config.EnableTLSHashMonitoring,
 	}
 
 	if config.MaxConcurrentRequests <= 0 {
@@ -606,7 +611,7 @@ func (c *APIClient) runRawRequestWithHeaders(method, url string, payloadBuffer i
 		return nil, err
 	}
 
-	if resp != nil && resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
+	if c.certHashMonitoring && resp != nil && resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
 		peerCert := resp.TLS.PeerCertificates[0]
 		c.certHashMu.Lock()
 		if c.CertHash == "" {
