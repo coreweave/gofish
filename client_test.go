@@ -208,7 +208,7 @@ func TestClientRunRawRequestNoURL(t *testing.T) {
 	}
 }
 
-func genTlsCert(t *testing.T) tls.Certificate {
+func genTLSCert(t *testing.T) tls.Certificate {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatalf("failed to generate private key: %v", err)
@@ -265,10 +265,10 @@ func TestCertHashMonitoring(t *testing.T) {
 
 	client.HTTPClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 
-	ts.TLS.Certificates = []tls.Certificate{genTlsCert(t)}
+	ts.TLS.Certificates = []tls.Certificate{genTLSCert(t)}
 
 	for i := 0; i < 5; i++ {
-		svc, err = ServiceRoot(client)
+		_, err = ServiceRoot(client)
 		if !errors.Is(err, ErrClientCertChanged) {
 			t.Error("expecting client cert changed err")
 		}

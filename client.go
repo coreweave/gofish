@@ -552,6 +552,17 @@ func tlsCertHash(cert *x509.Certificate) string {
 	return hex.EncodeToString(cert.Signature)
 }
 
+func (c *APIClient) checkCertHashMismatch(resp *http.Response) (*http.Response, error) {
+	if c.certHashMonitoring && c.CertHash != "" && resp != nil && resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
+		peerCertHash := tlsCertHash(resp.TLS.PeerCertificates[0])
+		if c.CertHash != peerCertHash {
+			defer common.DeferredCleanupHTTPResponse(resp)
+			return nil, ErrClientCertChanged
+		}
+	}
+	return resp, nil
+}
+
 // runRawRequestWithHeaders actually performs the REST calls but allowing custom headers
 func (c *APIClient) runRawRequestWithHeaders(method, url string, payloadBuffer io.ReadSeeker, contentType string, customHeaders map[string]string) (*http.Response, error) {
 	if url == "" {
@@ -625,12 +636,8 @@ func (c *APIClient) runRawRequestWithHeaders(method, url string, payloadBuffer i
 		return nil, err
 	}
 
-	if c.certHashMonitoring && c.CertHash != "" && resp != nil && resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
-		peerCertHash := tlsCertHash(resp.TLS.PeerCertificates[0])
-		if c.CertHash != peerCertHash {
-			defer common.DeferredCleanupHTTPResponse(resp)
-			return nil, ErrClientCertChanged
-		}
+	if resp, err = c.checkCertHashMismatch(resp); err != nil {
+		return nil, err
 	}
 
 	// Dump response if needed.
