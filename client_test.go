@@ -14,7 +14,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"log"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -232,7 +231,7 @@ func genTLSCert(t *testing.T) tls.Certificate {
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
-		log.Fatalf("Failed to create certificate: %v", err)
+		t.Fatalf("Failed to create certificate: %v", err)
 	}
 
 	return tls.Certificate{
