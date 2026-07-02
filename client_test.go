@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -218,6 +219,9 @@ func genTLSCert(t *testing.T) tls.Certificate {
 	notAfter := notBefore.Add(1 * time.Hour)
 
 	template := x509.Certificate{
+		// serial doesn't matter to us here and old golang needs it
+		// newer golang versions can autogen
+		SerialNumber:          big.NewInt(100),
 		Subject:               pkix.Name{Organization: []string{"test"}},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
