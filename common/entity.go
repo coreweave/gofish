@@ -268,7 +268,7 @@ func (e *Entity) UpdateFromRawData(resource any, rawData []byte, allowedUpdates 
 	// Recover from any panics during update
 	defer func() {
 		if r := recover(); r != nil {
-			retErr = errors.Join(retErr, fmt.Errorf("recovered from panic in Update: %v\n", r))
+			retErr = errors.Join(retErr, fmt.Errorf("recovered from panic in Update: %v", r))
 		}
 	}()
 

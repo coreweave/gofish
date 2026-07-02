@@ -719,7 +719,7 @@ func TestThermalFanUpdate(t *testing.T) {
 			patchContent = string(patchContentBytes)
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{}`))
+		w.Write([]byte(`{}`)) //nolint
 	})
 	fan.SetClient(client)
 
@@ -770,7 +770,7 @@ func TestTemperatureUpdate(t *testing.T) {
 			patchContent = string(patchContentBytes)
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{}`))
+		w.Write([]byte(`{}`)) //nolint
 	})
 	temp.SetClient(client)
 
