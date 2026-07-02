@@ -8,7 +8,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,7 +23,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/coreweave/gofish/common"
@@ -64,7 +65,6 @@ type APIClient struct {
 
 	Settings common.ClientSettings
 
-	certHashMu         sync.Mutex
 	certHashMonitoring bool
 	CertHash           string
 }
@@ -190,11 +190,16 @@ func setupClientWithConfig(ctx context.Context, config *ClientConfig) (c *APICli
 		client.keepAlive = true
 	}
 
-	// Fetch the service root
-	client.Service, err = ServiceRoot(client)
+	// Fetch the service root and TLS cert
+	var tlsCert *x509.Certificate
+	client.Service, tlsCert, err = ServiceRootWithCert(client)
 	if err != nil {
 		return nil, err
 	}
+
+	// CertHash is populated once when the client is initialized.
+	// After that, it should never change. If monitoring is enabled and it changes, an error is thrown
+	client.CertHash = tlsCertHash(tlsCert)
 
 	// Init default settings
 	if config.AutoExpand && client.Service != nil {
@@ -538,6 +543,15 @@ func (c *APIClient) releaseSemaphore() {
 	<-c.sem
 }
 
+func tlsCertHash(cert *x509.Certificate) string {
+	if cert == nil {
+		return ""
+	}
+
+	// this is not actually a cert hash but it's good enough for now
+	return hex.EncodeToString(cert.Signature)
+}
+
 // runRawRequestWithHeaders actually performs the REST calls but allowing custom headers
 func (c *APIClient) runRawRequestWithHeaders(method, url string, payloadBuffer io.ReadSeeker, contentType string, customHeaders map[string]string) (*http.Response, error) {
 	if url == "" {
@@ -611,16 +625,12 @@ func (c *APIClient) runRawRequestWithHeaders(method, url string, payloadBuffer i
 		return nil, err
 	}
 
-	if c.certHashMonitoring && resp != nil && resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
-		peerCert := resp.TLS.PeerCertificates[0]
-		c.certHashMu.Lock()
-		if c.CertHash == "" {
-			c.CertHash = string(peerCert.Signature)
-		} else if c.CertHash != string(peerCert.Signature) {
+	if c.certHashMonitoring && c.CertHash != "" && resp != nil && resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
+		peerCertHash := tlsCertHash(resp.TLS.PeerCertificates[0])
+		if c.CertHash != peerCertHash {
 			defer common.DeferredCleanupHTTPResponse(resp)
 			return nil, ErrClientCertChanged
 		}
-		c.certHashMu.Unlock()
 	}
 
 	// Dump response if needed.
