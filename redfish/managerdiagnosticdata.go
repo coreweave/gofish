@@ -39,11 +39,18 @@ type I2CBusStatistics struct {
 	TotalTransactionCount int
 }
 
+type ManagerDiagnosticDataActions struct {
+	ResetMetrics common.ActionTarget `json:"#ManagerDiagnosticData.ResetMetrics"`
+}
+
 // ManagerDiagnosticData shall represent internal diagnostic data for a manager for a Redfish implementation.
 // Clients should not make decisions for raising alerts, creating service events, or other actions based on
 // information in this resource.
 type ManagerDiagnosticData struct {
 	common.Entity
+
+	Actions ManagerDiagnosticDataActions
+
 	// ODataContext is the odata context.
 	ODataContext string `json:"@odata.context"`
 	// ODataType is the odata type.
@@ -72,37 +79,28 @@ type ManagerDiagnosticData struct {
 	ServiceRootUptimeSeconds float64
 	// TopProcesses shall contain the statistics of the top processes of this manager.
 	TopProcesses []ProcessStatistics
-
-	resetMetricsTarget string
 }
 
 // UnmarshalJSON unmarshals a ManagerDiagnosticData object from the raw JSON.
-func (managerdiagnosticdata *ManagerDiagnosticData) UnmarshalJSON(b []byte) error {
+func (mdd *ManagerDiagnosticData) UnmarshalJSON(b []byte) error {
 	type temp ManagerDiagnosticData
-	type Actions struct {
-		ResetMetrics common.ActionTarget `json:"#ManagerDiagnosticData.ResetMetrics"`
-	}
-	var t struct {
-		temp
-		Actions Actions
-	}
 
+	var t temp
 	err := json.Unmarshal(b, &t)
 	if err != nil {
 		return err
 	}
 
-	*managerdiagnosticdata = ManagerDiagnosticData(t.temp)
-
-	// Extract the links to other entities for later
-	managerdiagnosticdata.resetMetricsTarget = t.Actions.ResetMetrics.Target
-
+	*mdd = ManagerDiagnosticData(t)
 	return nil
 }
 
 // ResetMetrics resets time intervals or counted values of the diagnostic data for this manager.
-func (manager *Manager) ResetMetrics() error {
-	return manager.Post(manager.resetToDefaultsTarget, nil)
+func (mdd *ManagerDiagnosticData) ResetMetrics() error {
+	if mdd.Actions.ResetMetrics.Target == "" {
+		return ErrActionNotSupported
+	}
+	return mdd.Post(mdd.Actions.ResetMetrics.Target, nil)
 }
 
 // GetManagerDiagnosticData will get a ManagerDiagnosticData instance from the service.
