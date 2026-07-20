@@ -28,8 +28,8 @@ type SecureBootDatabase struct {
 	ODataContext string `json:"@odata.context"`
 	// ODataType is the odata type.
 	ODataType string `json:"@odata.type"`
-	// certificates shall be a link to a resource collection of type CertificateCollection.
-	certificates string
+	// CertificatesLink shall be a link to a resource collection of type CertificateCollection.
+	CertificatesLink common.Link `json:"Certificates"`
 	// DatabaseID shall contain the name of the UEFI Secure Boot database. This property shall contain the same value
 	// as the Id property. The value shall be one of the UEFI-defined Secure Boot databases: 'PK', 'KEK' 'db', 'dbx',
 	// 'dbr', 'dbt', 'PKDefault', 'KEKDefault', 'dbDefault', 'dbxDefault', 'dbrDefault', or 'dbtDefault'.
@@ -53,7 +53,6 @@ func (securebootdatabase *SecureBootDatabase) UnmarshalJSON(b []byte) error {
 		Actions struct {
 			ResetKeys common.ActionTarget `json:"#SecureBootDatabase.ResetKeys"`
 		}
-		Certificates common.Link
 	}
 
 	err := json.Unmarshal(b, &t)
@@ -63,9 +62,6 @@ func (securebootdatabase *SecureBootDatabase) UnmarshalJSON(b []byte) error {
 
 	*securebootdatabase = SecureBootDatabase(t.temp)
 
-	// Extract the links to other entities for later
-	securebootdatabase.certificates = t.Certificates.String()
-
 	securebootdatabase.resetKeysTarget = t.Actions.ResetKeys.Target
 
 	return nil
@@ -73,7 +69,10 @@ func (securebootdatabase *SecureBootDatabase) UnmarshalJSON(b []byte) error {
 
 // Certificates get the certificates contained in this UEFI Secure Boot database.
 func (securebootdatabase *SecureBootDatabase) Certificates() ([]*Certificate, error) {
-	return ListReferencedCertificates(securebootdatabase.GetClient(), securebootdatabase.certificates)
+	if securebootdatabase.CertificatesLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedCertificates(securebootdatabase.GetClient(), securebootdatabase.CertificatesLink.String())
 }
 
 // Signatures get the certificates contained in this UEFI Secure Boot database.

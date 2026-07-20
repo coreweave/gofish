@@ -45,7 +45,7 @@ func TestSecureBootDatabase(t *testing.T) {
 	assertEquals(t, "PK", result.ID)
 	assertEquals(t, "PK - Platform Key", result.Name)
 	assertEquals(t, "PK", result.DatabaseID)
-	assertEquals(t, "/redfish/v1/Systems/1/SecureBoot/SecureBootDatabases/PK/Certificates/", result.certificates)
+	assertEquals(t, "/redfish/v1/Systems/1/SecureBoot/SecureBootDatabases/PK/Certificates/", result.CertificatesLink.String())
 }
 
 // TestSecureBootDatabaseResetKeys tests the SecureBootDatabase ResetKeys call.
