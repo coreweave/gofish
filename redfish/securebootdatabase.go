@@ -39,8 +39,8 @@ type SecureBootDatabase struct {
 	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
-	// Signatures shall be a link to a resource collection of type SignatureCollection.
-	signatures string
+	// SignaturesLink shall be a link to a resource collection of type SignatureCollection.
+	SignaturesLink common.Link `json:"Signatures"`
 
 	resetKeysTarget string
 }
@@ -54,7 +54,6 @@ func (securebootdatabase *SecureBootDatabase) UnmarshalJSON(b []byte) error {
 			ResetKeys common.ActionTarget `json:"#SecureBootDatabase.ResetKeys"`
 		}
 		Certificates common.Link
-		Signatures   common.Link
 	}
 
 	err := json.Unmarshal(b, &t)
@@ -66,7 +65,6 @@ func (securebootdatabase *SecureBootDatabase) UnmarshalJSON(b []byte) error {
 
 	// Extract the links to other entities for later
 	securebootdatabase.certificates = t.Certificates.String()
-	securebootdatabase.signatures = t.Signatures.String()
 
 	securebootdatabase.resetKeysTarget = t.Actions.ResetKeys.Target
 
@@ -80,7 +78,10 @@ func (securebootdatabase *SecureBootDatabase) Certificates() ([]*Certificate, er
 
 // Signatures get the certificates contained in this UEFI Secure Boot database.
 func (securebootdatabase *SecureBootDatabase) Signatures() ([]*Signature, error) {
-	return ListReferencedSignatures(securebootdatabase.GetClient(), securebootdatabase.signatures)
+	if securebootdatabase.SignaturesLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedSignatures(securebootdatabase.GetClient(), securebootdatabase.SignaturesLink.String())
 }
 
 // ResetKeys will perform a reset of this UEFI Secure Boot key database. The `ResetAllKeysToDefault`
