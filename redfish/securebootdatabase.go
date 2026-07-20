@@ -41,30 +41,16 @@ type SecureBootDatabase struct {
 	OEM json.RawMessage `json:"Oem"`
 	// SignaturesLink shall be a link to a resource collection of type SignatureCollection.
 	SignaturesLink common.Link `json:"Signatures"`
-
-	resetKeysTarget string
+	// Actions shall contain the available actions for this resource.
+	Actions SecureBootDatabaseActions `json:"Actions"`
 }
 
-// UnmarshalJSON unmarshals a SecureBootDatabase object from the raw JSON.
-func (securebootdatabase *SecureBootDatabase) UnmarshalJSON(b []byte) error {
-	type temp SecureBootDatabase
-	var t struct {
-		temp
-		Actions struct {
-			ResetKeys common.ActionTarget `json:"#SecureBootDatabase.ResetKeys"`
-		}
-	}
-
-	err := json.Unmarshal(b, &t)
-	if err != nil {
-		return err
-	}
-
-	*securebootdatabase = SecureBootDatabase(t.temp)
-
-	securebootdatabase.resetKeysTarget = t.Actions.ResetKeys.Target
-
-	return nil
+// SecureBootDatabaseActions shall contain the available actions for a SecureBootDatabase resource.
+type SecureBootDatabaseActions struct {
+	// ResetKeys shall reset the UEFI Secure Boot key database.
+	ResetKeys common.ActionTarget `json:"#SecureBootDatabase.ResetKeys"`
+	// Oem shall contain the available OEM-specific actions for this resource.
+	Oem json.RawMessage `json:"Oem"`
 }
 
 // Certificates get the certificates contained in this UEFI Secure Boot database.
@@ -92,7 +78,7 @@ func (securebootdatabase *SecureBootDatabase) ResetKeys(resetType ResetKeysType)
 	}{
 		ResetKeysType: resetType,
 	}
-	return securebootdatabase.Post(securebootdatabase.resetKeysTarget, params)
+	return securebootdatabase.Post(securebootdatabase.Actions.ResetKeys.Target, params)
 }
 
 // GetSecureBootDatabase will get a SecureBootDatabase instance from the service.
