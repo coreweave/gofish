@@ -51,7 +51,7 @@ func TestSecureBootDatabase(t *testing.T) {
 // TestSecureBootDatabaseResetKeys tests the SecureBootDatabase ResetKeys call.
 func TestSecureBootDatabaseResetKeys(t *testing.T) {
 	var result SecureBootDatabase
-	err := json.NewDecoder(strings.NewReader(applicationBody)).Decode(&result)
+	err := json.NewDecoder(strings.NewReader(secureBootDatabaseBody)).Decode(&result)
 
 	if err != nil {
 		t.Errorf("Error decoding JSON: %s", err)

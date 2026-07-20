@@ -73,6 +73,9 @@ func (securebootdatabase *SecureBootDatabase) Signatures() ([]*Signature, error)
 // value shall reset this UEFI Secure Boot key database to the default values. The `DeleteAllKeys`
 // value shall delete the contents of this UEFI Secure Boot key database.
 func (securebootdatabase *SecureBootDatabase) ResetKeys(resetType ResetKeysType) error {
+	if securebootdatabase.Actions.ResetKeys.Target == "" {
+		return ErrActionNotSupported
+	}
 	params := struct {
 		ResetKeysType ResetKeysType
 	}{
