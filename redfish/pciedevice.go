@@ -413,7 +413,7 @@ func (pciedevice *PCIeDevice) PCIeFunctions() ([]*PCIeFunction, error) {
 	if len(pciedevice.pcieFunctionsArray) > 0 {
 		return common.GetObjects[PCIeFunction](pciedevice.GetClient(), pciedevice.pcieFunctionsArray)
 	}
-	if len(pciedevice.pcieFunctions) == 0 {
+	if pciedevice.pcieFunctions == "" {
 		return nil, nil
 	}
 	return ListReferencedPCIeFunctions(pciedevice.GetClient(), pciedevice.pcieFunctions)
