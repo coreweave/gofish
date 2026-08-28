@@ -375,9 +375,9 @@ func ListReferencedPCIeDevicesWithContext(ctx context.Context, c common.Client, 
 type PCIeInterface struct {
 	// LanesInUse shall be the number of PCIe lanes in use by this device, which
 	// shall be equal or less than the value of MaxLanes.
-	LanesInUse int
+	LanesInUse *int
 	// MaxLanes shall be the maximum number of PCIe lanes supported by this device.
-	MaxLanes int
+	MaxLanes *int
 	// MaxPCIeType shall be the maximum PCIe specification that this device supports.
 	MaxPCIeType PCIeTypes
 	// PCIeType shall be the negotiated PCIe interface version in use by this device.
