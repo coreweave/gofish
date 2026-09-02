@@ -1,0 +1,117 @@
+name: Claude PR review
+
+# Advisory review on every PR push: reviews the head commit with the /code-review skill
+# and posts inline comments as claude[bot]; comment /claude-review to re-review on demand.
+# Not a required status check, so an Actions or API outage never freezes merges.
+#
+# Drafts, fork PRs, and bot PRs skip the review. This repo is public, so outside
+# contributors arrive as forks; forks and Dependabot cannot read ORG_ANTHROPIC_API_KEY at
+# all and pass unreviewed by design. A human pushing to a bot branch still triggers a
+# review, and /claude-review works on any open PR.
+#
+# A PR that edits this file reviews nothing: claude-code-action refuses to run when the
+# workflow differs from main's copy, so its own changes can never be validated pre-merge.
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  # Supersede an in-flight review when a newer commit lands, so the review that finishes is
+  # the one anchored to the commit the check reports on. Keyed by event as well as PR: an
+  # issue_comment run shares the PR number, so without this any comment on the PR would
+  # cancel the running review instead of a push.
+  group: claude-pr-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+  id-token: write # OIDC exchange for the Claude GitHub App; comments post as claude[bot]
+
+jobs:
+  claude-review:
+    name: claude-review
+    if: |
+      (github.event_name == 'pull_request'
+        && !github.event.pull_request.draft
+        && github.event.pull_request.head.repo.full_name == github.repository
+        && !endsWith(github.actor, '[bot]'))
+      || (github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && github.event.issue.state == 'open'
+        && github.event.comment.body == '/claude-review'
+        && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association))
+    # GitHub-hosted like check.yml. This repo is public and the org runner group is not
+    # confirmed to serve public repos; a job queued on a label with no eligible runner
+    # waits until the timeout on every PR.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude review
+        id: review
+        uses: anthropics/claude-code-action@536f2c32a39763739000b0e1ac69ca2647d97ce9 # v1
+        with:
+          # A plugin resolves only from a registered marketplace, and the action names none
+          # by default. Adding one already registered exits 0 and refreshes, so this is safe
+          # whether or not the runner image ships it. Neither the marketplace nor the plugin
+          # supports version pinning, so this tracks their head.
+          plugin_marketplaces: "https://github.com/anthropics/claude-plugins-official.git"
+          plugins: "code-review@claude-plugins-official"
+          # CoreWeave org-level secret, not a repo-level secrets.ANTHROPIC_API_KEY.
+          anthropic_api_key: ${{ secrets.ORG_ANTHROPIC_API_KEY }}
+          prompt: |
+            /code-review ${{ github.event.pull_request.number || github.event.issue.number }} --comment
+
+            REPO: ${{ github.repository }}
+
+            ${{ github.event_name == 'issue_comment' && 'A maintainer asked for this re-review, so review the whole diff again even though you have commented on this PR before. Still do not post a comment that repeats one already there.' || 'Do not decline this review on the grounds that you have commented on this PR before. Instead scope it: read your existing comments on the PR first, review only what changed since the commit you last reviewed, and post nothing about code you already commented on. Rewording an earlier point counts as repeating it. If nothing changed since your last review, post no comments at all.' }}
+
+            This repo is CoreWeave's copy of github.com/stmcginnis/gofish, a Go client library
+            for Redfish and Swordfish. Other CoreWeave repos import it as
+            github.com/coreweave/gofish, so a change to an exported identifier or to observable
+            behavior is a compatibility change for those consumers.
+
+            Format every inline comment in one shape:
+
+            1. First line: a one-line claim, tagged **Blocking:**, **Not blocking:**, or **Nit:**.
+            2. One short paragraph of mechanism, at most ~40 words: why it fails and when,
+               citing `file:line`. Never one long wall of text.
+            3. Last line, on its own line, starting with `Fix:` and stating the requested
+               change. A committable suggestion block may follow it when the suggestion fixes
+               the issue entirely.
+
+            Blocking means the change breaks correctness, security, or compatibility. Not
+            blocking means a real issue that can land in a follow-up. Nit means wording.
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Grep,Glob,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh search:*)"
+            # Pin the review model: without it the action runs Claude Code's default (Opus 4.8
+            # today), whose knowledge predates Go 1.26/1.27 syntax and flagged valid code.
+            --model claude-fable-5-1
+
+      - name: Fail if the review did not finish
+        if: always()
+        env:
+          EXECUTION_FILE: ${{ steps.review.outputs.execution_file }}
+        run: |
+          # The action exits 0 even when the agent errors out, so without this a crashed
+          # review reports a green check having reviewed nothing.
+          if [ -z "$EXECUTION_FILE" ] || [ ! -f "$EXECUTION_FILE" ]; then
+            echo "No execution file: the action skipped before running the agent."
+            exit 0
+          fi
+          # Pass only on an explicit is_error=false: a file with no result record means the
+          # agent died mid-run, which is the same unreviewed-diff outcome as an error.
+          if [ "$(jq -r '[.. | objects | select(.type == "result") | .is_error] | last' "$EXECUTION_FILE")" != "false" ]; then
+            echo "::error::Claude review did not complete; the diff was not fully reviewed."
+            exit 1
+          fi

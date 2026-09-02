@@ -1,0 +1,61 @@
+name: Claude Code
+
+# Ad-hoc Claude runs from an @claude mention on an issue, PR comment, or review. The
+# automatic PR review lives in claude-pr-review.yaml; this one only answers when asked.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    # Author gating matches claude-pr-review.yaml's on-demand path: this repo is public
+    # and the job spends the org API key, so the trigger requires an org member or repo
+    # collaborator, not just comment access.
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')
+        && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')
+        && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')
+        && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))
+        && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association))
+    # Same runner as claude-pr-review.yaml: the action's setup-bun caches carry absolute
+    # paths, so a cache saved under one filesystem layout breaks runners with another. One
+    # layout for both Claude workflows keeps every run restoring a usable archive.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+      actions: read # Required for Claude to read CI results on PRs
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@536f2c32a39763739000b0e1ac69ca2647d97ce9 # v1
+        with:
+          # CoreWeave org-level secret, not a repo-level secrets.ANTHROPIC_API_KEY.
+          anthropic_api_key: ${{ secrets.ORG_ANTHROPIC_API_KEY }}
+
+          # Same model as the automatic review (claude-pr-review.yaml); the action has no
+          # `model` input, the flag goes through claude_args.
+          claude_args: |
+            --model claude-fable-5-1
+
+          # Lets Claude read CI results on PRs.
+          additional_permissions: |
+            actions: read
