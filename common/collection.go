@@ -168,39 +168,52 @@ func CollectListGenericWithContext[T any, PT interface {
 	*T
 	SchemaObject
 }](ctx context.Context, get func(PT, ...QueryGroupOption), c Client, link string, queryOpts ...QueryGroupOption) error {
+	members, err := collectMembersWithContext[T, PT](ctx, c, link, queryOpts...)
+	// deliver the members that were enumerated even when pagination failed partway
+	CollectResourceCollectionWithContext(ctx, get, members, queryOpts...)
+	return err
+}
+
+// collectMembersWithContext gathers the member entities of a collection in the
+// order the service lists them, following pagination. On a pagination failure it
+// returns the members gathered so far along with the error.
+func collectMembersWithContext[T any, PT interface {
+	*T
+	SchemaObject
+}](ctx context.Context, c Client, link string, queryOpts ...QueryGroupOption) ([]PT, error) {
 	collection, err := GetResourceCollectionWithContext[T, PT](ctx, c, link, queryOpts...)
 	if err != nil {
 		// A dead context fails every retry the same way; surface it as-is.
 		if ctx.Err() != nil {
-			return err
+			return nil, err
 		}
 		// allow for auto-fallback from $expand to regular
 		// this will only run on the first query, not future pages
 		builtOpts := BuildQueryGroup(c, queryOpts...).QueryCollection
-		if builtOpts.expand != ExpandNone && builtOpts.expandFallback {
-			queryWithoutExpand := queryOpts
-			queryWithoutExpand = append(queryWithoutExpand,
-				WithCollectionQueryOpts(WithExpand(ExpandNone)))
-			collection, err = GetResourceCollectionWithContext[T, PT](ctx, c, link, queryWithoutExpand...)
-			if err != nil {
-				return err
-			}
-		} else {
-			return err
+		if builtOpts.expand == ExpandNone || !builtOpts.expandFallback {
+			return nil, err
+		}
+		queryWithoutExpand := queryOpts
+		queryWithoutExpand = append(queryWithoutExpand,
+			WithCollectionQueryOpts(WithExpand(ExpandNone)))
+		collection, err = GetResourceCollectionWithContext[T, PT](ctx, c, link, queryWithoutExpand...)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	CollectResourceCollectionWithContext(ctx, get, collection.Members, queryOpts...)
+	members := collection.Members
 	if collection.MembersNextLink != "" {
 		if err := ctx.Err(); err != nil {
-			return err
+			return members, err
 		}
-		err := CollectListGenericWithContext(ctx, get, c, collection.MembersNextLink, queryOpts...)
+		next, err := collectMembersWithContext[T, PT](ctx, c, collection.MembersNextLink, queryOpts...)
+		members = append(members, next...)
 		if err != nil {
-			return err
+			return members, err
 		}
 	}
-	return nil
+	return members, nil
 }
 
 // CollectCollection will retrieve a collection of entities from the Redfish service
@@ -290,16 +303,34 @@ func GetCollectionObjectsWithContext[T any, PT interface {
 		return result, nil
 	}
 
+	collectionError := NewCollectionError()
+
+	// Gather the members in the order the service lists them, then resolve each
+	// concurrently into a slice indexed by that position, so the result keeps
+	// the service's ordering regardless of fetch completion order.
+	members, err := collectMembersWithContext[T, PT](ctx, c, uri, queryOpts...)
+	if err != nil {
+		collectionError.Failures[uri] = err
+	}
+
 	type GetResult struct {
 		Item  *T
 		Link  string
 		Error error
 	}
 
-	ch := make(chan GetResult)
-	collectionError := NewCollectionError()
+	results := make([]GetResult, len(members))
+	memberIndex := make(map[PT]int, len(members))
+	for i, member := range members {
+		memberIndex[member] = i
+	}
+
 	get := func(entity PT, opts ...QueryGroupOption) {
-		if entity != nil && entity.GetID() != "" {
+		if entity == nil {
+			return
+		}
+		i := memberIndex[entity]
+		if entity.GetID() != "" {
 			// if the entity has any ExtendedInfo, we assume it's an error
 			var err error
 			extendedInfo := entity.GetExtendedInfo()
@@ -313,27 +344,21 @@ func GetCollectionObjectsWithContext[T any, PT interface {
 
 			entity.SetClient(c)
 
-			ch <- GetResult{Item: entity, Link: entity.GetODataID(), Error: err}
-		} else if entity != nil && entity.GetODataID() != "" {
+			results[i] = GetResult{Item: entity, Link: entity.GetODataID(), Error: err}
+		} else if entity.GetODataID() != "" {
 			link := entity.GetODataID()
-			entity, err := GetObjectWithContext[T, PT](ctx, c, link, opts...)
-			ch <- GetResult{Item: entity, Link: link, Error: err}
+			item, err := GetObjectWithContext[T, PT](ctx, c, link, opts...)
+			results[i] = GetResult{Item: item, Link: link, Error: err}
 		}
 	}
 
-	go func() {
-		// A collection-level failure is delivered through the channel so that
-		// Failures is only ever written by the consumer loop below.
-		if err := CollectListGenericWithContext(ctx, get, c, uri, queryOpts...); err != nil {
-			ch <- GetResult{Link: uri, Error: err}
-		}
-		close(ch)
-	}()
+	CollectResourceCollectionWithContext(ctx, get, members, queryOpts...)
 
-	for r := range ch {
-		if r.Error != nil {
+	for _, r := range results {
+		switch {
+		case r.Error != nil:
 			collectionError.Failures[r.Link] = r.Error
-		} else {
+		case r.Item != nil:
 			result = append(result, r.Item)
 		}
 	}
