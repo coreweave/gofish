@@ -1043,6 +1043,16 @@ func (computersystem *ComputerSystem) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// SettingsTarget returns the discovered settings URI, falling back to ODataID.
+// Callers can use it when a direct write is unsupported. SetBoot continues to
+// write to the active resource; choosing when to fall back is the caller's responsibility.
+func (computersystem *ComputerSystem) SettingsTarget() string {
+	if computersystem.settingsTarget == "" {
+		return computersystem.ODataID
+	}
+	return computersystem.settingsTarget
+}
+
 // Update commits updates to this object's properties to the running system.
 func (computersystem *ComputerSystem) Update() error {
 	return computersystem.UpdateWithContext(common.ContextOf(computersystem.GetClient()))

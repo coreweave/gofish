@@ -5,13 +5,86 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/coreweave/gofish/common"
 )
+
+type computerSystemBootClient struct {
+	common.TestClient
+	body []byte
+}
+
+func (c *computerSystemBootClient) PatchWithHeadersWithContext(ctx context.Context, uri string, payload interface{}, headers map[string]string) (*http.Response, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	c.body = body
+	return c.TestClient.PatchWithHeadersWithContext(ctx, uri, payload, headers)
+}
+
+func TestComputerSystemSettingsTargetPreservesDirectBootWrite(t *testing.T) {
+	const active = "/redfish/v1/Systems/system"
+	for _, tc := range []struct {
+		name, settings, wantTarget string
+	}{
+		{"advertised SD", `,"@Redfish.Settings":{"SettingsObject":{"@odata.id":"/redfish/v1/Systems/system/SD"}}`, active + "/SD"},
+		{"arbitrary settings URI", `,"@Redfish.Settings":{"SettingsObject":{"@odata.id":"/redfish/v1/Systems/pending"}}`, "/redfish/v1/Systems/pending"},
+		{"absent settings", "", active},
+		{"empty settings object", `,"@Redfish.Settings":{"SettingsObject":{}}`, active},
+		{"manually constructed", "", active},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			system := ComputerSystem{Entity: common.Entity{ODataID: active}}
+			if tc.name != "manually constructed" {
+				body := `{"@odata.id":"` + active + `"` + tc.settings + `}`
+				if err := json.Unmarshal([]byte(body), &system); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if got := system.SettingsTarget(); got != tc.wantTarget {
+				t.Fatalf("SettingsTarget() = %q, want %q", got, tc.wantTarget)
+			}
+
+			client := &computerSystemBootClient{}
+			system.SetClient(client)
+			boot := Boot{
+				BootSourceOverrideEnabled:    "Once",
+				BootSourceOverrideMode:       "UEFI",
+				BootSourceOverrideTarget:     "UefiTarget",
+				UefiTargetBootSourceOverride: "PciRoot(0x0)/Pci(0x1,0x0)",
+				BootNext:                     "Boot0001",
+			}
+			if err := system.SetBoot(boot); err != nil {
+				t.Fatal(err)
+			}
+			calls := client.CapturedCalls()
+			if len(calls) != 1 || calls[0].Action != http.MethodPatch || calls[0].URL != active {
+				t.Fatalf("expected one PATCH to active URI, got %+v", calls)
+			}
+			var got map[string]interface{}
+			if err := json.Unmarshal(client.body, &got); err != nil {
+				t.Fatal(err)
+			}
+			want := map[string]interface{}{"Boot": map[string]interface{}{
+				"BootSourceOverrideEnabled":    "Once",
+				"BootSourceOverrideMode":       "UEFI",
+				"BootSourceOverrideTarget":     "UefiTarget",
+				"UefiTargetBootSourceOverride": "PciRoot(0x0)/Pci(0x1,0x0)",
+				"BootNext":                     "Boot0001",
+			}}
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("PATCH body = %s, want %+v", client.body, want)
+			}
+		})
+	}
+}
 
 var computerSystemResetActionInfoTarget = "/redfish/v1/Systems/System-1/ResetActionInfo"
 
