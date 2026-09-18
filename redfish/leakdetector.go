@@ -6,7 +6,6 @@ package redfish
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
 )
@@ -30,15 +29,10 @@ const (
 
 // LeakDetector shall represent a state-based or digital-value leak detector for a Redfish implementation.
 type LeakDetector struct {
-	common.Entity
-	// ODataContext is the odata context.
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the odata type.
-	ODataType string `json:"@odata.type"`
+	common.Resource
 	// CriticalReactionType specifies the reaction to perform when a critical leak is detected.
 	CriticalReactionType LeakReactionType
-	// Description provides a description of this resource.
-	Description string
+	CurrentAmps          SensorCurrentExcerpt `json:"CurrentAmps,omitempty"`
 	// DetectorState shall contain the state of the leak detector.
 	DetectorState common.Health
 	// Enabled shall indicate whether the leak detector is enabled.
@@ -52,9 +46,6 @@ type LeakDetector struct {
 	Manufacturer string
 	// Model shall contain the name by which the manufacturer generally refers to the leak detector.
 	Model string
-	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
-	// Redfish Specification-described requirements.
-	OEM json.RawMessage `json:"Oem"`
 	// PartNumber shall contain a part number assigned by the organization that is responsible for producing or
 	// manufacturing the leak detector.
 	PartNumber string
@@ -64,7 +55,8 @@ type LeakDetector struct {
 	// PhysicalSubContext shall contain a description of the usage or sub-region within the equipment to which this
 	// leak detector applies. This property generally differentiates multiple leak detectors within the same
 	// PhysicalContext instance.
-	PhysicalSubContext PhysicalSubContext
+	PhysicalSubContext   PhysicalSubContext
+	ReactionDelaySeconds *int
 	// SKU shall contain the stock-keeping unit number for this leak detector.
 	SKU string
 	// SensingFrequency shall contain the time interval between readings of the physical leak detector.
@@ -74,7 +66,9 @@ type LeakDetector struct {
 	// SparePartNumber shall contain the spare part number of the leak detector.
 	SparePartNumber string
 	// Status shall contain any status or health properties of the resource.
-	Status common.Status
+	Status    common.Status
+	UserLabel string
+	Voltage   SensorVoltageExcerpt
 	// WarningReactionType specifies the reaction to perform when a warning-level leak is detected.
 	WarningReactionType LeakReactionType
 	// RawData holds the original serialized JSON so we can compare updates
@@ -136,6 +130,10 @@ func (leakdetector *LeakDetector) Update() error {
 func (leakdetector *LeakDetector) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"Enabled",
+		"ReactionDelaySeconds",
+		"CriticalReactionType",
+		"WarningReactionType",
+		"UserLabel",
 	}
 
 	return leakdetector.UpdateFromRawDataWithContext(ctx, leakdetector, leakdetector.RawData, readWriteFields)
