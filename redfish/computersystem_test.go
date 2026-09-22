@@ -36,9 +36,9 @@ func TestComputerSystemSettingsTargetPreservesDirectBootWrite(t *testing.T) {
 	}{
 		{"advertised SD", `,"@Redfish.Settings":{"SettingsObject":{"@odata.id":"/redfish/v1/Systems/system/SD"}}`, active + "/SD"},
 		{"arbitrary settings URI", `,"@Redfish.Settings":{"SettingsObject":{"@odata.id":"/redfish/v1/Systems/pending"}}`, "/redfish/v1/Systems/pending"},
-		{"absent settings", "", active},
-		{"empty settings object", `,"@Redfish.Settings":{"SettingsObject":{}}`, active},
-		{"manually constructed", "", active},
+		{"absent settings", "", ""},
+		{"empty settings object", `,"@Redfish.Settings":{"SettingsObject":{}}`, ""},
+		{"manually constructed", "", ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			system := ComputerSystem{Entity: common.Entity{ODataID: active}}
@@ -48,8 +48,8 @@ func TestComputerSystemSettingsTargetPreservesDirectBootWrite(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if got := system.SettingsTarget(); got != tc.wantTarget {
-				t.Fatalf("SettingsTarget() = %q, want %q", got, tc.wantTarget)
+			if got := system.SettingsTarget; got != tc.wantTarget {
+				t.Fatalf("SettingsTarget = %q, want %q", got, tc.wantTarget)
 			}
 
 			client := &computerSystemBootClient{}
@@ -81,6 +81,30 @@ func TestComputerSystemSettingsTargetPreservesDirectBootWrite(t *testing.T) {
 			}}
 			if !reflect.DeepEqual(got, want) {
 				t.Fatalf("PATCH body = %s, want %+v", client.body, want)
+			}
+			if tc.name == "manually constructed" {
+				return
+			}
+
+			// The existing attributes writer still falls back to the active URI,
+			// without changing the exported discovery result.
+			client.Reset()
+			if err := system.UpdateBootAttributes(SettingsAttributes{"BootTypeOrder0": "Pxe"}); err != nil {
+				t.Fatal(err)
+			}
+			writeTarget := tc.wantTarget
+			if writeTarget == "" {
+				writeTarget = active
+			}
+			calls = client.CapturedCalls()
+			if len(calls) != 2 || calls[0].Action != http.MethodGet || calls[0].URL != writeTarget || calls[1].Action != http.MethodPatch || calls[1].URL != writeTarget {
+				t.Fatalf("unexpected attributes requests: %+v", calls)
+			}
+			if string(client.body) != `{"Boot":{"BootTypeOrder0":"Pxe"}}` {
+				t.Fatalf("unexpected attributes PATCH body: %s", client.body)
+			}
+			if system.SettingsTarget != tc.wantTarget {
+				t.Fatal("attributes update changed SettingsTarget")
 			}
 		})
 	}

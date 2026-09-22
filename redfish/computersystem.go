@@ -945,7 +945,9 @@ type ComputerSystem struct {
 	resetActionInfoTarget string
 	// setDefaultBootOrderTarget is the URL to send SetDefaultBootOrder actions to.
 	setDefaultBootOrderTarget string
-	settingsTarget            string
+	// SettingsTarget is the settings URI discovered from @Redfish.Settings.SettingsObject.
+	// It is empty when no settings URI is advertised.
+	SettingsTarget string `json:"-"`
 	// RawData holds the original serialized JSON so we can compare updates.
 	RawData []byte
 }
@@ -1030,27 +1032,13 @@ func (computersystem *ComputerSystem) UnmarshalJSON(b []byte) error {
 	computersystem.managedBy = t.Links.ManagedBy.ToStrings()
 	computersystem.settingsApplyTimes = t.Settings.SupportedApplyTimes
 
-	// Some implementations use a @Redfish.Settings object to direct settings updates to a
-	// different URL than the object being updated. Others don't, so handle both.
-	computersystem.settingsTarget = t.Settings.SettingsObject.String()
-	if computersystem.settingsTarget == "" {
-		computersystem.settingsTarget = computersystem.ODataID
-	}
+	// Preserve the advertised settings URI so callers can detect whether it exists.
+	computersystem.SettingsTarget = t.Settings.SettingsObject.String()
 
 	// This is a read/write object, so we need to save the raw object data for later
 	computersystem.RawData = b
 
 	return nil
-}
-
-// SettingsTarget returns the discovered settings URI, falling back to ODataID.
-// Callers can use it when a direct write is unsupported. SetBoot continues to
-// write to the active resource; choosing when to fall back is the caller's responsibility.
-func (computersystem *ComputerSystem) SettingsTarget() string {
-	if computersystem.settingsTarget == "" {
-		return computersystem.ODataID
-	}
-	return computersystem.settingsTarget
 }
 
 // Update commits updates to this object's properties to the running system.
@@ -1372,7 +1360,11 @@ func (computersystem *ComputerSystem) UpdateBootAttributesApplyAtWithContext(ctx
 		}
 	}
 
-	resp, err := computersystem.GetClient().GetWithContext(ctx, computersystem.settingsTarget)
+	target := computersystem.SettingsTarget
+	if target == "" {
+		target = computersystem.ODataID
+	}
+	resp, err := computersystem.GetClient().GetWithContext(ctx, target)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil {
 		return err
@@ -1391,7 +1383,7 @@ func (computersystem *ComputerSystem) UpdateBootAttributesApplyAtWithContext(ctx
 			header["If-Match"] = resp.Header["Etag"][0]
 		}
 
-		resp, err = computersystem.GetClient().PatchWithHeadersWithContext(ctx, computersystem.settingsTarget, data, header)
+		resp, err = computersystem.GetClient().PatchWithHeadersWithContext(ctx, target, data, header)
 		defer common.DeferredCleanupHTTPResponse(resp)
 		if err != nil {
 			return err

@@ -77,7 +77,9 @@ type SecureBoot struct {
 
 	// resetKeysTarget is the URL to send ResetKeys requests.
 	resetKeysTarget string
-	settingsTarget  string
+	// SettingsTarget is the settings URI discovered from @Redfish.Settings.SettingsObject.
+	// It is empty when no settings URI is advertised.
+	SettingsTarget string `json:"-"`
 }
 
 // UnmarshalJSON unmarshals a SecureBoot object from the raw JSON.
@@ -100,25 +102,12 @@ func (secureboot *SecureBoot) UnmarshalJSON(b []byte) error {
 	// Extract the links to other entities for later
 	*secureboot = SecureBoot(t.temp)
 	secureboot.resetKeysTarget = t.Actions.ResetKeys.Target
-	secureboot.settingsTarget = t.Settings.SettingsObject.String()
-	if secureboot.settingsTarget == "" {
-		secureboot.settingsTarget = secureboot.ODataID
-	}
+	secureboot.SettingsTarget = t.Settings.SettingsObject.String()
 
 	// This is a read/write object, so we need to save the raw object data for later
 	secureboot.rawData = b
 
 	return nil
-}
-
-// SettingsTarget returns the discovered settings URI, falling back to ODataID.
-// Callers can use it when a direct write is unsupported. Update continues to
-// write to the active resource; choosing when to fall back is the caller's responsibility.
-func (secureboot *SecureBoot) SettingsTarget() string {
-	if secureboot.settingsTarget == "" {
-		return secureboot.ODataID
-	}
-	return secureboot.settingsTarget
 }
 
 // Update commits updates to this object's properties to the running system.

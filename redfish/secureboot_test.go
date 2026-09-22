@@ -35,10 +35,10 @@ func TestSecureBootSettingsTargetPreservesDirectUpdate(t *testing.T) {
 			for _, changed := range []bool{false, true} {
 				t.Run(fmt.Sprintf("settings=%t/enabled=%t/changed=%t", advertised, enabled, changed), func(t *testing.T) {
 					const active = "/redfish/v1/SecureBoot"
-					target := active
+					target := ""
 					settings := ""
 					if advertised {
-						target += "/Settings"
+						target = active + "/Settings"
 						settings = fmt.Sprintf(`,"@Redfish.Settings":{"SettingsObject":{"@odata.id":%q}}`, target)
 					}
 					var resource SecureBoot
@@ -46,7 +46,7 @@ func TestSecureBootSettingsTargetPreservesDirectUpdate(t *testing.T) {
 						t.Fatal(err)
 					}
 					client := &secureBootUpdateClient{}
-					if got := resource.SettingsTarget(); got != target {
+					if got := resource.SettingsTarget; got != target {
 						t.Fatalf("SettingsTarget = %q, want %q", got, target)
 					}
 					resource.SetClient(client)
