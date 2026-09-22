@@ -53,6 +53,11 @@ const (
 	DeployedModeSecureBootModeType SecureBootModeType = "DeployedMode"
 )
 
+// SecureBootActions contains the actions supported by a Secure Boot resource.
+type SecureBootActions struct {
+	ResetKeys common.ActionTarget `json:"#SecureBoot.ResetKeys"`
+}
+
 // SecureBoot is used to represent a UEFI Secure Boot resource.
 type SecureBoot struct {
 	common.Entity
@@ -75,34 +80,20 @@ type SecureBoot struct {
 	// rawData holds the original serialized JSON so we can compare updates.
 	rawData []byte
 
-	// resetKeysTarget is the URL to send ResetKeys requests.
-	resetKeysTarget string
-	// SettingsTarget is the settings URI discovered from @Redfish.Settings.SettingsObject.
-	// It is empty when no settings URI is advertised.
-	SettingsTarget string `json:"-"`
+	// Actions contains the actions advertised by the service.
+	Actions SecureBootActions
+	// Settings contains the settings resource information advertised by the service.
+	Settings common.Settings `json:"@Redfish.Settings"`
 }
 
 // UnmarshalJSON unmarshals a SecureBoot object from the raw JSON.
 func (secureboot *SecureBoot) UnmarshalJSON(b []byte) error {
 	type temp SecureBoot
-	type actions struct {
-		ResetKeys common.ActionTarget `json:"#SecureBoot.ResetKeys"`
-	}
-	var t struct {
-		temp
-		Actions  actions
-		Settings common.Settings `json:"@Redfish.Settings"`
-	}
-
-	err := json.Unmarshal(b, &t)
-	if err != nil {
+	var t temp
+	if err := json.Unmarshal(b, &t); err != nil {
 		return err
 	}
-
-	// Extract the links to other entities for later
-	*secureboot = SecureBoot(t.temp)
-	secureboot.resetKeysTarget = t.Actions.ResetKeys.Target
-	secureboot.SettingsTarget = t.Settings.SettingsObject.String()
+	*secureboot = SecureBoot(t)
 
 	// This is a read/write object, so we need to save the raw object data for later
 	secureboot.rawData = b
@@ -165,5 +156,5 @@ func (secureboot *SecureBoot) ResetKeysWithContext(ctx context.Context, resetTyp
 		ResetKeysType ResetKeysType
 	}{ResetKeysType: resetType}
 
-	return secureboot.PostWithContext(ctx, secureboot.resetKeysTarget, t)
+	return secureboot.PostWithContext(ctx, secureboot.Actions.ResetKeys.Target, t)
 }

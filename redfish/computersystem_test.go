@@ -48,8 +48,8 @@ func TestComputerSystemSettingsTargetPreservesDirectBootWrite(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if got := system.SettingsTarget; got != tc.wantTarget {
-				t.Fatalf("SettingsTarget = %q, want %q", got, tc.wantTarget)
+			if got := system.Settings.SettingsObject.String(); got != tc.wantTarget {
+				t.Fatalf("Settings.SettingsObject = %q, want %q", got, tc.wantTarget)
 			}
 
 			client := &computerSystemBootClient{}
@@ -103,7 +103,7 @@ func TestComputerSystemSettingsTargetPreservesDirectBootWrite(t *testing.T) {
 			if string(client.body) != `{"Boot":{"BootTypeOrder0":"Pxe"}}` {
 				t.Fatalf("unexpected attributes PATCH body: %s", client.body)
 			}
-			if system.SettingsTarget != tc.wantTarget {
+			if system.Settings.SettingsObject.String() != tc.wantTarget {
 				t.Fatal("attributes update changed SettingsTarget")
 			}
 		})
@@ -433,47 +433,47 @@ func TestComputerSystem(t *testing.T) { //nolint
 			result.ProcessorSummary.metrics)
 	}
 
-	if result.processors != "/redfish/v1/Systems/System-1/Processors" {
-		t.Errorf("Received invalid processors reference: %s", result.processors)
+	if result.ProcessorsLink.String() != "/redfish/v1/Systems/System-1/Processors" {
+		t.Errorf("Received invalid processors reference: %s", result.ProcessorsLink.String())
 	}
 
-	if result.memory != "/redfish/v1/Systems/System-1/Memory" {
-		t.Errorf("Received invalid memory reference: %s", result.memory)
+	if result.MemoryLink.String() != "/redfish/v1/Systems/System-1/Memory" {
+		t.Errorf("Received invalid memory reference: %s", result.MemoryLink.String())
 	}
 
-	if result.ethernetInterfaces != "/redfish/v1/Systems/System-1/EthernetInterfaces" {
-		t.Errorf("Received invalid ethernet interface reference: %s", result.ethernetInterfaces)
+	if result.EthernetInterfacesLink.String() != "/redfish/v1/Systems/System-1/EthernetInterfaces" {
+		t.Errorf("Received invalid ethernet interface reference: %s", result.EthernetInterfacesLink.String())
 	}
 
-	if result.simpleStorage != "/redfish/v1/Systems/System-1/SimpleStorage" {
-		t.Errorf("Received invalid simple storage reference: %s", result.simpleStorage)
+	if result.SimpleStorageLink.String() != "/redfish/v1/Systems/System-1/SimpleStorage" {
+		t.Errorf("Received invalid simple storage reference: %s", result.SimpleStorageLink.String())
 	}
 
-	if len(result.chassis) != 1 {
-		t.Errorf("Received invalid number of chassis: %d", len(result.chassis))
+	if len(result.Links.Chassis.ToStrings()) != 1 {
+		t.Errorf("Received invalid number of chassis: %d", len(result.Links.Chassis.ToStrings()))
 	}
 
-	if result.chassis[0] != TestChassisPath {
-		t.Errorf("Received invalid chassis reference: %s", result.chassis[0])
+	if result.Links.Chassis.ToStrings()[0] != TestChassisPath {
+		t.Errorf("Received invalid chassis reference: %s", result.Links.Chassis.ToStrings()[0])
 	}
 
-	if result.resetTarget != "/redfish/v1/Systems/System-1/Actions/ComputerSystem.Reset" {
-		t.Errorf("Invalid reset action target: %s", result.resetTarget)
+	if result.Actions.Reset.Target != "/redfish/v1/Systems/System-1/Actions/ComputerSystem.Reset" {
+		t.Errorf("Invalid reset action target: %s", result.Actions.Reset.Target)
 	}
 
 	if len(result.SupportedResetTypes) != 6 {
 		t.Errorf("Invalid allowable reset actions, expected 6, got %d",
 			len(result.SupportedResetTypes))
 	}
-	if len(result.managedBy) != 1 {
-		t.Errorf("Received invalid number of ManagedBy: %d", len(result.managedBy))
+	if len(result.Links.ManagedBy.ToStrings()) != 1 {
+		t.Errorf("Received invalid number of ManagedBy: %d", len(result.Links.ManagedBy.ToStrings()))
 	}
-	if result.managedBy[0] != "/redfish/v1/Managers/BMC-1" {
-		t.Errorf("Received invalid Managers reference: %s", result.managedBy[0])
+	if result.Links.ManagedBy.ToStrings()[0] != "/redfish/v1/Managers/BMC-1" {
+		t.Errorf("Received invalid Managers reference: %s", result.Links.ManagedBy.ToStrings()[0])
 	}
 
-	if result.operatingSystem != "/redfish/v1/Systems/1/OperatingSystem" {
-		t.Errorf("Received invalid OperatingSystem reference: %s", result.operatingSystem)
+	if result.OperatingSystemLink.String() != "/redfish/v1/Systems/1/OperatingSystem" {
+		t.Errorf("Received invalid OperatingSystem reference: %s", result.OperatingSystemLink.String())
 	}
 	if result.Boot.AllowableBootSourceOverrideTargetValues[0] != NoneBootSourceOverrideTarget {
 		t.Errorf("Received invalid AllowablebootSourceOverrideTargetValue: %s", result.Boot.AllowableBootSourceOverrideTargetValues[0])
@@ -599,8 +599,8 @@ func TestSystemSupportedResetTypes(t *testing.T) {
 		t.Errorf("Error decoding JSON: %s", err)
 	}
 
-	if result.resetActionInfoTarget != computerSystemResetActionInfoTarget {
-		t.Errorf("Invalid reset action info target: %s, expecting %s", result.resetActionInfoTarget, computerSystemResetActionInfoTarget)
+	if result.Actions.Reset.ActionInfoTarget != computerSystemResetActionInfoTarget {
+		t.Errorf("Invalid reset action info target: %s, expecting %s", result.Actions.Reset.ActionInfoTarget, computerSystemResetActionInfoTarget)
 	}
 
 	testClient := &common.TestClient{

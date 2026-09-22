@@ -46,8 +46,8 @@ func TestSecureBootSettingsTargetPreservesDirectUpdate(t *testing.T) {
 						t.Fatal(err)
 					}
 					client := &secureBootUpdateClient{}
-					if got := resource.SettingsTarget; got != target {
-						t.Fatalf("SettingsTarget = %q, want %q", got, target)
+					if got := resource.Settings.SettingsObject.String(); got != target {
+						t.Fatalf("Settings.SettingsObject = %q, want %q", got, target)
 					}
 					resource.SetClient(client)
 					if changed {
@@ -128,8 +128,8 @@ func TestSecureBoot(t *testing.T) {
 		t.Errorf("Invalid SecureBootMode: %s", result.SecureBootMode)
 	}
 
-	if result.resetKeysTarget != "/redfish/v1/SecureBoot/Actions/SecureBoot.ResetKeys" {
-		t.Errorf("Invalid ResetKeys target: %s", result.resetKeysTarget)
+	if result.Actions.ResetKeys.Target != "/redfish/v1/SecureBoot/Actions/SecureBoot.ResetKeys" {
+		t.Errorf("Invalid ResetKeys target: %s", result.Actions.ResetKeys.Target)
 	}
 }
 
