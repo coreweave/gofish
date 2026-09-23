@@ -29,6 +29,31 @@ func (c *computerSystemBootClient) PatchWithHeadersWithContext(ctx context.Conte
 	return c.TestClient.PatchWithHeadersWithContext(ctx, uri, payload, headers)
 }
 
+func TestComputerSystemInheritedResource(t *testing.T) {
+	const body = `{"@odata.id":"/redfish/v1/Systems/1","@odata.context":"/redfish/v1/$metadata#ComputerSystem.ComputerSystem","@odata.type":"#ComputerSystem.v1_0_0.ComputerSystem","Description":"Test system","Oem":{"Vendor":{"Enabled":true}}}`
+	var system ComputerSystem
+	if err := json.Unmarshal([]byte(body), &system); err != nil {
+		t.Fatal(err)
+	}
+	if system.Resource.ODataID != "/redfish/v1/Systems/1" ||
+		system.Resource.ODataContext != "/redfish/v1/$metadata#ComputerSystem.ComputerSystem" ||
+		system.Resource.ODataType != "#ComputerSystem.v1_0_0.ComputerSystem" ||
+		system.Resource.Description != "Test system" ||
+		string(system.Resource.OEM) != `{"Vendor":{"Enabled":true}}` {
+		t.Fatalf("resource fields were not inherited correctly: %+v", system.Resource)
+	}
+	client := &computerSystemBootClient{}
+	system.SetClient(client)
+	system.AssetTag = "new-tag"
+	if err := system.Update(); err != nil {
+		t.Fatal(err)
+	}
+	calls := client.CapturedCalls()
+	if len(calls) != 1 || calls[0].Action != http.MethodPatch || calls[0].URL != system.ODataID || string(client.body) != `{"AssetTag":"new-tag"}` {
+		t.Fatalf("unexpected update: calls=%+v body=%s", calls, client.body)
+	}
+}
+
 func TestComputerSystemSettingsTargetPreservesDirectBootWrite(t *testing.T) {
 	const active = "/redfish/v1/Systems/system"
 	for _, tc := range []struct {
@@ -41,7 +66,7 @@ func TestComputerSystemSettingsTargetPreservesDirectBootWrite(t *testing.T) {
 		{"manually constructed", "", ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			system := ComputerSystem{Entity: common.Entity{ODataID: active}}
+			system := ComputerSystem{Resource: common.Resource{Entity: common.Entity{ODataID: active}}}
 			if tc.name != "manually constructed" {
 				body := `{"@odata.id":"` + active + `"` + tc.settings + `}`
 				if err := json.Unmarshal([]byte(body), &system); err != nil {

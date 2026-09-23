@@ -791,8 +791,6 @@ type ComputerSystem struct {
 	CertificatesLink common.Link `json:"Certificates"`
 	// Composition shall contain information about the composition capabilities and state of the computer system.
 	Composition Composition
-	// Description is the resource description.
-	Description string
 	// EthernetInterfaces shall be a link to a collection of type EthernetInterfaceCollection.
 	EthernetInterfacesLink common.Link `json:"EthernetInterfaces"`
 	// FabricAdapters shall contain a link to a resource collection of type FabricAdapterCollection.
@@ -849,13 +847,6 @@ type ComputerSystem struct {
 	// networkInterfaces shall be a link to a collection of type
 	// NetworkInterfaceCollection.
 	NetworkInterfacesLink common.Link `json:"NetworkInterfaces"`
-	// ODataContext is the @odata.context
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the @odata.type
-	ODataType string `json:"@odata.type"`
-	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
-	// Redfish Specification-described requirements.
-	OEM json.RawMessage `json:"Oem"`
 	// OperatingSystem shall contain a link to a resource of type OperatingSystem that contains operating system
 	// information for this system.
 	OperatingSystemLink common.Link `json:"OperatingSystem"`
