@@ -770,67 +770,13 @@ type ComputerSystemActions struct {
 type ComputerSystem struct {
 	common.Entity
 
+	// Actions contains the actions advertised by the service.
+	Actions ComputerSystemActions
+	// AssetTag shall contain the value of the asset tag of the system.
+	AssetTag string
 	// bios shall be a link to a resource of
 	// type Bios that lists the Bios settings for this system.
 	BiosLink common.Link `json:"Bios"`
-	// Certificates shall contain a link to a resource collection of type CertificateCollection that contains
-	// certificates for device identity and attestation.
-	CertificatesLink common.Link `json:"Certificates"`
-	// EthernetInterfaces shall be a link to a collection of type EthernetInterfaceCollection.
-	EthernetInterfacesLink common.Link `json:"EthernetInterfaces"`
-	// FabricAdapters shall contain a link to a resource collection of type FabricAdapterCollection.
-	FabricAdaptersLink common.Link `json:"FabricAdapters"`
-	// GraphicsControllers shall contain a link to a resource collection of type GraphicsControllerCollection that
-	// contains graphics controllers that can output video for this system.
-	GraphicsControllersLink common.Link `json:"GraphicsControllers"`
-	// logServices shall be a link to a collection of type LogServiceCollection.
-	LogServicesLink common.Link `json:"LogServices"`
-	// Memory shall be a link to a collection of type MemoryCollection.
-	MemoryLink common.Link `json:"Memory"`
-	// memoryDomains shall be a link to a collection of type MemoryDomainCollection.
-	MemoryDomainsLink common.Link `json:"MemoryDomains"`
-	// networkInterfaces shall be a link to a collection of type
-	// NetworkInterfaceCollection.
-	NetworkInterfacesLink common.Link `json:"NetworkInterfaces"`
-	// OperatingSystem shall contain a link to a resource of type OperatingSystem that contains operating system
-	// information for this system.
-	OperatingSystemLink common.Link `json:"OperatingSystem"`
-	// PCIeDevices shall be an array of references of type PCIeDevice.
-	PCIeDevicesLink common.Links `json:"PCIeDevices"`
-	// PCIeFunctions shall be an array of references of type PCIeFunction.
-	PCIeFunctionsLink common.Links `json:"PCIeFunctions"`
-	// Processors shall be a link to a collection of type ProcessorCollection.
-	ProcessorsLink common.Link `json:"Processors"`
-	// Redundancy references a redundancy
-	// entity that specifies a kind and level of redundancy and a collection
-	// (RedundancySet) of other ComputerSystems that provide the specified
-	// redundancy to this ComputerSystem.
-	RedundancyLink common.Link `json:"Redundancy"`
-	// secureBoot shall be a link to a resource of type SecureBoot.
-	SecureBootLink common.Link `json:"SecureBoot"`
-	// SimpleStorage shall be a link to a collection of type SimpleStorageCollection.
-	SimpleStorageLink common.Link `json:"SimpleStorage"`
-	// storage shall be a link to a collection
-	// of type StorageCollection.
-	StorageLink common.Link `json:"Storage"`
-	// USBControllers shall contain a link to a resource collection of type USBControllerCollection that contains USB
-	// controllers for this system.
-	USBControllersLink common.Link `json:"USBControllers"`
-	// virtualMedia shall contain a reference to a collection of type
-	// VirtualMediaCollection which are for the use of this system.
-	VirtualMediaLink common.Link `json:"VirtualMedia"`
-	// Links contains references to related resources.
-	Links CSLinks
-	// Settings contains the settings resource information advertised by the service.
-	Settings common.Settings `json:"@Redfish.Settings"`
-
-	// ODataContext is the @odata.context
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the @odata.type
-	ODataType string `json:"@odata.type"`
-
-	// AssetTag shall contain the value of the asset tag of the system.
-	AssetTag string
 	// BIOSVersion shall be the version string
 	// of the currently installed and running BIOS (for x86 systems). For
 	// other systems, the value may contain a version string representing the
@@ -840,12 +786,26 @@ type ComputerSystem struct {
 	Boot Boot
 	// BootProgress shall contain the last boot progress state and time.
 	BootProgress BootProgress
+	// Certificates shall contain a link to a resource collection of type CertificateCollection that contains
+	// certificates for device identity and attestation.
+	CertificatesLink common.Link `json:"Certificates"`
 	// Composition shall contain information about the composition capabilities and state of the computer system.
 	Composition Composition
 	// Description is the resource description.
 	Description string
+	// EthernetInterfaces shall be a link to a collection of type EthernetInterfaceCollection.
+	EthernetInterfacesLink common.Link `json:"EthernetInterfaces"`
+	// FabricAdapters shall contain a link to a resource collection of type FabricAdapterCollection.
+	FabricAdaptersLink common.Link `json:"FabricAdapters"`
 	// GraphicalConsole shall contain the information about the graphical console (KVM-IP) service of this system.
 	GraphicalConsole HostGraphicalConsole
+	// GraphicsControllers shall contain a link to a resource collection of type GraphicsControllerCollection that
+	// contains graphics controllers that can output video for this system.
+	GraphicsControllersLink common.Link `json:"GraphicsControllers"`
+	// HostedServices shall describe services that this computer system supports.
+	HostedServices HostedServices
+	// HostingRoles shall be the hosting roles supported by this computer system.
+	HostingRoles []string
 	// HostName shall be the host name for this
 	// system, as reported by the operating system or hypervisor. This value
 	// is typically provided to the Manager by a service running in the host
@@ -855,26 +815,30 @@ type ComputerSystem struct {
 	// describe the host watchdog timer functionality for this
 	// ComputerSystem.
 	HostWatchdogTimer WatchdogTimer
-	// HostedServices shall describe services that this computer system supports.
-	HostedServices HostedServices
-	// HostingRoles shall be the hosting roles supported by this computer system.
-	HostingRoles []string
 	// IdlePowerSaver shall contain the idle power saver settings of the computer system.
 	IdlePowerSaver IdlePowerSaver
+	// IndicatorLED shall contain the indicator
+	// light state for the indicator light associated with this system.
+	IndicatorLED common.IndicatorLED
 	// KeyManagement shall contain the key management settings of the computer system.
 	KeyManagement KeyManagement
 	// LastResetTime shall contain the date and time when the system last came out of a reset or was rebooted.
 	LastResetTime string
-	// IndicatorLED shall contain the indicator
-	// light state for the indicator light associated with this system.
-	IndicatorLED common.IndicatorLED
+	// Links contains references to related resources.
+	Links CSLinks
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource. A write to this property shall update the value of IndicatorLED in this resource, if supported, to
 	// reflect the implementation of the locating function. Modifying this property may modify the
 	// LocationIndicatorActive in the containing Chassis resource.
 	LocationIndicatorActive *bool
+	// logServices shall be a link to a collection of type LogServiceCollection.
+	LogServicesLink common.Link `json:"LogServices"`
 	// Manufacturer shall contain a value that represents the manufacturer of the system.
 	Manufacturer string
+	// memoryDomains shall be a link to a collection of type MemoryDomainCollection.
+	MemoryDomainsLink common.Link `json:"MemoryDomains"`
+	// Memory shall be a link to a collection of type MemoryCollection.
+	MemoryLink common.Link `json:"Memory"`
 	// MemorySummary is This object shall contain properties which describe
 	// the central memory for the current resource.
 	MemorySummary MemorySummary
@@ -882,16 +846,30 @@ type ComputerSystem struct {
 	// about how the manufacturer references this system. This is typically
 	// the product name, without the manufacturer name.
 	Model string
+	// networkInterfaces shall be a link to a collection of type
+	// NetworkInterfaceCollection.
+	NetworkInterfacesLink common.Link `json:"NetworkInterfaces"`
+	// ODataContext is the @odata.context
+	ODataContext string `json:"@odata.context"`
+	// ODataType is the @odata.type
+	ODataType string `json:"@odata.type"`
 	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
-	// PCIeDevicesCount is the number of PCIeDevices.
-	PCIeDevicesCount int `json:"PCIeDevices@odata.count"`
-	// PCIeFunctionsCount is the number of PCIeFunctions.
-	PCIeFunctionsCount int `json:"PCIeFunctions@odata.count"`
+	// OperatingSystem shall contain a link to a resource of type OperatingSystem that contains operating system
+	// information for this system.
+	OperatingSystemLink common.Link `json:"OperatingSystem"`
 	// PartNumber shall contain the part number
 	// for the system as defined by the manufacturer.
 	PartNumber string
+	// PCIeDevicesCount is the number of PCIeDevices.
+	PCIeDevicesCount int `json:"PCIeDevices@odata.count"`
+	// PCIeDevices shall be an array of references of type PCIeDevice.
+	PCIeDevicesLink common.Links `json:"PCIeDevices"`
+	// PCIeFunctionsCount is the number of PCIeFunctions.
+	PCIeFunctionsCount int `json:"PCIeFunctions@odata.count"`
+	// PCIeFunctions shall be an array of references of type PCIeFunction.
+	PCIeFunctionsLink common.Links `json:"PCIeFunctions"`
 	// PowerCycleDelaySeconds shall contain the number of seconds to delay power on after a 'Reset' action requesting
 	// 'PowerCycle'. The value '0' shall indicate no delay to power on.
 	PowerCycleDelaySeconds float64
@@ -910,25 +888,52 @@ type ComputerSystem struct {
 	PowerRestorePolicy PowerState
 	// PowerState shall contain the power state of the system.
 	PowerState PowerState
+	// Processors shall be a link to a collection of type ProcessorCollection.
+	ProcessorsLink common.Link `json:"Processors"`
 	// ProcessorSummary shall contain properties which
 	// describe the central processors for the current resource.
 	ProcessorSummary ProcessorSummary
+	// RawData holds the original serialized JSON so we can compare updates.
+	RawData []byte
 	// RedundancyCount is the number of Redundancy objects.
 	RedundancyCount string `json:"Redundancy@odata.count"`
-	// SKU shall contain the Stock Keeping Unit (SKU) for the system.
-	SKU string
+	// Redundancy references a redundancy
+	// entity that specifies a kind and level of redundancy and a collection
+	// (RedundancySet) of other ComputerSystems that provide the specified
+	// redundancy to this ComputerSystem.
+	RedundancyLink common.Link `json:"Redundancy"`
+	// secureBoot shall be a link to a resource of type SecureBoot.
+	SecureBootLink common.Link `json:"SecureBoot"`
 	// SerialConsole shall contain information about the serial console services of this system.
 	SerialConsole HostSerialConsole
 	// SerialNumber shall contain the serial number for the system.
 	SerialNumber string
+	// Settings contains the settings resource information advertised by the service.
+	Settings common.Settings `json:"@Redfish.Settings"`
+	// SimpleStorage shall be a link to a collection of type SimpleStorageCollection.
+	SimpleStorageLink common.Link `json:"SimpleStorage"`
+	// SKU shall contain the Stock Keeping Unit (SKU) for the system.
+	SKU string
 	// Status shall contain any status or health properties
 	// of the resource.
 	Status common.Status
+	// storage shall be a link to a collection
+	// of type StorageCollection.
+	StorageLink common.Link `json:"Storage"`
 	// SubModel shall contain the information about the sub-model (or configuration) of the system. This shall not
 	// include the model/product name or the manufacturer name.
 	SubModel string
+	// SupportedResetTypes caches supported reset types for existing callers.
+	SupportedResetTypes []ResetType `json:"-"`
 	// SystemType An enumeration that indicates the kind of system that this resource represents.
 	SystemType SystemType
+	// TrustedModules shall contain an array of objects with
+	// properties which describe the trusted modules for the current resource.
+	// This property has been deprecated in favor of the TrustedComponents property in Links.
+	TrustedModules []TrustedModules
+	// USBControllers shall contain a link to a resource collection of type USBControllerCollection that contains USB
+	// controllers for this system.
+	USBControllersLink common.Link `json:"USBControllers"`
 	// UUID shall contain the universally unique identifier number for this system. RFC4122 describes methods to create
 	// this value. The value should be considered to be opaque. Client software should only treat the overall value as
 	// a UUID and should not interpret any subfields within the UUID. If the system supports SMBIOS, the property value
@@ -936,17 +941,9 @@ type ComputerSystem struct {
 	// Redfish canonical 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' string format, so that the property value matches the
 	// byte order presented by current OS APIs, such as WMI and dmidecode.
 	UUID string
-	// TrustedModules shall contain an array of objects with
-	// properties which describe the trusted modules for the current resource.
-	// This property has been deprecated in favor of the TrustedComponents property in Links.
-	TrustedModules []TrustedModules
-
-	// Actions contains the actions advertised by the service.
-	Actions ComputerSystemActions
-	// SupportedResetTypes caches supported reset types for existing callers.
-	SupportedResetTypes []ResetType `json:"-"`
-	// RawData holds the original serialized JSON so we can compare updates.
-	RawData []byte
+	// virtualMedia shall contain a reference to a collection of type
+	// VirtualMediaCollection which are for the use of this system.
+	VirtualMediaLink common.Link `json:"VirtualMedia"`
 }
 
 // UnmarshalJSON unmarshals a ComputerSystem object from the raw JSON.
