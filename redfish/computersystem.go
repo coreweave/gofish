@@ -768,7 +768,7 @@ type ComputerSystemActions struct {
 // ComputerSystem is used to represent resources that represent a
 // computing system in the Redfish specification.
 type ComputerSystem struct {
-	common.Entity
+	common.Resource
 
 	// Actions contains the actions advertised by the service.
 	Actions ComputerSystemActions
