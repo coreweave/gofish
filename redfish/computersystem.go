@@ -765,9 +765,11 @@ type ComputerSystemActions struct {
 	SetDefaultBootOrder common.ActionTarget `json:"#ComputerSystem.SetDefaultBootOrder"`
 }
 
-// ComputerSystemResources contains the resource links and settings advertised by a computer system.
-// It is embedded so these properties retain their top-level JSON names.
-type ComputerSystemResources struct {
+// ComputerSystem is used to represent resources that represent a
+// computing system in the Redfish specification.
+type ComputerSystem struct {
+	common.Entity
+
 	// bios shall be a link to a resource of
 	// type Bios that lists the Bios settings for this system.
 	BiosLink common.Link `json:"Bios"`
@@ -821,13 +823,6 @@ type ComputerSystemResources struct {
 	Links CSLinks
 	// Settings contains the settings resource information advertised by the service.
 	Settings common.Settings `json:"@Redfish.Settings"`
-}
-
-// ComputerSystem is used to represent resources that represent a
-// computing system in the Redfish specification.
-type ComputerSystem struct {
-	common.Entity
-	ComputerSystemResources
 
 	// ODataContext is the @odata.context
 	ODataContext string `json:"@odata.context"`
@@ -1018,7 +1013,7 @@ func (computersystem *ComputerSystem) Bios(queryOpts ...common.QueryGroupOption)
 
 // BiosWithContext gets the Bios information for this ComputerSystem.
 func (computersystem *ComputerSystem) BiosWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Bios, error) {
-	if computersystem.BiosLink.String() == "" {
+	if computersystem.BiosLink.IsZero() {
 		return nil, nil
 	}
 
@@ -1152,7 +1147,7 @@ func (computersystem *ComputerSystem) SecureBoot(queryOpts ...common.QueryGroupO
 
 // SecureBootWithContext gets the secure boot information for the system.
 func (computersystem *ComputerSystem) SecureBootWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*SecureBoot, error) {
-	if computersystem.SecureBootLink.String() == "" {
+	if computersystem.SecureBootLink.IsZero() {
 		return nil, nil
 	}
 
