@@ -753,21 +753,30 @@ func (keymanagement *KeyManagement) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// ComputerSystemActions contains the actions supported by a computer system.
+type ComputerSystemActions struct {
+	AddResourceBlock    common.ActionTarget `json:"#ComputerSystem.AddResourceBlock"`
+	Decommission        common.ActionTarget `json:"#ComputerSystem.Decommission"`
+	RemoveResourceBlock common.ActionTarget `json:"#ComputerSystem.RemoveResourceBlock"`
+	Reset               struct {
+		common.ActionTarget
+		AllowedResetTypes []ResetType `json:"ResetType@Redfish.AllowableValues"`
+	} `json:"#ComputerSystem.Reset"`
+	SetDefaultBootOrder common.ActionTarget `json:"#ComputerSystem.SetDefaultBootOrder"`
+}
+
 // ComputerSystem is used to represent resources that represent a
 // computing system in the Redfish specification.
 type ComputerSystem struct {
-	common.Entity
+	common.Resource
 
-	// ODataContext is the @odata.context
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the @odata.type
-	ODataType string `json:"@odata.type"`
-
+	// Actions contains the actions advertised by the service.
+	Actions ComputerSystemActions
 	// AssetTag shall contain the value of the asset tag of the system.
 	AssetTag string
 	// bios shall be a link to a resource of
 	// type Bios that lists the Bios settings for this system.
-	bios string
+	BiosLink common.Link `json:"Bios"`
 	// BIOSVersion shall be the version string
 	// of the currently installed and running BIOS (for x86 systems). For
 	// other systems, the value may contain a version string representing the
@@ -779,20 +788,22 @@ type ComputerSystem struct {
 	BootProgress BootProgress
 	// Certificates shall contain a link to a resource collection of type CertificateCollection that contains
 	// certificates for device identity and attestation.
-	certificates string
+	CertificatesLink common.Link `json:"Certificates"`
 	// Composition shall contain information about the composition capabilities and state of the computer system.
 	Composition Composition
-	// Description is the resource description.
-	Description string
 	// EthernetInterfaces shall be a link to a collection of type EthernetInterfaceCollection.
-	ethernetInterfaces string
+	EthernetInterfacesLink common.Link `json:"EthernetInterfaces"`
 	// FabricAdapters shall contain a link to a resource collection of type FabricAdapterCollection.
-	fabricAdapters string
+	FabricAdaptersLink common.Link `json:"FabricAdapters"`
 	// GraphicalConsole shall contain the information about the graphical console (KVM-IP) service of this system.
 	GraphicalConsole HostGraphicalConsole
 	// GraphicsControllers shall contain a link to a resource collection of type GraphicsControllerCollection that
 	// contains graphics controllers that can output video for this system.
-	graphicsControllers string
+	GraphicsControllersLink common.Link `json:"GraphicsControllers"`
+	// HostedServices shall describe services that this computer system supports.
+	HostedServices HostedServices
+	// HostingRoles shall be the hosting roles supported by this computer system.
+	HostingRoles []string
 	// HostName shall be the host name for this
 	// system, as reported by the operating system or hypervisor. This value
 	// is typically provided to the Manager by a service running in the host
@@ -802,32 +813,30 @@ type ComputerSystem struct {
 	// describe the host watchdog timer functionality for this
 	// ComputerSystem.
 	HostWatchdogTimer WatchdogTimer
-	// HostedServices shall describe services that this computer system supports.
-	HostedServices HostedServices
-	// HostingRoles shall be the hosting roles supported by this computer system.
-	HostingRoles []string
 	// IdlePowerSaver shall contain the idle power saver settings of the computer system.
 	IdlePowerSaver IdlePowerSaver
+	// IndicatorLED shall contain the indicator
+	// light state for the indicator light associated with this system.
+	IndicatorLED common.IndicatorLED
 	// KeyManagement shall contain the key management settings of the computer system.
 	KeyManagement KeyManagement
 	// LastResetTime shall contain the date and time when the system last came out of a reset or was rebooted.
 	LastResetTime string
-	// IndicatorLED shall contain the indicator
-	// light state for the indicator light associated with this system.
-	IndicatorLED common.IndicatorLED
+	// Links contains references to related resources.
+	Links CSLinks
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource. A write to this property shall update the value of IndicatorLED in this resource, if supported, to
 	// reflect the implementation of the locating function. Modifying this property may modify the
 	// LocationIndicatorActive in the containing Chassis resource.
 	LocationIndicatorActive *bool
 	// logServices shall be a link to a collection of type LogServiceCollection.
-	logServices string
+	LogServicesLink common.Link `json:"LogServices"`
 	// Manufacturer shall contain a value that represents the manufacturer of the system.
 	Manufacturer string
-	// Memory shall be a link to a collection of type MemoryCollection.
-	memory string
 	// memoryDomains shall be a link to a collection of type MemoryDomainCollection.
-	memoryDomains string
+	MemoryDomainsLink common.Link `json:"MemoryDomains"`
+	// Memory shall be a link to a collection of type MemoryCollection.
+	MemoryLink common.Link `json:"Memory"`
 	// MemorySummary is This object shall contain properties which describe
 	// the central memory for the current resource.
 	MemorySummary MemorySummary
@@ -837,24 +846,21 @@ type ComputerSystem struct {
 	Model string
 	// networkInterfaces shall be a link to a collection of type
 	// NetworkInterfaceCollection.
-	networkInterfaces string
-	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
-	// Redfish Specification-described requirements.
-	OEM json.RawMessage `json:"Oem"`
+	NetworkInterfacesLink common.Link `json:"NetworkInterfaces"`
 	// OperatingSystem shall contain a link to a resource of type OperatingSystem that contains operating system
 	// information for this system.
-	operatingSystem string
-	// PCIeDevices shall be an array of references of type PCIeDevice.
-	pcieDevices []string
-	// PCIeDevicesCount is the number of PCIeDevices.
-	PCIeDevicesCount int `json:"PCIeDevices@odata.count"`
-	// PCIeFunctions shall be an array of references of type PCIeFunction.
-	pcieFunctions []string
-	// PCIeFunctionsCount is the number of PCIeFunctions.
-	PCIeFunctionsCount int `json:"PCIeFunctions@odata.count"`
+	OperatingSystemLink common.Link `json:"OperatingSystem"`
 	// PartNumber shall contain the part number
 	// for the system as defined by the manufacturer.
 	PartNumber string
+	// PCIeDevicesCount is the number of PCIeDevices.
+	PCIeDevicesCount int `json:"PCIeDevices@odata.count"`
+	// PCIeDevices shall be an array of references of type PCIeDevice.
+	PCIeDevicesLink common.Links `json:"PCIeDevices"`
+	// PCIeFunctionsCount is the number of PCIeFunctions.
+	PCIeFunctionsCount int `json:"PCIeFunctions@odata.count"`
+	// PCIeFunctions shall be an array of references of type PCIeFunction.
+	PCIeFunctionsLink common.Links `json:"PCIeFunctions"`
 	// PowerCycleDelaySeconds shall contain the number of seconds to delay power on after a 'Reset' action requesting
 	// 'PowerCycle'. The value '0' shall indicate no delay to power on.
 	PowerCycleDelaySeconds float64
@@ -873,42 +879,52 @@ type ComputerSystem struct {
 	PowerRestorePolicy PowerState
 	// PowerState shall contain the power state of the system.
 	PowerState PowerState
+	// Processors shall be a link to a collection of type ProcessorCollection.
+	ProcessorsLink common.Link `json:"Processors"`
 	// ProcessorSummary shall contain properties which
 	// describe the central processors for the current resource.
 	ProcessorSummary ProcessorSummary
-	// Processors shall be a link to a collection of type ProcessorCollection.
-	processors string
+	// RawData holds the original serialized JSON so we can compare updates.
+	RawData []byte
+	// RedundancyCount is the number of Redundancy objects.
+	RedundancyCount string `json:"Redundancy@odata.count"`
 	// Redundancy references a redundancy
 	// entity that specifies a kind and level of redundancy and a collection
 	// (RedundancySet) of other ComputerSystems that provide the specified
 	// redundancy to this ComputerSystem.
-	redundancy string
-	// RedundancyCount is the number of Redundancy objects.
-	RedundancyCount string `json:"Redundancy@odata.count"`
-	// SKU shall contain the Stock Keeping Unit (SKU) for the system.
-	SKU string
+	RedundancyLink common.Link `json:"Redundancy"`
 	// secureBoot shall be a link to a resource of type SecureBoot.
-	secureBoot string
+	SecureBootLink common.Link `json:"SecureBoot"`
 	// SerialConsole shall contain information about the serial console services of this system.
 	SerialConsole HostSerialConsole
 	// SerialNumber shall contain the serial number for the system.
 	SerialNumber string
+	// Settings contains the settings resource information advertised by the service.
+	Settings common.Settings `json:"@Redfish.Settings"`
 	// SimpleStorage shall be a link to a collection of type SimpleStorageCollection.
-	simpleStorage string
+	SimpleStorageLink common.Link `json:"SimpleStorage"`
+	// SKU shall contain the Stock Keeping Unit (SKU) for the system.
+	SKU string
 	// Status shall contain any status or health properties
 	// of the resource.
 	Status common.Status
 	// storage shall be a link to a collection
 	// of type StorageCollection.
-	storage string
+	StorageLink common.Link `json:"Storage"`
 	// SubModel shall contain the information about the sub-model (or configuration) of the system. This shall not
 	// include the model/product name or the manufacturer name.
 	SubModel string
+	// SupportedResetTypes caches supported reset types for existing callers.
+	SupportedResetTypes []ResetType `json:"-"`
 	// SystemType An enumeration that indicates the kind of system that this resource represents.
 	SystemType SystemType
+	// TrustedModules shall contain an array of objects with
+	// properties which describe the trusted modules for the current resource.
+	// This property has been deprecated in favor of the TrustedComponents property in Links.
+	TrustedModules []TrustedModules
 	// USBControllers shall contain a link to a resource collection of type USBControllerCollection that contains USB
 	// controllers for this system.
-	usbControllers string
+	USBControllersLink common.Link `json:"USBControllers"`
 	// UUID shall contain the universally unique identifier number for this system. RFC4122 describes methods to create
 	// this value. The value should be considered to be opaque. Client software should only treat the overall value as
 	// a UUID and should not interpret any subfields within the UUID. If the system supports SMBIOS, the property value
@@ -918,128 +934,19 @@ type ComputerSystem struct {
 	UUID string
 	// virtualMedia shall contain a reference to a collection of type
 	// VirtualMediaCollection which are for the use of this system.
-	virtualMedia string
-	// TrustedModules shall contain an array of objects with
-	// properties which describe the trusted modules for the current resource.
-	// This property has been deprecated in favor of the TrustedComponents property in Links.
-	TrustedModules []TrustedModules
-
-	// Chassis is an array of references to the chassis in which this system is contained.
-	chassis []string
-	// SupportedResetTypes, if provided, is the reset types this system supports.
-	SupportedResetTypes []ResetType
-	// settingsApplyTimes is a set of allowed settings update apply times. If none
-	// are specified, then the system does not provide that information.
-	settingsApplyTimes []common.ApplyTime
-	managedBy          []string
-
-	// addResourceBlockTarget is the internal URL for the AddResourceBlock action.
-	addResourceBlockTarget string
-	// decommissionTarget is the URL for the Decommission action.
-	decommissionTarget string
-	// removeResourceBlockTarget is the URL for the RemoveResourceBlock action.
-	removeResourceBlockTarget string
-	// resetTarget is the internal URL to send reset targets to.
-	resetTarget string
-	// resetActionInfoTarget is the URL to check what values are supported
-	resetActionInfoTarget string
-	// setDefaultBootOrderTarget is the URL to send SetDefaultBootOrder actions to.
-	setDefaultBootOrderTarget string
-	settingsTarget            string
-	// RawData holds the original serialized JSON so we can compare updates.
-	RawData []byte
+	VirtualMediaLink common.Link `json:"VirtualMedia"`
 }
 
 // UnmarshalJSON unmarshals a ComputerSystem object from the raw JSON.
 func (computersystem *ComputerSystem) UnmarshalJSON(b []byte) error {
-	type CSActions struct {
-		AddResourceBlock    common.ActionTarget `json:"#ComputerSystem.AddResourceBlock"`
-		Decommission        common.ActionTarget `json:"#ComputerSystem.Decommission"`
-		RemoveResourceBlock common.ActionTarget `json:"#ComputerSystem.RemoveResourceBlock"`
-		Reset               struct {
-			common.ActionTarget
-			AllowedResetTypes []ResetType `json:"ResetType@Redfish.AllowableValues"`
-		} `json:"#ComputerSystem.Reset"`
-		SetDefaultBootOrder common.ActionTarget `json:"#ComputerSystem.SetDefaultBootOrder"`
-	}
-
 	type temp ComputerSystem
-	var t struct {
-		temp
-		Actions             CSActions
-		Bios                common.Link
-		Certificates        common.Link
-		EthernetInterfaces  common.Link
-		FabricAdapters      common.Link
-		GraphicsControllers common.Link
-		Processors          common.Link
-		Redundancy          common.Link
-		Memory              common.Link
-		OperatingSystem     common.Link
-		SimpleStorage       common.Link
-		SecureBoot          common.Link
-		Storage             common.Link
-		NetworkInterfaces   common.Link
-		LogServices         common.Link
-		MemoryDomains       common.Link
-		PCIeDevices         common.Links
-		PCIeFunctions       common.Links
-		USBControllers      common.Link
-		VirtualMedia        common.Link
-		Links               CSLinks
-		Settings            common.Settings `json:"@Redfish.Settings"`
-	}
-
-	err := json.Unmarshal(b, &t)
-	if err != nil {
+	var t temp
+	if err := json.Unmarshal(b, &t); err != nil {
 		return err
 	}
-
-	*computersystem = ComputerSystem(t.temp)
-
-	// Extract the links to other entities for later
-	computersystem.bios = t.Bios.String()
-	computersystem.certificates = t.Certificates.String()
-	computersystem.ethernetInterfaces = t.EthernetInterfaces.String()
-	computersystem.fabricAdapters = t.FabricAdapters.String()
-	computersystem.graphicsControllers = t.GraphicsControllers.String()
-	computersystem.logServices = t.LogServices.String()
-	computersystem.pcieDevices = t.PCIeDevices.ToStrings()
-	computersystem.pcieFunctions = t.PCIeFunctions.ToStrings()
-	computersystem.processors = t.Processors.String()
-	computersystem.memory = t.Memory.String()
-	computersystem.memoryDomains = t.MemoryDomains.String()
-	computersystem.networkInterfaces = t.NetworkInterfaces.String()
-	computersystem.operatingSystem = t.OperatingSystem.String()
-	computersystem.redundancy = t.Redundancy.String()
-	computersystem.secureBoot = t.SecureBoot.String()
-	computersystem.simpleStorage = t.SimpleStorage.String()
-	computersystem.storage = t.Storage.String()
-	computersystem.usbControllers = t.USBControllers.String()
-	computersystem.virtualMedia = t.VirtualMedia.String()
-
-	computersystem.addResourceBlockTarget = t.Actions.AddResourceBlock.Target
-	computersystem.decommissionTarget = t.Actions.Decommission.Target
-	computersystem.removeResourceBlockTarget = t.Actions.RemoveResourceBlock.Target
-	computersystem.resetTarget = t.Actions.Reset.Target
-	computersystem.resetActionInfoTarget = t.Actions.Reset.ActionInfoTarget
-	computersystem.SupportedResetTypes = t.Actions.Reset.AllowedResetTypes
-	computersystem.setDefaultBootOrderTarget = t.Actions.SetDefaultBootOrder.Target
-
-	computersystem.chassis = t.Links.Chassis.ToStrings()
-	computersystem.managedBy = t.Links.ManagedBy.ToStrings()
-	computersystem.settingsApplyTimes = t.Settings.SupportedApplyTimes
-
-	// Some implementations use a @Redfish.Settings object to direct settings updates to a
-	// different URL than the object being updated. Others don't, so handle both.
-	computersystem.settingsTarget = t.Settings.SettingsObject.String()
-	if computersystem.settingsTarget == "" {
-		computersystem.settingsTarget = computersystem.ODataID
-	}
-
-	// This is a read/write object, so we need to save the raw object data for later
+	*computersystem = ComputerSystem(t)
+	computersystem.SupportedResetTypes = computersystem.Actions.Reset.AllowedResetTypes
 	computersystem.RawData = b
-
 	return nil
 }
 
@@ -1094,11 +1001,11 @@ func (computersystem *ComputerSystem) Bios(queryOpts ...common.QueryGroupOption)
 
 // BiosWithContext gets the Bios information for this ComputerSystem.
 func (computersystem *ComputerSystem) BiosWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Bios, error) {
-	if computersystem.bios == "" {
+	if computersystem.BiosLink.IsZero() {
 		return nil, nil
 	}
 
-	return GetBiosWithContext(ctx, computersystem.GetClient(), computersystem.bios, queryOpts...)
+	return GetBiosWithContext(ctx, computersystem.GetClient(), computersystem.BiosLink.String(), queryOpts...)
 }
 
 // BootOptions gets all BootOption items for this system.
@@ -1128,7 +1035,7 @@ func (computersystem *ComputerSystem) EthernetInterfaces(queryOpts ...common.Que
 
 // EthernetInterfacesWithContext get this system's ethernet interfaces.
 func (computersystem *ComputerSystem) EthernetInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
-	return ListReferencedEthernetInterfacesWithContext(ctx, computersystem.GetClient(), computersystem.ethernetInterfaces, queryOpts...)
+	return ListReferencedEthernetInterfacesWithContext(ctx, computersystem.GetClient(), computersystem.EthernetInterfacesLink.String(), queryOpts...)
 }
 
 // LogServices get this system's log services.
@@ -1138,7 +1045,7 @@ func (computersystem *ComputerSystem) LogServices(queryOpts ...common.QueryGroup
 
 // LogServicesWithContext get this system's log services.
 func (computersystem *ComputerSystem) LogServicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*LogService, error) {
-	return ListReferencedLogServicesWithContext(ctx, computersystem.GetClient(), computersystem.logServices, queryOpts...)
+	return ListReferencedLogServicesWithContext(ctx, computersystem.GetClient(), computersystem.LogServicesLink.String(), queryOpts...)
 }
 
 // ManagedBy gets all Managers for this system.
@@ -1148,7 +1055,7 @@ func (computersystem *ComputerSystem) ManagedBy(queryOpts ...common.QueryGroupOp
 
 // ManagedByWithContext gets all Managers for this system.
 func (computersystem *ComputerSystem) ManagedByWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
-	return common.GetObjectsWithContext[Manager](ctx, computersystem.GetClient(), computersystem.managedBy, queryOpts...)
+	return common.GetObjectsWithContext[Manager](ctx, computersystem.GetClient(), computersystem.Links.ManagedBy.ToStrings(), queryOpts...)
 }
 
 // Memory gets this system's memory.
@@ -1158,7 +1065,7 @@ func (computersystem *ComputerSystem) Memory(queryOpts ...common.QueryGroupOptio
 
 // MemoryWithContext gets this system's memory.
 func (computersystem *ComputerSystem) MemoryWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Memory, error) {
-	return ListReferencedMemorysWithContext(ctx, computersystem.GetClient(), computersystem.memory, queryOpts...)
+	return ListReferencedMemorysWithContext(ctx, computersystem.GetClient(), computersystem.MemoryLink.String(), queryOpts...)
 }
 
 // MemoryDomains gets this system's memory domains.
@@ -1168,7 +1075,7 @@ func (computersystem *ComputerSystem) MemoryDomains(queryOpts ...common.QueryGro
 
 // MemoryDomainsWithContext gets this system's memory domains.
 func (computersystem *ComputerSystem) MemoryDomainsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*MemoryDomain, error) {
-	return ListReferencedMemoryDomainsWithContext(ctx, computersystem.GetClient(), computersystem.memoryDomains, queryOpts...)
+	return ListReferencedMemoryDomainsWithContext(ctx, computersystem.GetClient(), computersystem.MemoryDomainsLink.String(), queryOpts...)
 }
 
 // NetworkInterfaces returns a collection of network interfaces in this system.
@@ -1178,7 +1085,7 @@ func (computersystem *ComputerSystem) NetworkInterfaces(queryOpts ...common.Quer
 
 // NetworkInterfacesWithContext returns a collection of network interfaces in this system.
 func (computersystem *ComputerSystem) NetworkInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*NetworkInterface, error) {
-	return ListReferencedNetworkInterfacesWithContext(ctx, computersystem.GetClient(), computersystem.networkInterfaces, queryOpts...)
+	return ListReferencedNetworkInterfacesWithContext(ctx, computersystem.GetClient(), computersystem.NetworkInterfacesLink.String(), queryOpts...)
 }
 
 // OperatingSystem gets this system's operating system.
@@ -1188,7 +1095,7 @@ func (computersystem *ComputerSystem) OperatingSystem(queryOpts ...common.QueryG
 
 // OperatingSystemWithContext gets this system's operating system.
 func (computersystem *ComputerSystem) OperatingSystemWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*OperatingSystem, error) {
-	return GetOperatingSystemWithContext(ctx, computersystem.GetClient(), computersystem.operatingSystem, queryOpts...)
+	return GetOperatingSystemWithContext(ctx, computersystem.GetClient(), computersystem.OperatingSystemLink.String(), queryOpts...)
 }
 
 // PCIeDevices gets all PCIeDevices for this system.
@@ -1198,7 +1105,7 @@ func (computersystem *ComputerSystem) PCIeDevices(queryOpts ...common.QueryGroup
 
 // PCIeDevicesWithContext gets all PCIeDevices for this system.
 func (computersystem *ComputerSystem) PCIeDevicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PCIeDevice, error) {
-	return common.GetObjectsWithContext[PCIeDevice](ctx, computersystem.GetClient(), computersystem.pcieDevices, queryOpts...)
+	return common.GetObjectsWithContext[PCIeDevice](ctx, computersystem.GetClient(), computersystem.PCIeDevicesLink.ToStrings(), queryOpts...)
 }
 
 // PCIeFunctions gets all PCIeFunctions for this system.
@@ -1208,7 +1115,7 @@ func (computersystem *ComputerSystem) PCIeFunctions(queryOpts ...common.QueryGro
 
 // PCIeFunctionsWithContext gets all PCIeFunctions for this system.
 func (computersystem *ComputerSystem) PCIeFunctionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
-	return common.GetObjectsWithContext[PCIeFunction](ctx, computersystem.GetClient(), computersystem.pcieFunctions, queryOpts...)
+	return common.GetObjectsWithContext[PCIeFunction](ctx, computersystem.GetClient(), computersystem.PCIeFunctionsLink.ToStrings(), queryOpts...)
 }
 
 // Processors returns a collection of processors from this system
@@ -1218,7 +1125,7 @@ func (computersystem *ComputerSystem) Processors(queryOpts ...common.QueryGroupO
 
 // ProcessorsWithContext returns a collection of processors from this system
 func (computersystem *ComputerSystem) ProcessorsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
-	return ListReferencedProcessorsWithContext(ctx, computersystem.GetClient(), computersystem.processors, queryOpts...)
+	return ListReferencedProcessorsWithContext(ctx, computersystem.GetClient(), computersystem.ProcessorsLink.String(), queryOpts...)
 }
 
 // SecureBoot gets the secure boot information for the system.
@@ -1228,11 +1135,11 @@ func (computersystem *ComputerSystem) SecureBoot(queryOpts ...common.QueryGroupO
 
 // SecureBootWithContext gets the secure boot information for the system.
 func (computersystem *ComputerSystem) SecureBootWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*SecureBoot, error) {
-	if computersystem.secureBoot == "" {
+	if computersystem.SecureBootLink.IsZero() {
 		return nil, nil
 	}
 
-	return GetSecureBootWithContext(ctx, computersystem.GetClient(), computersystem.secureBoot, queryOpts...)
+	return GetSecureBootWithContext(ctx, computersystem.GetClient(), computersystem.SecureBootLink.String(), queryOpts...)
 }
 
 // SetBoot set a boot object based on a payload request
@@ -1288,7 +1195,7 @@ func (computersystem *ComputerSystem) ResetWithContext(ctx context.Context, rese
 		ResetType ResetType
 	}{ResetType: resetType}
 
-	return computersystem.PostWithContext(ctx, computersystem.resetTarget, t)
+	return computersystem.PostWithContext(ctx, computersystem.Actions.Reset.Target, t)
 }
 
 // GetSupportedResetTypes returns any reset types that the ComputerSystem declares as supported
@@ -1305,7 +1212,7 @@ func (computersystem *ComputerSystem) GetSupportedResetTypesWithContext(ctx cont
 	}
 
 	// if we don't have ResetTypes, try to get from ActionInfo
-	if computersystem.resetActionInfoTarget != "" {
+	if computersystem.Actions.Reset.ActionInfoTarget != "" {
 		resetActionInfo, err := computersystem.ResetActionInfoWithContext(ctx)
 		if err != nil {
 			return nil, err
@@ -1331,11 +1238,11 @@ func (computersystem *ComputerSystem) ResetActionInfo() (*ActionInfo, error) {
 
 // ResetActionInfoWithContext returns the ActionInfo for the ComputerSystem reset action if supported
 func (computersystem *ComputerSystem) ResetActionInfoWithContext(ctx context.Context) (*ActionInfo, error) {
-	if computersystem.resetActionInfoTarget == "" {
+	if computersystem.Actions.Reset.ActionInfoTarget == "" {
 		return nil, errors.New("ComputerSystem Reset ActionInfo not supported")
 	}
 
-	return common.GetObjectWithContext[ActionInfo](ctx, computersystem.GetClient(), computersystem.resetActionInfoTarget)
+	return common.GetObjectWithContext[ActionInfo](ctx, computersystem.GetClient(), computersystem.Actions.Reset.ActionInfoTarget)
 }
 
 // UpdateBootAttributesApplyAt is used to update attribute values and set apply time together
@@ -1362,7 +1269,11 @@ func (computersystem *ComputerSystem) UpdateBootAttributesApplyAtWithContext(ctx
 		}
 	}
 
-	resp, err := computersystem.GetClient().GetWithContext(ctx, computersystem.settingsTarget)
+	target := computersystem.Settings.SettingsObject.String()
+	if target == "" {
+		target = computersystem.ODataID
+	}
+	resp, err := computersystem.GetClient().GetWithContext(ctx, target)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil {
 		return err
@@ -1381,7 +1292,7 @@ func (computersystem *ComputerSystem) UpdateBootAttributesApplyAtWithContext(ctx
 			header["If-Match"] = resp.Header["Etag"][0]
 		}
 
-		resp, err = computersystem.GetClient().PatchWithHeadersWithContext(ctx, computersystem.settingsTarget, data, header)
+		resp, err = computersystem.GetClient().PatchWithHeadersWithContext(ctx, target, data, header)
 		defer common.DeferredCleanupHTTPResponse(resp)
 		if err != nil {
 			return err
@@ -1409,11 +1320,11 @@ func (computersystem *ComputerSystem) SetDefaultBootOrder() error {
 // SetDefaultBootOrderWithContext shall set the BootOrder array to the default settings.
 func (computersystem *ComputerSystem) SetDefaultBootOrderWithContext(ctx context.Context) error {
 	// This action wasn't added until 1.5.0, make sure this is supported.
-	if computersystem.setDefaultBootOrderTarget == "" {
+	if computersystem.Actions.SetDefaultBootOrder.Target == "" {
 		return fmt.Errorf("SetDefaultBootOrder is not supported by this system")
 	}
 
-	return computersystem.PostWithContext(ctx, computersystem.setDefaultBootOrderTarget, nil)
+	return computersystem.PostWithContext(ctx, computersystem.Actions.SetDefaultBootOrder.Target, nil)
 }
 
 // SimpleStorages gets all simple storage services of this system.
@@ -1423,7 +1334,7 @@ func (computersystem *ComputerSystem) SimpleStorages(queryOpts ...common.QueryGr
 
 // SimpleStoragesWithContext gets all simple storage services of this system.
 func (computersystem *ComputerSystem) SimpleStoragesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*SimpleStorage, error) {
-	return ListReferencedSimpleStoragesWithContext(ctx, computersystem.GetClient(), computersystem.simpleStorage, queryOpts...)
+	return ListReferencedSimpleStoragesWithContext(ctx, computersystem.GetClient(), computersystem.SimpleStorageLink.String(), queryOpts...)
 }
 
 // Storage gets the storage associated with this system.
@@ -1433,7 +1344,7 @@ func (computersystem *ComputerSystem) Storage(queryOpts ...common.QueryGroupOpti
 
 // StorageWithContext gets the storage associated with this system.
 func (computersystem *ComputerSystem) StorageWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Storage, error) {
-	return ListReferencedStoragesWithContext(ctx, computersystem.GetClient(), computersystem.storage, queryOpts...)
+	return ListReferencedStoragesWithContext(ctx, computersystem.GetClient(), computersystem.StorageLink.String(), queryOpts...)
 }
 
 // VirtualMedia gets the virtual media associated with this system.
@@ -1443,7 +1354,7 @@ func (computersystem *ComputerSystem) VirtualMedia(queryOpts ...common.QueryGrou
 
 // VirtualMediaWithContext gets the virtual media associated with this system.
 func (computersystem *ComputerSystem) VirtualMediaWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*VirtualMedia, error) {
-	return ListReferencedVirtualMediasWithContext(ctx, computersystem.GetClient(), computersystem.virtualMedia, queryOpts...)
+	return ListReferencedVirtualMediasWithContext(ctx, computersystem.GetClient(), computersystem.VirtualMediaLink.String(), queryOpts...)
 }
 
 // USBControllers gets the USB controllers associated with this system.
@@ -1453,7 +1364,7 @@ func (computersystem *ComputerSystem) USBControllers(queryOpts ...common.QueryGr
 
 // USBControllersWithContext gets the USB controllers associated with this system.
 func (computersystem *ComputerSystem) USBControllersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*USBController, error) {
-	return ListReferencedUSBControllersWithContext(ctx, computersystem.GetClient(), computersystem.usbControllers, queryOpts...)
+	return ListReferencedUSBControllersWithContext(ctx, computersystem.GetClient(), computersystem.USBControllersLink.String(), queryOpts...)
 }
 
 // CSLinks are references to resources that are related to, but not contained

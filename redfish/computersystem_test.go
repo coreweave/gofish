@@ -5,13 +5,135 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/coreweave/gofish/common"
 )
+
+type computerSystemBootClient struct {
+	common.TestClient
+	body []byte
+}
+
+func (c *computerSystemBootClient) PatchWithHeadersWithContext(ctx context.Context, uri string, payload interface{}, headers map[string]string) (*http.Response, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	c.body = body
+	return c.TestClient.PatchWithHeadersWithContext(ctx, uri, payload, headers)
+}
+
+func TestComputerSystemInheritedResource(t *testing.T) {
+	const body = `{"@odata.id":"/redfish/v1/Systems/1","@odata.context":"/redfish/v1/$metadata#ComputerSystem.ComputerSystem","@odata.type":"#ComputerSystem.v1_0_0.ComputerSystem","Description":"Test system","Oem":{"Vendor":{"Enabled":true}}}`
+	var system ComputerSystem
+	if err := json.Unmarshal([]byte(body), &system); err != nil {
+		t.Fatal(err)
+	}
+	if system.ODataID != "/redfish/v1/Systems/1" ||
+		system.ODataContext != "/redfish/v1/$metadata#ComputerSystem.ComputerSystem" ||
+		system.ODataType != "#ComputerSystem.v1_0_0.ComputerSystem" ||
+		system.Description != "Test system" ||
+		string(system.OEM) != `{"Vendor":{"Enabled":true}}` {
+		t.Fatalf("resource fields were not inherited correctly: %+v", system.Resource)
+	}
+	client := &computerSystemBootClient{}
+	system.SetClient(client)
+	system.AssetTag = "new-tag"
+	if err := system.Update(); err != nil {
+		t.Fatal(err)
+	}
+	calls := client.CapturedCalls()
+	if len(calls) != 1 || calls[0].Action != http.MethodPatch || calls[0].URL != system.ODataID || string(client.body) != `{"AssetTag":"new-tag"}` {
+		t.Fatalf("unexpected update: calls=%+v body=%s", calls, client.body)
+	}
+}
+
+func TestComputerSystemSettingsTargetPreservesDirectBootWrite(t *testing.T) {
+	const active = "/redfish/v1/Systems/system"
+	for _, tc := range []struct {
+		name, settings, wantTarget string
+	}{
+		{"advertised SD", `,"@Redfish.Settings":{"SettingsObject":{"@odata.id":"/redfish/v1/Systems/system/SD"}}`, active + "/SD"},
+		{"arbitrary settings URI", `,"@Redfish.Settings":{"SettingsObject":{"@odata.id":"/redfish/v1/Systems/pending"}}`, "/redfish/v1/Systems/pending"},
+		{"absent settings", "", ""},
+		{"empty settings object", `,"@Redfish.Settings":{"SettingsObject":{}}`, ""},
+		{"manually constructed", "", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			system := ComputerSystem{Resource: common.Resource{Entity: common.Entity{ODataID: active}}}
+			if tc.name != "manually constructed" {
+				body := `{"@odata.id":"` + active + `"` + tc.settings + `}`
+				if err := json.Unmarshal([]byte(body), &system); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if got := system.Settings.SettingsObject.String(); got != tc.wantTarget {
+				t.Fatalf("Settings.SettingsObject = %q, want %q", got, tc.wantTarget)
+			}
+
+			client := &computerSystemBootClient{}
+			system.SetClient(client)
+			boot := Boot{
+				BootSourceOverrideEnabled:    "Once",
+				BootSourceOverrideMode:       "UEFI",
+				BootSourceOverrideTarget:     "UefiTarget",
+				UefiTargetBootSourceOverride: "PciRoot(0x0)/Pci(0x1,0x0)",
+				BootNext:                     "Boot0001",
+			}
+			if err := system.SetBoot(boot); err != nil {
+				t.Fatal(err)
+			}
+			calls := client.CapturedCalls()
+			if len(calls) != 1 || calls[0].Action != http.MethodPatch || calls[0].URL != active {
+				t.Fatalf("expected one PATCH to active URI, got %+v", calls)
+			}
+			var got map[string]interface{}
+			if err := json.Unmarshal(client.body, &got); err != nil {
+				t.Fatal(err)
+			}
+			want := map[string]interface{}{"Boot": map[string]interface{}{
+				"BootSourceOverrideEnabled":    "Once",
+				"BootSourceOverrideMode":       "UEFI",
+				"BootSourceOverrideTarget":     "UefiTarget",
+				"UefiTargetBootSourceOverride": "PciRoot(0x0)/Pci(0x1,0x0)",
+				"BootNext":                     "Boot0001",
+			}}
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("PATCH body = %s, want %+v", client.body, want)
+			}
+			if tc.name == "manually constructed" {
+				return
+			}
+
+			// The existing attributes writer still falls back to the active URI,
+			// without changing the exported discovery result.
+			client.Reset()
+			if err := system.UpdateBootAttributes(SettingsAttributes{"BootTypeOrder0": "Pxe"}); err != nil {
+				t.Fatal(err)
+			}
+			writeTarget := tc.wantTarget
+			if writeTarget == "" {
+				writeTarget = active
+			}
+			calls = client.CapturedCalls()
+			if len(calls) != 2 || calls[0].Action != http.MethodGet || calls[0].URL != writeTarget || calls[1].Action != http.MethodPatch || calls[1].URL != writeTarget {
+				t.Fatalf("unexpected attributes requests: %+v", calls)
+			}
+			if string(client.body) != `{"Boot":{"BootTypeOrder0":"Pxe"}}` {
+				t.Fatalf("unexpected attributes PATCH body: %s", client.body)
+			}
+			if system.Settings.SettingsObject.String() != tc.wantTarget {
+				t.Fatal("attributes update changed SettingsTarget")
+			}
+		})
+	}
+}
 
 var computerSystemResetActionInfoTarget = "/redfish/v1/Systems/System-1/ResetActionInfo"
 
@@ -336,47 +458,47 @@ func TestComputerSystem(t *testing.T) { //nolint
 			result.ProcessorSummary.metrics)
 	}
 
-	if result.processors != "/redfish/v1/Systems/System-1/Processors" {
-		t.Errorf("Received invalid processors reference: %s", result.processors)
+	if result.ProcessorsLink.String() != "/redfish/v1/Systems/System-1/Processors" {
+		t.Errorf("Received invalid processors reference: %s", result.ProcessorsLink.String())
 	}
 
-	if result.memory != "/redfish/v1/Systems/System-1/Memory" {
-		t.Errorf("Received invalid memory reference: %s", result.memory)
+	if result.MemoryLink.String() != "/redfish/v1/Systems/System-1/Memory" {
+		t.Errorf("Received invalid memory reference: %s", result.MemoryLink.String())
 	}
 
-	if result.ethernetInterfaces != "/redfish/v1/Systems/System-1/EthernetInterfaces" {
-		t.Errorf("Received invalid ethernet interface reference: %s", result.ethernetInterfaces)
+	if result.EthernetInterfacesLink.String() != "/redfish/v1/Systems/System-1/EthernetInterfaces" {
+		t.Errorf("Received invalid ethernet interface reference: %s", result.EthernetInterfacesLink.String())
 	}
 
-	if result.simpleStorage != "/redfish/v1/Systems/System-1/SimpleStorage" {
-		t.Errorf("Received invalid simple storage reference: %s", result.simpleStorage)
+	if result.SimpleStorageLink.String() != "/redfish/v1/Systems/System-1/SimpleStorage" {
+		t.Errorf("Received invalid simple storage reference: %s", result.SimpleStorageLink.String())
 	}
 
-	if len(result.chassis) != 1 {
-		t.Errorf("Received invalid number of chassis: %d", len(result.chassis))
+	if len(result.Links.Chassis.ToStrings()) != 1 {
+		t.Errorf("Received invalid number of chassis: %d", len(result.Links.Chassis.ToStrings()))
 	}
 
-	if result.chassis[0] != TestChassisPath {
-		t.Errorf("Received invalid chassis reference: %s", result.chassis[0])
+	if result.Links.Chassis.ToStrings()[0] != TestChassisPath {
+		t.Errorf("Received invalid chassis reference: %s", result.Links.Chassis.ToStrings()[0])
 	}
 
-	if result.resetTarget != "/redfish/v1/Systems/System-1/Actions/ComputerSystem.Reset" {
-		t.Errorf("Invalid reset action target: %s", result.resetTarget)
+	if result.Actions.Reset.Target != "/redfish/v1/Systems/System-1/Actions/ComputerSystem.Reset" {
+		t.Errorf("Invalid reset action target: %s", result.Actions.Reset.Target)
 	}
 
 	if len(result.SupportedResetTypes) != 6 {
 		t.Errorf("Invalid allowable reset actions, expected 6, got %d",
 			len(result.SupportedResetTypes))
 	}
-	if len(result.managedBy) != 1 {
-		t.Errorf("Received invalid number of ManagedBy: %d", len(result.managedBy))
+	if len(result.Links.ManagedBy.ToStrings()) != 1 {
+		t.Errorf("Received invalid number of ManagedBy: %d", len(result.Links.ManagedBy.ToStrings()))
 	}
-	if result.managedBy[0] != "/redfish/v1/Managers/BMC-1" {
-		t.Errorf("Received invalid Managers reference: %s", result.managedBy[0])
+	if result.Links.ManagedBy.ToStrings()[0] != "/redfish/v1/Managers/BMC-1" {
+		t.Errorf("Received invalid Managers reference: %s", result.Links.ManagedBy.ToStrings()[0])
 	}
 
-	if result.operatingSystem != "/redfish/v1/Systems/1/OperatingSystem" {
-		t.Errorf("Received invalid OperatingSystem reference: %s", result.operatingSystem)
+	if result.OperatingSystemLink.String() != "/redfish/v1/Systems/1/OperatingSystem" {
+		t.Errorf("Received invalid OperatingSystem reference: %s", result.OperatingSystemLink.String())
 	}
 	if result.Boot.AllowableBootSourceOverrideTargetValues[0] != NoneBootSourceOverrideTarget {
 		t.Errorf("Received invalid AllowablebootSourceOverrideTargetValue: %s", result.Boot.AllowableBootSourceOverrideTargetValues[0])
@@ -502,8 +624,8 @@ func TestSystemSupportedResetTypes(t *testing.T) {
 		t.Errorf("Error decoding JSON: %s", err)
 	}
 
-	if result.resetActionInfoTarget != computerSystemResetActionInfoTarget {
-		t.Errorf("Invalid reset action info target: %s, expecting %s", result.resetActionInfoTarget, computerSystemResetActionInfoTarget)
+	if result.Actions.Reset.ActionInfoTarget != computerSystemResetActionInfoTarget {
+		t.Errorf("Invalid reset action info target: %s, expecting %s", result.Actions.Reset.ActionInfoTarget, computerSystemResetActionInfoTarget)
 	}
 
 	testClient := &common.TestClient{
