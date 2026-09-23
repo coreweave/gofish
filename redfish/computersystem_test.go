@@ -35,11 +35,11 @@ func TestComputerSystemInheritedResource(t *testing.T) {
 	if err := json.Unmarshal([]byte(body), &system); err != nil {
 		t.Fatal(err)
 	}
-	if system.Resource.ODataID != "/redfish/v1/Systems/1" ||
-		system.Resource.ODataContext != "/redfish/v1/$metadata#ComputerSystem.ComputerSystem" ||
-		system.Resource.ODataType != "#ComputerSystem.v1_0_0.ComputerSystem" ||
-		system.Resource.Description != "Test system" ||
-		string(system.Resource.OEM) != `{"Vendor":{"Enabled":true}}` {
+	if system.ODataID != "/redfish/v1/Systems/1" ||
+		system.ODataContext != "/redfish/v1/$metadata#ComputerSystem.ComputerSystem" ||
+		system.ODataType != "#ComputerSystem.v1_0_0.ComputerSystem" ||
+		system.Description != "Test system" ||
+		string(system.OEM) != `{"Vendor":{"Enabled":true}}` {
 		t.Fatalf("resource fields were not inherited correctly: %+v", system.Resource)
 	}
 	client := &computerSystemBootClient{}
