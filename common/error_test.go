@@ -9,11 +9,20 @@ import (
 )
 
 const (
-	envelopeBody = `{"error":{"code":"Base.1.10.GeneralError",` +
+	// https://github.com/DMTF/Redfish/blob/master/mockups/development/ExtErrorResp/index.json
+	envelopeBody = `{"error":{"code":"Base.1.0.0.GeneralError",` +
 		`"message":"A general error has occurred. See ExtendedInfo for more information.",` +
-		`"@Message.ExtendedInfo":[{"MessageId":"Base.1.10.AccessUnauthorized",` +
-		`"Message":"While attempting to establish a connection, the service denied access.",` +
-		`"MessageArgs":["admin"],"Resolution":"Verify credentials and resubmit the request."}]}}`
+		`"@Message.ExtendedInfo":[` +
+		`{"@odata.type":"/redfish/v1/$metadata#Message.v1_0_8.Message",` +
+		`"MessageId":"Base.1.0.0.PropertyValueNotInList","RelatedProperties":["/IndicatorLED"],` +
+		`"Message":"The value RED for the property IndicatorLED is not in the list of acceptable values",` +
+		`"MessageArgs":["RED","IndicatorLED"],"Severity":"Warning",` +
+		`"Resolution":"Remove the property from the request body and resubmit the request if the operation failed"},` +
+		`{"@odata.type":"/redfish/v1/$metadata#Message.v1_0_8.Message",` +
+		`"MessageId":"Base.1.0.0.PropertyNotWritable","RelatedProperties":["/SKU"],` +
+		`"Message":"The property SKU is a read only property and cannot be assigned a value",` +
+		`"MessageArgs":["SKU"],"Severity":"Warning",` +
+		`"Resolution":"Remove the property from the request body and resubmit the request if the operation failed"}]}}`
 
 	barePropertyBody = `{"VerifyRemoteServerCertificate@Message.ExtendedInfo":[{` +
 		`"@odata.type":"#Message.v1_1_1.Message",` +
@@ -22,18 +31,14 @@ const (
 		`"MessageId":"Base.1.18.1.PropertyMissing",` +
 		`"Resolution":"Ensure that the property is in the request body and has a valid value."}]}`
 
-	bareUnscopedBody = `{"@Message.ExtendedInfo":[{"MessageId":"Base.1.10.ResourceAtUriUnauthorized",` +
-		`"Message":"While accessing the resource, the service denied access."}]}`
+	bareUnscopedBody = `{"@Message.ExtendedInfo":[{"@odata.type":"#Message.v1_1_1.Message",` +
+		`"Message":"Please add the following public key info to ~/.ssh/authorized_keys on the remote server",` +
+		`"MessageArgs":["<type> <bmc_public_key> root@dpu-bmc"]}]}`
 
-	envelopeWithSiblingBody = `{"error":{"code":"Base.1.10.GeneralError","message":"failed",` +
-		`"@Message.ExtendedInfo":[{"MessageId":"Base.1.10.GeneralError"}]},` +
-		`"Attributes@Message.ExtendedInfo":[{"MessageId":"Base.1.10.PropertyNotWritable",` +
-		`"MessageArgs":["Attributes"]}]}`
-
-	envelopeWithNestedBody = `{"error":{"code":"Base.1.10.GeneralError","message":"failed",` +
-		`"@Message.ExtendedInfo":[{"MessageId":"Base.1.10.GeneralError"}],` +
-		`"Boot@Message.ExtendedInfo":[{"MessageId":"Base.1.10.PropertyValueNotInList",` +
-		`"MessageArgs":["Boot"]}]}}`
+	unauthorizedBody = `{"error":{"code":"Base.1.22.AccessUnauthorized","message":"Unauthorized.",` +
+		`"@Message.ExtendedInfo":[{"@odata.type":"#Message.v1_3_0.Message",` +
+		`"MessageId":"Base.1.22.AccessUnauthorized","Message":"Unauthorized.",` +
+		`"MessageSeverity":"Critical","Resolution":"Attempt to connect with a valid account."}]}}`
 
 	plainBody = "unable to execute request, no target provided"
 )
@@ -77,12 +82,15 @@ type constructErrorCase struct {
 
 var constructErrorCases = []constructErrorCase{
 	{
-		name:         "envelope populates the unscoped messages",
-		body:         envelopeBody,
-		code:         401,
-		wantCode:     "Base.1.10.GeneralError",
-		wantMessage:  "A general error has occurred. See ExtendedInfo for more information.",
-		wantExtended: []string{"Base.1.10.AccessUnauthorized"},
+		name:        "envelope populates the unscoped messages",
+		body:        envelopeBody,
+		code:        400,
+		wantCode:    "Base.1.0.0.GeneralError",
+		wantMessage: "A general error has occurred. See ExtendedInfo for more information.",
+		wantExtended: []string{
+			"Base.1.0.0.PropertyValueNotInList",
+			"Base.1.0.0.PropertyNotWritable",
+		},
 	},
 	{
 		name:           "bare property-scoped body is no longer dropped",
@@ -94,27 +102,17 @@ var constructErrorCases = []constructErrorCase{
 	{
 		name:         "bare unscoped body is no longer dropped",
 		body:         bareUnscopedBody,
-		code:         401,
+		code:         400,
 		wantMessage:  bareUnscopedBody,
-		wantExtended: []string{"Base.1.10.ResourceAtUriUnauthorized"},
+		wantExtended: []string{""},
 	},
 	{
-		name:           "annotation beside the error object",
-		body:           envelopeWithSiblingBody,
-		code:           400,
-		wantCode:       "Base.1.10.GeneralError",
-		wantMessage:    "failed",
-		wantExtended:   []string{"Base.1.10.GeneralError"},
-		wantProperties: map[string]string{"Attributes": "Base.1.10.PropertyNotWritable"},
-	},
-	{
-		name:           "annotation inside the error object",
-		body:           envelopeWithNestedBody,
-		code:           400,
-		wantCode:       "Base.1.10.GeneralError",
-		wantMessage:    "failed",
-		wantExtended:   []string{"Base.1.10.GeneralError"},
-		wantProperties: map[string]string{"Boot": "Base.1.10.PropertyValueNotInList"},
+		name:         "401 auth failure keeps its status and message id",
+		body:         unauthorizedBody,
+		code:         401,
+		wantCode:     "Base.1.22.AccessUnauthorized",
+		wantMessage:  "Unauthorized.",
+		wantExtended: []string{"Base.1.22.AccessUnauthorized"},
 	},
 	{
 		name:        "non-JSON body falls back to the raw message",
@@ -133,15 +131,6 @@ var constructErrorCases = []constructErrorCase{
 		body:        `{"VerifyRemoteServerCertificate@Message.ExtendedInfo":[{`,
 		code:        400,
 		wantMessage: `{"VerifyRemoteServerCertificate@Message.ExtendedInfo":[{`,
-	},
-	{
-		name: "annotation whose value is not an array is skipped",
-		body: `{"Foo@Message.ExtendedInfo":"not an array",` +
-			`"Bar@Message.ExtendedInfo":[{"MessageId":"Base.1.10.PropertyMissing"}]}`,
-		wantMessage: `{"Foo@Message.ExtendedInfo":"not an array",` +
-			`"Bar@Message.ExtendedInfo":[{"MessageId":"Base.1.10.PropertyMissing"}]}`,
-		code:           400,
-		wantProperties: map[string]string{"Bar": "Base.1.10.PropertyMissing"},
 	},
 }
 
@@ -217,7 +206,7 @@ func TestConstructErrorPropertyArgs(t *testing.T) {
 
 func TestAllExtendedInfos(t *testing.T) {
 	t.Run("returns the same slice when there is nothing scoped", func(t *testing.T) {
-		rfErr := asRedfishError(t, ConstructError(401, []byte(envelopeBody)))
+		rfErr := asRedfishError(t, ConstructError(400, []byte(envelopeBody)))
 		got := rfErr.AllExtendedInfos()
 		if len(got) != len(rfErr.ExtendedInfos) {
 			t.Fatalf("len = %d, want %d", len(got), len(rfErr.ExtendedInfos))
@@ -229,12 +218,17 @@ func TestAllExtendedInfos(t *testing.T) {
 	})
 
 	t.Run("merges both scopes", func(t *testing.T) {
-		rfErr := asRedfishError(t, ConstructError(400, []byte(envelopeWithSiblingBody)))
+		rfErr := Error{
+			ExtendedInfos: []ErrExtendedInfo{{MessageID: "Base.1.22.AccessUnauthorized"}},
+			PropertyExtendedInfos: map[string][]ErrExtendedInfo{
+				"VerifyRemoteServerCertificate": {{MessageID: "Base.1.18.1.PropertyMissing"}},
+			},
+		}
 		got := rfErr.AllExtendedInfos()
 		if len(got) != 2 {
 			t.Fatalf("AllExtendedInfos = %v, want 2 entries", messageIDs(got))
 		}
-		for _, want := range []string{"Base.1.10.GeneralError", "Base.1.10.PropertyNotWritable"} {
+		for _, want := range []string{"Base.1.22.AccessUnauthorized", "Base.1.18.1.PropertyMissing"} {
 			if !containsID(got, want) {
 				t.Errorf("AllExtendedInfos = %v, missing %q", messageIDs(got), want)
 			}
@@ -247,30 +241,4 @@ func TestAllExtendedInfos(t *testing.T) {
 			t.Errorf("AllExtendedInfos = %v, want nil", got)
 		}
 	})
-}
-
-func TestHasPropertyScopedExtendedInfo(t *testing.T) {
-	tests := []struct {
-		name string
-		body string
-		want bool
-	}{
-		{"unscoped annotation only", envelopeBody, false},
-		{"bare unscoped annotation", bareUnscopedBody, false},
-		{"no annotation at all", `{"error":{"code":"Base.1.10.GeneralError"}}`, false},
-		{"not JSON", plainBody, false},
-		{"empty", "", false},
-		{"property-scoped", barePropertyBody, true},
-		{"property-scoped beside the envelope", envelopeWithSiblingBody, true},
-		{"property-scoped inside the envelope", envelopeWithNestedBody, true},
-		{"unscoped first, property-scoped second", bareUnscopedBody + barePropertyBody, true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := hasPropertyScopedExtendedInfo([]byte(tt.body)); got != tt.want {
-				t.Errorf("hasPropertyScopedExtendedInfo = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }

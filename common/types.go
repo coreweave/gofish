@@ -760,58 +760,19 @@ func ConstructError(statusCode int, b []byte) error {
 		if bytes.Contains(b, extendedInfoKey) {
 			err.Error.ExtendedInfos, err.Error.PropertyExtendedInfos = parseExtendedInfos(b)
 		}
-	} else if hasPropertyScopedExtendedInfo(b) {
-		// Already populated ExtendedInfos; only the property-scoped form is missing.
-		_, err.Error.PropertyExtendedInfos = parseExtendedInfos(b)
 	}
 	err.Error.HTTPReturnedStatusCode = statusCode
 	err.Error.RawData = b
 	return err.Error
 }
 
-// hasPropertyScopedExtendedInfo reports whether b carries a `<Property>@Message.ExtendedInfo` key.
-// The plain form is always preceded by its key's opening quote; a property-scoped one never is,
-// so ordinary errors skip the second parse.
-func hasPropertyScopedExtendedInfo(b []byte) bool {
-	for i := 0; ; {
-		j := bytes.Index(b[i:], extendedInfoKey)
-		if j < 0 {
-			return false
-		}
-		if pos := i + j; pos > 0 && b[pos-1] != '"' {
-			return true
-		}
-		i += j + len(extendedInfoKey)
-	}
-}
-
 // parseExtendedInfos splits a body's message annotations into the unscoped one and the
-// property-scoped ones, keyed by property. On a key collision the inner level wins.
+// property-scoped ones, keyed by property.
 func parseExtendedInfos(b []byte) (unscopedInfos []ErrExtendedInfo, propertyInfos map[string][]ErrExtendedInfo) {
 	var raw map[string]json.RawMessage
 	if json.Unmarshal(b, &raw) != nil {
 		return nil, nil
 	}
-	unscopedInfos, propertyInfos = collectExtendedInfos(raw, nil)
-
-	// Some services annotate inside the error object rather than beside it:
-	//   {"error":{"@Message.ExtendedInfo":[...],"Boot@Message.ExtendedInfo":[...]}}
-	// Only "Boot" is new; the unscoped entry there already decoded into ExtendedInfos.
-	var nested map[string]json.RawMessage
-	if errObject, ok := raw["error"]; ok && json.Unmarshal(errObject, &nested) == nil {
-		_, propertyInfos = collectExtendedInfos(nested, propertyInfos)
-	}
-	return unscopedInfos, propertyInfos
-}
-
-// collectExtendedInfos sorts one object's annotations, returning the unscoped one separately and
-// adding property-scoped ones to existingPropertyInfos (nil for the first level). A value that is
-// not an ExtendedInfo array is skipped, since the body is untrusted.
-func collectExtendedInfos(
-	raw map[string]json.RawMessage,
-	existingPropertyInfos map[string][]ErrExtendedInfo,
-) (unscopedInfos []ErrExtendedInfo, propertyInfos map[string][]ErrExtendedInfo) {
-	propertyInfos = existingPropertyInfos
 	key := string(extendedInfoKey)
 	for k, v := range raw {
 		if !strings.HasSuffix(k, key) {
