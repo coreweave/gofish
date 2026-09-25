@@ -5,12 +5,14 @@
 package common
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // DefaultServiceRoot is the default path to the Redfish service endpoint.
@@ -744,6 +746,8 @@ type Settings struct {
 	Time string
 }
 
+var extendedInfoKey = []byte("@Message.ExtendedInfo")
+
 // ConstructError tries to create error if body is defined as redfish spec
 func ConstructError(statusCode int, b []byte) error {
 	var err struct {
@@ -753,10 +757,41 @@ func ConstructError(statusCode int, b []byte) error {
 		// Construct our own error
 		err.Error = new(Error)
 		err.Error.Message = string(b)
+		if bytes.Contains(b, extendedInfoKey) {
+			err.Error.ExtendedInfos, err.Error.PropertyExtendedInfos = parseExtendedInfos(b)
+		}
 	}
 	err.Error.HTTPReturnedStatusCode = statusCode
 	err.Error.RawData = b
 	return err.Error
+}
+
+// parseExtendedInfos splits a body's message annotations into the unscoped one and the
+// property-scoped ones, keyed by property.
+func parseExtendedInfos(b []byte) (unscopedInfos []ErrExtendedInfo, propertyInfos map[string][]ErrExtendedInfo) {
+	var raw map[string]json.RawMessage
+	if json.Unmarshal(b, &raw) != nil {
+		return nil, nil
+	}
+	key := string(extendedInfoKey)
+	for k, v := range raw {
+		if !strings.HasSuffix(k, key) {
+			continue
+		}
+		var infos []ErrExtendedInfo
+		if json.Unmarshal(v, &infos) != nil {
+			continue
+		}
+		if k == key {
+			unscopedInfos = infos
+			continue
+		}
+		if propertyInfos == nil {
+			propertyInfos = make(map[string][]ErrExtendedInfo, 1)
+		}
+		propertyInfos[strings.TrimSuffix(k, key)] = infos
+	}
+	return unscopedInfos, propertyInfos
 }
 
 // Error is redfish error response object for HTTP status codes different from 200, 201 and 204
@@ -770,6 +805,23 @@ type Error struct {
 	Message string `json:"message"`
 	// An array of message objects describing one or more error message(s).
 	ExtendedInfos []ErrExtendedInfo `json:"@Message.ExtendedInfo"`
+	// PropertyExtendedInfos holds DSP0266 extended property information from
+	// `<Property>@Message.ExtendedInfo` keys, keyed by the annotated property.
+	PropertyExtendedInfos map[string][]ErrExtendedInfo `json:"-"`
+}
+
+// AllExtendedInfos returns the unscoped messages followed by every property-scoped one. Property
+// order is not stable, so match on MessageId rather than position.
+func (e *Error) AllExtendedInfos() []ErrExtendedInfo {
+	if len(e.PropertyExtendedInfos) == 0 {
+		return e.ExtendedInfos
+	}
+	out := make([]ErrExtendedInfo, 0, len(e.ExtendedInfos)+len(e.PropertyExtendedInfos))
+	out = append(out, e.ExtendedInfos...)
+	for _, infos := range e.PropertyExtendedInfos {
+		out = append(out, infos...)
+	}
+	return out
 }
 
 func (e *Error) Error() string {
