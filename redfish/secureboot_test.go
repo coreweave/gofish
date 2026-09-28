@@ -51,7 +51,8 @@ func TestSecureBootSettingsTargetPreservesDirectUpdate(t *testing.T) {
 					}
 					resource.SetClient(client)
 					if changed {
-						resource.SecureBootEnable = !enabled
+						value := !enabled
+						resource.SecureBootEnable = &value
 					}
 					if err := resource.Update(); err != nil {
 						t.Fatal(err)
@@ -120,7 +121,7 @@ func TestSecureBoot(t *testing.T) {
 		t.Errorf("Invalid SecureBootCurrentBoot: %s", result.SecureBootCurrentBoot)
 	}
 
-	if !result.SecureBootEnable {
+	if result.SecureBootEnable == nil || !*result.SecureBootEnable {
 		t.Error("SecureBootEnable should be true")
 	}
 
@@ -145,7 +146,8 @@ func TestSecureBootUpdate(t *testing.T) {
 	testClient := &common.TestClient{}
 	result.SetClient(testClient)
 
-	result.SecureBootEnable = false
+	enabled := false
+	result.SecureBootEnable = &enabled
 	err = result.Update()
 
 	if err != nil {
@@ -153,6 +155,9 @@ func TestSecureBootUpdate(t *testing.T) {
 	}
 
 	calls := testClient.CapturedCalls()
+	if len(calls) != 1 {
+		t.Fatalf("Expected one update request, got %+v", calls)
+	}
 
 	if !strings.Contains(calls[0].Payload, "SecureBootEnable:false") {
 		t.Errorf("Unexpected SecureBootEnable update payload: %s", calls[0].Payload)

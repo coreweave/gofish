@@ -73,7 +73,7 @@ type SecureBoot struct {
 	SecureBootCurrentBoot SecureBootCurrentBootType
 	// SecureBootEnable set to true enables UEFI Secure Boot, and setting it to
 	// false disables it. This property can be enabled only in UEFI boot mode.
-	SecureBootEnable bool
+	SecureBootEnable *bool
 	// SecureBootMode shall contain the current Secure Boot mode, as defined in
 	// the UEFI Specification.
 	SecureBootMode SecureBootModeType
