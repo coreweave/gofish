@@ -28,11 +28,7 @@ const (
 
 // CoolantConnector shall represent a coolant connector for a Redfish implementation.
 type CoolantConnector struct {
-	common.Entity
-	// ODataContext is the odata context.
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the odata type.
-	ODataType string `json:"@odata.type"`
+	common.Resource
 	// Coolant shall contain details regarding the coolant contained or used by this unit.
 	Coolant Coolant
 	// CoolantConnectorType shall contain the type of coolant connector.
@@ -60,8 +56,6 @@ type CoolantConnector struct {
 	// DeltaTemperatureControlCelsius contain the control for the desired temperature difference, in degree Celsius
 	// for this coolant connector. This control shall only be present for the secondary coolant connector.
 	DeltaTemperatureControlCelsius ControlSingleExcerpt
-	// Description provides a description of this resource.
-	Description string
 	// FlowLitersPerMinute shall contain the liquid flow rate, in liters per minute units, for this coolant connector.
 	// The value of the DataSourceUri property, if present, shall reference a resource of type Sensor with the
 	// ReadingType property containing the value 'LiquidFlowLPM'.
