@@ -6,6 +6,7 @@ package redfish
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -50,5 +51,73 @@ func TestEnvironmentMetrics(t *testing.T) {
 
 	if *result.PowerWatts.Reading != 12.87 {
 		t.Errorf("Unexpected PowerWatts reading: %.2f", *result.PowerWatts.Reading)
+	}
+}
+
+// hgxGPUEnvironmentMetricsBody is shaped like NVIDIA HGX GPU EnvironmentMetrics on Dell GB200
+// firmware 25.07.4001500, which returns EnergykWh as an empty array.
+var hgxGPUEnvironmentMetricsBody = `{
+	"@odata.type": "#EnvironmentMetrics.v1_3_0.EnvironmentMetrics",
+	"@odata.id": "/redfish/v1/Chassis/HGX_GPU_0/EnvironmentMetrics",
+	"Id": "EnvironmentMetrics",
+	"Name": "GPU Environment Metrics",
+	"EnergykWh": [],
+	"PowerLimitWatts": {
+	  "AllowableMax": 1200,
+	  "DefaultSetPoint": 1200
+	}
+  }`
+
+// TestEnvironmentMetricsEmptyEnergykWh tests that an empty EnergykWh array does not fail the resource.
+func TestEnvironmentMetricsEmptyEnergykWh(t *testing.T) {
+	var result EnvironmentMetrics
+	if err := json.Unmarshal([]byte(hgxGPUEnvironmentMetricsBody), &result); err != nil {
+		t.Fatalf("Error decoding JSON: %s", err)
+	}
+
+	if result.PowerLimitWatts.AllowableMax != 1200 {
+		t.Errorf("Unexpected PowerLimitWatts AllowableMax: %.0f", result.PowerLimitWatts.AllowableMax)
+	}
+	if result.PowerLimitWatts.DefaultSetPoint != 1200 {
+		t.Errorf("Unexpected PowerLimitWatts DefaultSetPoint: %.0f", result.PowerLimitWatts.DefaultSetPoint)
+	}
+	if result.EnergykWh.Reading != nil {
+		t.Errorf("Expected nil EnergykWh reading, got %.2f", *result.EnergykWh.Reading)
+	}
+}
+
+// TestEnvironmentMetricsEnergykWhShapes tests which EnergykWh shapes decode and which still fail.
+func TestEnvironmentMetricsEnergykWhShapes(t *testing.T) {
+	reading := 4.2
+	tests := []struct {
+		name        string
+		energykWh   string
+		wantReading *float64
+		wantErr     bool
+	}{
+		{name: "object", energykWh: `{"Reading": 4.2}`, wantReading: &reading},
+		{name: "null", energykWh: `null`},
+		{name: "empty array", energykWh: `[]`},
+		{name: "non-empty array", energykWh: `[{"Reading": 4.2}]`, wantErr: true},
+		{name: "string", energykWh: `"4.2"`, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result EnvironmentMetrics
+			err := json.Unmarshal([]byte(`{"Id": "Metrics1", "EnergykWh": `+tt.energykWh+`}`), &result)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("Expected decode error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("Error decoding JSON: %s", err)
+			}
+			if !reflect.DeepEqual(result.EnergykWh.Reading, tt.wantReading) {
+				t.Errorf("Unexpected EnergykWh reading: got %v, want %v", result.EnergykWh.Reading, tt.wantReading)
+			}
+		})
 	}
 }

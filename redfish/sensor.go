@@ -232,6 +232,17 @@ type SensorEnergykWhExcerpt struct {
 	SensorResetTime string `json:"SensorResetTime,omitempty"`
 }
 
+// UnmarshalJSON treats an empty array as an absent excerpt. Dell XE9712 BMC
+// firmware before 26.05.14 returns "EnergykWh": [] when a GPU has no energy reading.
+func (excerpt *SensorEnergykWhExcerpt) UnmarshalJSON(b []byte) error {
+	if string(b) == "[]" {
+		return nil
+	}
+
+	type sensorEnergykWhExcerpt SensorEnergykWhExcerpt
+	return json.Unmarshal(b, (*sensorEnergykWhExcerpt)(excerpt))
+}
+
 // SensorPowerArrayExcerpt represents power array summary.
 type SensorPowerArrayExcerpt struct {
 	// ApparentVA indicates apparent power.
