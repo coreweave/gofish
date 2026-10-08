@@ -70,7 +70,7 @@ func (l *Link) UnmarshalJSON(b []byte) error {
 	}
 
 	*l = Link(t.ODataID)
-	if *l == "" {
+	if l.IsZero() {
 		*l = Link(t.Href)
 	}
 	return nil
