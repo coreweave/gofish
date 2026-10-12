@@ -436,29 +436,8 @@ type HostedServices struct {
 	// Oem shall contain the OEM extensions. All values for properties contained in this object shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
-	// StorageServices shall contain a link to a resource collection of type HostedStorageServices.
-	storageServices string
-}
-
-// UnmarshalJSON unmarshals a HostedServices object from the raw JSON.
-func (hostedservices *HostedServices) UnmarshalJSON(b []byte) error {
-	type temp HostedServices
-	var t struct {
-		temp
-		StorageServices common.Link
-	}
-
-	err := json.Unmarshal(b, &t)
-	if err != nil {
-		return err
-	}
-
-	*hostedservices = HostedServices(t.temp)
-
-	// Extract the links to other entities for later
-	hostedservices.storageServices = t.StorageServices.String()
-
-	return nil
+	// StorageServicesLink shall contain a link to a resource collection of type HostedStorageServices.
+	StorageServicesLink common.Link `json:"StorageServices"`
 }
 
 // Boot contains properties which describe boot information for a system.
@@ -477,9 +456,9 @@ type Boot struct {
 	// BootSourceOverrideEnabled set to 'Continuous' is not supported for BootSourceOverrideTarget set to
 	// 'UefiBootNext' because this setting is defined in UEFI as a one-time boot setting.
 	BootNext string `json:",omitempty"`
-	// bootOptions is a link to the collection of the UEFI boot options
+	// BootOptions is a link to the collection of the UEFI boot options
 	// associated with this computer system.
-	bootOptions string
+	BootOptionsLink common.Link `json:"BootOptions,omitzero"`
 	// BootOrder shall be an ordered array of
 	// BootOptionReference strings representing the persistent Boot Order of
 	// this computer system. For UEFI systems, this is the UEFI BootOrder as
@@ -515,7 +494,7 @@ type Boot struct {
 	BootSourceOverrideTarget                BootSourceOverrideTarget   `json:",omitempty"`
 	AllowableBootSourceOverrideTargetValues []BootSourceOverrideTarget `json:"BootSourceOverrideTarget@Redfish.AllowableValues,omitempty"`
 	// The link to a collection of certificates used for booting through HTTPS by this computer system.
-	certificates string
+	CertificatesLink common.Link `json:"Certificates,omitzero"`
 	// The URI to boot from when BootSourceOverrideTarget is set to UefiHttp.
 	HTTPBootURI string `json:"HttpBootUri,omitempty"`
 	// RemainingAutomaticRetryAttempts shall contain the number of attempts remaining the system will retry booting in
@@ -536,29 +515,6 @@ type Boot struct {
 	// persistent boot order configuration.
 	UefiTargetBootSourceOverride                string   `json:",omitempty"`
 	AllowableUefiTargetBootSourceOverrideValues []string `json:"UefiTargetBootSourceOverride@Redfish.AllowableValues,omitempty"`
-}
-
-// UnmarshalJSON unmarshals a Boot object from the raw JSON.
-func (boot *Boot) UnmarshalJSON(b []byte) error {
-	type temp Boot
-	var t struct {
-		temp
-		BootOptions  common.Link
-		Certificates common.Link
-	}
-
-	err := json.Unmarshal(b, &t)
-	if err != nil {
-		return err
-	}
-
-	*boot = Boot(t.temp)
-
-	// Extract the links to other entities for later
-	boot.bootOptions = t.BootOptions.String()
-	boot.certificates = t.Certificates.String()
-
-	return nil
 }
 
 // BootProgress shall contain the last boot progress state and time.
@@ -765,6 +721,30 @@ type ComputerSystemActions struct {
 	SetDefaultBootOrder common.ActionTarget `json:"#ComputerSystem.SetDefaultBootOrder"`
 }
 
+type IPMIHostInterface struct {
+	ServiceEnabled bool `json:"ServiceEnabled"`
+}
+
+type LastResetCause string
+
+const (
+	LastResetCauseManagementCommand  LastResetCause = "ManagementCommand"
+	LastResetCauseOSSoftRestart      LastResetCause = "OSSoftRestart"
+	LastResetCausePowerButtonPress   LastResetCause = "PowerButtonPress"
+	LastResetCausePowerEvent         LastResetCause = "PowerEvent"
+	LastResetCausePowerRestorePolicy LastResetCause = "PowerRestorePolicy"
+	LastResetCauseRTCWakeup          LastResetCause = "RTCWakeup"
+	LastResetCauseSystemCrash        LastResetCause = "SystemCrash"
+	LastResetCauseThermalEvent       LastResetCause = "ThermalEvent"
+	LastResetCauseUnknown            LastResetCause = "Unknown"
+	LastResetCauseWatchdogExpiration LastResetCause = "WatchdogExpiration"
+)
+
+type CSVirtualMediaConfig struct {
+	Port           int
+	ServiceEnabled bool
+}
+
 // ComputerSystem is used to represent resources that represent a
 // computing system in the Redfish specification.
 type ComputerSystem struct {
@@ -783,7 +763,8 @@ type ComputerSystem struct {
 	// primary system firmware.
 	BIOSVersion string `json:"BiosVersion"`
 	// Boot describes boot information for the current resource.
-	Boot Boot
+	Boot             Boot
+	BootImagePushURI string `json:"BootImagePushURI,omitempty"`
 	// BootProgress shall contain the last boot progress state and time.
 	BootProgress BootProgress
 	// Certificates shall contain a link to a resource collection of type CertificateCollection that contains
@@ -817,9 +798,11 @@ type ComputerSystem struct {
 	IdlePowerSaver IdlePowerSaver
 	// IndicatorLED shall contain the indicator
 	// light state for the indicator light associated with this system.
-	IndicatorLED common.IndicatorLED
+	IndicatorLED      common.IndicatorLED
+	IPMIHostInterface *IPMIHostInterface `json:"IPMIHostInterface,omitzero"`
 	// KeyManagement shall contain the key management settings of the computer system.
-	KeyManagement KeyManagement
+	KeyManagement  KeyManagement
+	LastResetCause LastResetCause
 	// LastResetTime shall contain the date and time when the system last came out of a reset or was rebooted.
 	LastResetTime string
 	// Links contains references to related resources.
@@ -832,7 +815,8 @@ type ComputerSystem struct {
 	// logServices shall be a link to a collection of type LogServiceCollection.
 	LogServicesLink common.Link `json:"LogServices"`
 	// Manufacturer shall contain a value that represents the manufacturer of the system.
-	Manufacturer string
+	Manufacturer      string
+	ManufacturingMode *bool
 	// memoryDomains shall be a link to a collection of type MemoryDomainCollection.
 	MemoryDomainsLink common.Link `json:"MemoryDomains"`
 	// Memory shall be a link to a collection of type MemoryCollection.
@@ -843,7 +827,8 @@ type ComputerSystem struct {
 	// Model shall contain the information
 	// about how the manufacturer references this system. This is typically
 	// the product name, without the manufacturer name.
-	Model string
+	Model                               string
+	MultipartImportConfigurationPushURI string
 	// networkInterfaces shall be a link to a collection of type
 	// NetworkInterfaceCollection.
 	NetworkInterfacesLink common.Link `json:"NetworkInterfaces"`
@@ -884,6 +869,7 @@ type ComputerSystem struct {
 	// ProcessorSummary shall contain properties which
 	// describe the central processors for the current resource.
 	ProcessorSummary ProcessorSummary
+	ProductionDate   string
 	// RawData holds the original serialized JSON so we can compare updates.
 	RawData []byte
 	// RedundancyCount is the number of Redundancy objects.
@@ -931,10 +917,12 @@ type ComputerSystem struct {
 	// should follow the SMBIOS 2.6 and later recommendation for converting the SMBIOS 16-byte UUID structure into the
 	// Redfish canonical 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' string format, so that the property value matches the
 	// byte order presented by current OS APIs, such as WMI and dmidecode.
-	UUID string
+	UUID           string
+	Virtualization common.Link
 	// virtualMedia shall contain a reference to a collection of type
 	// VirtualMediaCollection which are for the use of this system.
-	VirtualMediaLink common.Link `json:"VirtualMedia"`
+	VirtualMediaLink   common.Link `json:"VirtualMedia"`
+	VirtualMediaConfig *CSVirtualMediaConfig
 }
 
 // UnmarshalJSON unmarshals a ComputerSystem object from the raw JSON.
@@ -1015,9 +1003,13 @@ func (computersystem *ComputerSystem) BootOptions(queryOpts ...common.QueryGroup
 
 // BootOptionsWithContext gets all BootOption items for this system.
 func (computersystem *ComputerSystem) BootOptionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*BootOption, error) {
+	if computersystem.Boot.BootOptionsLink.IsZero() {
+		return nil, nil
+	}
+
 	return common.GetCollectionObjectsWithContext[BootOption](ctx,
 		computersystem.GetClient(),
-		computersystem.Boot.bootOptions, queryOpts...)
+		computersystem.Boot.BootOptionsLink.String(), queryOpts...)
 }
 
 func (computersystem *ComputerSystem) BootCertificates(queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
@@ -1025,7 +1017,11 @@ func (computersystem *ComputerSystem) BootCertificates(queryOpts ...common.Query
 }
 
 func (computersystem *ComputerSystem) BootCertificatesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
-	return ListReferencedCertificatesWithContext(ctx, computersystem.GetClient(), computersystem.Boot.certificates, queryOpts...)
+	if computersystem.Boot.CertificatesLink.IsZero() {
+		return nil, nil
+	}
+
+	return ListReferencedCertificatesWithContext(ctx, computersystem.GetClient(), computersystem.Boot.CertificatesLink.String(), queryOpts...)
 }
 
 // EthernetInterfaces get this system's ethernet interfaces.
