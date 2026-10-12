@@ -458,7 +458,7 @@ type Boot struct {
 	BootNext string `json:",omitempty"`
 	// BootOptions is a link to the collection of the UEFI boot options
 	// associated with this computer system.
-	BootOptionsLink common.Link `json:"BootOptions,omitzero"`
+	BootOptionsLink common.Link `json:"BootOptions,omitempty"`
 	// BootOrder shall be an ordered array of
 	// BootOptionReference strings representing the persistent Boot Order of
 	// this computer system. For UEFI systems, this is the UEFI BootOrder as
@@ -494,7 +494,7 @@ type Boot struct {
 	BootSourceOverrideTarget                BootSourceOverrideTarget   `json:",omitempty"`
 	AllowableBootSourceOverrideTargetValues []BootSourceOverrideTarget `json:"BootSourceOverrideTarget@Redfish.AllowableValues,omitempty"`
 	// The link to a collection of certificates used for booting through HTTPS by this computer system.
-	CertificatesLink common.Link `json:"Certificates,omitzero"`
+	CertificatesLink common.Link `json:"Certificates,omitempty"`
 	// The URI to boot from when BootSourceOverrideTarget is set to UefiHttp.
 	HTTPBootURI string `json:"HttpBootUri,omitempty"`
 	// RemainingAutomaticRetryAttempts shall contain the number of attempts remaining the system will retry booting in
