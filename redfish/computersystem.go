@@ -798,8 +798,9 @@ type ComputerSystem struct {
 	IdlePowerSaver IdlePowerSaver
 	// IndicatorLED shall contain the indicator
 	// light state for the indicator light associated with this system.
-	IndicatorLED      common.IndicatorLED
-	IPMIHostInterface *IPMIHostInterface `json:"IPMIHostInterface,omitzero"`
+	IndicatorLED common.IndicatorLED
+	// TODO: temporarily removed
+	// IPMIHostInterface *IPMIHostInterface `json:"IPMIHostInterface,omitzero"`
 	// KeyManagement shall contain the key management settings of the computer system.
 	KeyManagement  KeyManagement
 	LastResetCause LastResetCause
