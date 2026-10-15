@@ -17,6 +17,8 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -275,5 +277,107 @@ func TestCertHashMonitoring(t *testing.T) {
 		if !errors.Is(err, ErrClientCertChanged) {
 			t.Error("expecting client cert changed err")
 		}
+	}
+}
+
+// newServiceRootTLSServer starts an HTTPS server with a self-signed
+// certificate that answers every request with an empty service root.
+func newServiceRootTLSServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(`{}`)) //nolint
+	}))
+	t.Cleanup(ts.Close)
+	return ts
+}
+
+// setDefaultTransportTLSConfig puts cfg on http.DefaultTransport until the
+// test ends. A process has a non-nil config there after its first HTTPS
+// request through the default transport, or when it installs its own. The
+// config is process-wide, so tests that call this must not run in parallel.
+func setDefaultTransportTLSConfig(t *testing.T, cfg *tls.Config) {
+	t.Helper()
+	defaultTransport := http.DefaultTransport.(*http.Transport)
+	original := defaultTransport.TLSClientConfig
+	defaultTransport.TLSClientConfig = cfg
+	t.Cleanup(func() {
+		defaultTransport.CloseIdleConnections()
+		defaultTransport.TLSClientConfig = original
+	})
+}
+
+// TestConnectInsecureLeavesDefaultTransportTLSConfig checks that an Insecure
+// connect skips certificate checks only on the transport gofish builds, and
+// that other requests through http.DefaultTransport still verify certificates.
+func TestConnectInsecureLeavesDefaultTransportTLSConfig(t *testing.T) {
+	ts := newServiceRootTLSServer(t)
+	shared := &tls.Config{MinVersion: tls.VersionTLS12}
+	setDefaultTransportTLSConfig(t, shared)
+
+	// No HTTPClient, so gofish builds its transport from http.DefaultTransport.
+	if _, err := Connect(ClientConfig{Endpoint: ts.URL, Insecure: true}); err != nil {
+		t.Fatalf("insecure connect to a self-signed server failed: %v", err)
+	}
+
+	if shared.InsecureSkipVerify {
+		t.Error("connect set InsecureSkipVerify on http.DefaultTransport's tls.Config")
+	}
+	if len(shared.NextProtos) != 0 {
+		t.Errorf("connect changed NextProtos on http.DefaultTransport's tls.Config: %v", shared.NextProtos)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL, http.NoBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err == nil {
+		resp.Body.Close()
+		t.Fatal("http.DefaultClient accepted a self-signed certificate after an insecure connect")
+	}
+	var certErr *tls.CertificateVerificationError
+	if !errors.As(err, &certErr) {
+		t.Errorf("expected a certificate verification error, got: %v", err)
+	}
+}
+
+// TestConnectInsecureConcurrent runs Insecure connects in parallel while
+// http.DefaultTransport holds a tls.Config. Each connect needs its own copy of
+// that config, or go test -race reports the writes to the shared one.
+func TestConnectInsecureConcurrent(t *testing.T) {
+	ts := newServiceRootTLSServer(t)
+	setDefaultTransportTLSConfig(t, &tls.Config{MinVersion: tls.VersionTLS12})
+
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := Connect(ClientConfig{Endpoint: ts.URL, Insecure: true}); err != nil {
+				t.Errorf("concurrent insecure connect failed: %v", err)
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+// TestConnectNegotiatesHTTP2 checks that the transport gofish builds still
+// offers HTTP/2. net/http turns HTTP/2 off on a transport with its own
+// TLSClientConfig or DialContext unless ForceAttemptHTTP2 is set.
+func TestConnectNegotiatesHTTP2(t *testing.T) {
+	var proto atomic.Value
+	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		proto.Store(r.Proto)
+		w.Write([]byte(`{}`)) //nolint
+	}))
+	ts.EnableHTTP2 = true
+	ts.StartTLS()
+	t.Cleanup(ts.Close)
+
+	if _, err := Connect(ClientConfig{Endpoint: ts.URL, Insecure: true}); err != nil {
+		t.Fatalf("insecure connect failed: %v", err)
+	}
+	if got := proto.Load(); got != "HTTP/2.0" {
+		t.Errorf("expected the connect to negotiate HTTP/2.0, got %v", got)
 	}
 }

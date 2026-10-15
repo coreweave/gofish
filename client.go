@@ -151,8 +151,16 @@ func setupClientWithConfig(ctx context.Context, config *ClientConfig) (c *APICli
 			MaxIdleConns:          defaultTransport.MaxIdleConns,
 			IdleConnTimeout:       defaultTransport.IdleConnTimeout,
 			ExpectContinueTimeout: defaultTransport.ExpectContinueTimeout,
-			TLSClientConfig:       defaultTransport.TLSClientConfig,
-			TLSHandshakeTimeout:   time.Duration(config.TLSHandshakeTimeout) * time.Second,
+			// Clone rather than share the pointer. The default transport's config
+			// belongs to the whole process, and both the InsecureSkipVerify write
+			// below and net/http's HTTP/2 setup write into whatever config a
+			// transport holds.
+			TLSClientConfig:     defaultTransport.TLSClientConfig.Clone(),
+			TLSHandshakeTimeout: time.Duration(config.TLSHandshakeTimeout) * time.Second,
+			// Without this, Go disables HTTP/2 negotiation whenever TLSClientConfig
+			// or DialContext is set. Setting it re-enables ALPN negotiation, so the
+			// protocol is still picked during the TLS handshake.
+			ForceAttemptHTTP2: true,
 		}
 
 		config.HTTPClient = &http.Client{Transport: transport}
@@ -172,8 +180,13 @@ func setupClientWithConfig(ctx context.Context, config *ClientConfig) (c *APICli
 					MinVersion: tls.VersionTLS12,
 				}
 			}
-			transport.TLSClientConfig.InsecureSkipVerify = config.Insecure
+			transport.TLSClientConfig.InsecureSkipVerify = true
 		}
+
+		// Without this, Go disables HTTP/2 negotiation whenever TLSClientConfig
+		// or DialContext is set. Setting it re-enables ALPN negotiation, so the
+		// protocol is still picked during the TLS handshake.
+		transport.ForceAttemptHTTP2 = true
 
 		if config.ReuseConnections {
 			transport.DisableKeepAlives = false
