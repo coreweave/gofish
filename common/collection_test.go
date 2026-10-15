@@ -6,6 +6,7 @@ package common
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -47,12 +48,13 @@ func (c *orderedGetClient) GetWithContext(_ context.Context, url string) (*http.
 		c.opened = true
 	}
 	c.mu.Unlock()
-	if !ok {
-		return nil, fmt.Errorf("unexpected GET %s", url)
-	}
 
+	// open before failing an unknown URL, which may be the last pending member
 	if open {
 		close(c.gate)
+	}
+	if !ok {
+		return nil, fmt.Errorf("unexpected GET %s", url)
 	}
 	return jsonResponse(body), nil
 }
@@ -110,5 +112,55 @@ func TestGetCollectionObjectsKeepsDocumentOrder(t *testing.T) {
 	last := client.served[len(client.served)-1]
 	if last != client.gateURL {
 		t.Fatalf("first-listed member was served %q-last; the gate did not stagger completion", last)
+	}
+}
+
+// TestGetObjectsKeepsLinkOrder pins GetObjects results to the order of the
+// uris it is given, which getters pass straight from a Links array. The
+// first-listed link completes last, so a result in completion order would come
+// back rotated. A link that fails is left out without moving the others, and a
+// link listed twice comes back twice.
+func TestGetObjectsKeepsLinkOrder(t *testing.T) {
+	const base = "/redfish/v1/Chassis/1/Drives"
+	gone := base + "/gone"
+	uris := []string{base + "/2", base + "/10", gone, base + "/0", base + "/1", base + "/2"}
+	want := []string{"2", "10", "0", "1", "2"}
+
+	bodies := map[string]string{}
+	for _, id := range want {
+		uri := base + "/" + id
+		bodies[uri] = fmt.Sprintf(`{"@odata.id":%q,"Id":%q}`, uri, id)
+	}
+	// the repeated gated link at the end waits on the gate too, so only the
+	// links between the two copies must be served before it opens
+	pending := map[string]struct{}{}
+	for _, uri := range uris[1:5] {
+		pending[uri] = struct{}{}
+	}
+	client := &orderedGetClient{
+		TestClient: &TestClient{},
+		bodies:     bodies,
+		gate:       make(chan struct{}),
+		gateURL:    uris[0],
+		pending:    pending,
+	}
+
+	resources, err := GetObjectsWithContext[Resource](context.Background(), client, uris)
+	var collectionErr *CollectionError
+	if !errors.As(err, &collectionErr) || len(collectionErr.Failures) != 1 || collectionErr.Failures[gone] == nil {
+		t.Fatalf("err = %v, want a CollectionError for %s only", err, gone)
+	}
+
+	var got []string
+	for _, r := range resources {
+		got = append(got, r.ID)
+	}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("member order = %v, want link order %v", got, want)
+	}
+
+	last := client.served[len(client.served)-1]
+	if last != client.gateURL {
+		t.Fatalf("first-listed link was served %q-last; the gate did not stagger completion", last)
 	}
 }

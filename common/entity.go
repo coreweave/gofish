@@ -539,6 +539,8 @@ func DecodeGenericEntity[T any, PT GenericSchemaObjectPointer[T]](c Client, resp
 }
 
 // GetObjects retrieves multiple API objects concurrently from the service using the client's cached context.
+// Results keep the order of uris; links that fail are left out and reported in
+// the returned CollectionError.
 func GetObjects[T any, PT interface {
 	*T
 	SchemaObject
@@ -547,6 +549,8 @@ func GetObjects[T any, PT interface {
 }
 
 // GetObjectsWithContext retrieves multiple API objects concurrently from the service.
+// Results keep the order of uris; links that fail are left out and reported in
+// the returned CollectionError.
 func GetObjectsWithContext[T any, PT interface {
 	*T
 	SchemaObject
@@ -562,26 +566,32 @@ func GetObjectsWithContext[T any, PT interface {
 		Error error
 	}
 
-	ch := make(chan GetResult)
-	collectionError := NewCollectionError()
-
-	// Worker function to get a single object
-	get := func(link string) {
-		entity, err := GetObjectWithContext[T, PT](ctx, c, link, opts...)
-		ch <- GetResult{Item: entity, Link: link, Error: err}
+	// Resolve each link concurrently into a slice indexed by its position in
+	// uris, so the result keeps the caller's ordering regardless of fetch
+	// completion order. The index is keyed by member, not link, so a link
+	// listed twice keeps both of its places.
+	members := make([]*Resource, len(uris))
+	memberIndex := make(map[*Resource]int, len(uris))
+	for i, link := range uris {
+		members[i] = &Resource{Entity: Entity{ODataID: link}}
+		memberIndex[members[i]] = i
 	}
 
-	// Start workers for each URI
-	go func() {
-		CollectCollectionWithContext(ctx, get, uris)
-		close(ch)
-	}()
+	results := make([]GetResult, len(uris))
+	get := func(member *Resource, _ ...QueryGroupOption) {
+		link := member.ODataID
+		entity, err := GetObjectWithContext[T, PT](ctx, c, link, opts...)
+		results[memberIndex[member]] = GetResult{Item: entity, Link: link, Error: err}
+	}
 
-	// Process results
-	for r := range ch {
-		if r.Error != nil {
+	CollectResourceCollectionWithContext(ctx, get, members)
+
+	collectionError := NewCollectionError()
+	for _, r := range results {
+		switch {
+		case r.Error != nil:
 			collectionError.Failures[r.Link] = r.Error
-		} else {
+		case r.Item != nil:
 			result = append(result, r.Item)
 		}
 	}
