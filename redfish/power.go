@@ -154,8 +154,11 @@ func (power *Power) UnmarshalJSON(b []byte) error {
 
 	*power = Power(t.temp)
 
-	// PowerControl is optional. When the key is absent the raw message is
-	// empty, and decoding it would fail.
+	// PowerControl is optional. The Power schema requires only @odata.id,
+	// @odata.type, Id and Name:
+	// https://github.com/DMTF/Redfish-Publications/blob/fa6d23d9709aef0aba4340ef6136d332a5c9f144/json-schema/Power.v1_7_3.json#L330-L335
+	// When the key is absent the raw message is empty, and decoding it would
+	// fail.
 	if len(t.PowerControl) > 0 {
 		powerControls := []PowerControl{}
 		err = json.Unmarshal(t.PowerControl, &powerControls)
