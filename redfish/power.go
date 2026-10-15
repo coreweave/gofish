@@ -177,6 +177,24 @@ func (power *Power) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// SetClient sets the API client on this Power resource and on the members of
+// its arrays, which the service sends inline.
+func (power *Power) SetClient(c common.Client) {
+	power.Entity.SetClient(c)
+	for i := range power.PowerControl {
+		power.PowerControl[i].SetClient(c)
+	}
+	for i := range power.PowerSupplies {
+		power.PowerSupplies[i].SetClient(c)
+	}
+	for i := range power.Redundancy {
+		power.Redundancy[i].SetClient(c)
+	}
+	for i := range power.Voltages {
+		power.Voltages[i].SetClient(c)
+	}
+}
+
 // PowerSupplyReset resets the specified power supply.
 // memberID identifies the power supply in the PowerSupplies array.
 // resetType specifies the type of reset to perform.

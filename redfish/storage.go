@@ -252,6 +252,18 @@ func (storage *Storage) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// SetClient sets the API client on this Storage resource and on the members
+// of its arrays, which the service sends inline.
+func (storage *Storage) SetClient(c common.Client) {
+	storage.Entity.SetClient(c)
+	for i := range storage.Redundancy {
+		storage.Redundancy[i].SetClient(c)
+	}
+	for i := range storage.StorageControllers {
+		storage.StorageControllers[i].SetClient(c)
+	}
+}
+
 // Connection gets the connections that this storage subsystem contains.
 func (storage *Storage) Connections(queryOpts ...common.QueryGroupOption) ([]*Connection, error) {
 	return storage.ConnectionsWithContext(common.ContextOf(storage.GetClient()), queryOpts...)

@@ -272,6 +272,18 @@ func (thermal *Thermal) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// SetClient sets the API client on this Thermal resource and on the members
+// of its arrays, which the service sends inline.
+func (thermal *Thermal) SetClient(c common.Client) {
+	thermal.Entity.SetClient(c)
+	for i := range thermal.Fans {
+		thermal.Fans[i].SetClient(c)
+	}
+	for i := range thermal.Temperatures {
+		thermal.Temperatures[i].SetClient(c)
+	}
+}
+
 // Update commits updates to this object's properties to the running system.
 func (thermal *Thermal) Update() error {
 	return thermal.UpdateWithContext(common.ContextOf(thermal.GetClient()))

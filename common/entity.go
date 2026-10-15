@@ -128,6 +128,9 @@ func (e *Entity) UpdateWithContext(ctx context.Context, originalEntity, updatedE
 
 	// Send updates if there are any allowed changes
 	if len(payload) > 0 {
+		if strings.Contains(e.ODataID, "#") {
+			return fmt.Errorf("%w: %s", ErrArrayMemberUpdate, e.ODataID)
+		}
 		return e.PatchWithContext(ctx, e.ODataID, payload)
 	}
 
@@ -292,6 +295,13 @@ func (e *Entity) UpdateFromRawDataWithContext(ctx context.Context, resource any,
 		}
 	} else if err := json.Unmarshal(rawData, original); err != nil {
 		return fmt.Errorf("standard unmarshal failed: %w", err)
+	}
+
+	// A resource's SetClient can also set the client on the members of its
+	// inline arrays. The comparison below reaches those members' unexported
+	// fields, so the copy needs the same client or every member looks changed.
+	if setter, ok := original.(interface{ SetClient(Client) }); ok {
+		setter.SetClient(e.client)
 	}
 
 	originalValue := reflect.ValueOf(original)

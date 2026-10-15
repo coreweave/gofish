@@ -6,6 +6,7 @@ package redfish
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -322,14 +323,11 @@ func TestStorageControllerUpdate(t *testing.T) {
 		t.Errorf("Error decoding JSON: %s", err)
 	}
 
+	testClient := &common.TestClient{}
+	result.SetClient(testClient)
+
 	scResult := result.StorageControllers[0]
 	scResult.AssetTag = TestAssetTag
-
-	// TODO: This highlights an issue that child objects of an object do not
-	// get their client set. Need to review objects like Storage that include
-	// the full objects rather than just links to them.
-	testClient := &common.TestClient{}
-	scResult.SetClient(testClient)
 	err = scResult.Update()
 
 	if err != nil {
@@ -340,5 +338,35 @@ func TestStorageControllerUpdate(t *testing.T) {
 
 	if !strings.Contains(calls[0].Payload, "AssetTag:TestAssetTag") {
 		t.Errorf("Unexpected AssetTag update payload: %s", calls[0].Payload)
+	}
+}
+
+// TestStorageUpdateAfterGetStorage tests that GetStorage gives the inline
+// storage controllers the client and that Storage.Update still sends only the
+// changed property.
+func TestStorageUpdateAfterGetStorage(t *testing.T) {
+	testClient := &common.TestClient{
+		CustomReturnForActions: map[string][]interface{}{
+			http.MethodGet: {getCall(storageBody)},
+		},
+	}
+	storage, err := GetStorage(testClient, "/redfish/v1/Storage")
+	if err != nil {
+		t.Fatalf("Error getting storage: %s", err)
+	}
+
+	if storage.StorageControllers[0].GetClient() != testClient {
+		t.Error("StorageControllers[0] has no client")
+	}
+
+	storage.AutoVolumeCreate = RAID1AutoVolumeCreate
+	if err := storage.Update(); err != nil {
+		t.Fatalf("Error making Update call: %s", err)
+	}
+
+	calls := testClient.CapturedCalls()
+	last := calls[len(calls)-1]
+	if last.Action != http.MethodPatch || last.Payload != "map[AutoVolumeCreate:RAID1]" {
+		t.Errorf("Unexpected update call: %s %s", last.Action, last.Payload)
 	}
 }

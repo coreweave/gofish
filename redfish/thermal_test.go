@@ -6,6 +6,7 @@ package redfish_test
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"math"
 	"net/http"
@@ -2053,3 +2054,85 @@ var serverThermalBody = `{
         }
     ]
 }`
+
+// inlineThermalBody is a Thermal resource whose array members have fragment IDs.
+var inlineThermalBody = `{
+	"@odata.id": "/redfish/v1/Chassis/1/Thermal",
+	"Id": "Thermal",
+	"Name": "Thermal",
+	"Fans": [{"@odata.id": "/redfish/v1/Chassis/1/Thermal#/Fans/0", "MemberId": "0", "IndicatorLED": "Off", "Reading": 4000}],
+	"Temperatures": [{"@odata.id": "/redfish/v1/Chassis/1/Thermal#/Temperatures/0", "MemberId": "0", "ReadingCelsius": 30}]
+}`
+
+// inlineThermalClient returns a client for a service that serves
+// inlineThermalBody and adds the path and body of each PATCH to patches.
+func inlineThermalClient(t *testing.T, patches *[]string) common.Client {
+	return testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPatch:
+			body, _ := io.ReadAll(r.Body)
+			*patches = append(*patches, r.URL.Path+" "+string(body))
+			w.WriteHeader(http.StatusNoContent)
+		case r.URL.Path == "/redfish/v1/Chassis/1/Thermal":
+			_, _ = w.Write([]byte(inlineThermalBody))
+		default:
+			_, _ = w.Write([]byte(`{}`))
+		}
+	})
+}
+
+// TestGetThermalSetsMemberClients tests that GetThermal gives the inline fans
+// and temperatures the client.
+func TestGetThermalSetsMemberClients(t *testing.T) {
+	var patches []string
+	client := inlineThermalClient(t, &patches)
+	thermal, err := redfish.GetThermal(client, "/redfish/v1/Chassis/1/Thermal")
+	if err != nil {
+		t.Fatalf("Error getting thermal: %v", err)
+	}
+
+	if thermal.Fans[0].GetClient() != client {
+		t.Error("Fans[0] has no client")
+	}
+	if thermal.Temperatures[0].GetClient() != client {
+		t.Error("Temperatures[0] has no client")
+	}
+}
+
+// TestThermalUpdateWithoutChanges tests that Thermal.Update after GetThermal
+// sends no PATCH when nothing changed.
+func TestThermalUpdateWithoutChanges(t *testing.T) {
+	var patches []string
+	client := inlineThermalClient(t, &patches)
+	thermal, err := redfish.GetThermal(client, "/redfish/v1/Chassis/1/Thermal")
+	if err != nil {
+		t.Fatalf("Error getting thermal: %v", err)
+	}
+
+	if err := thermal.Update(); err != nil {
+		t.Errorf("Update failed: %v", err)
+	}
+	if len(patches) != 0 {
+		t.Errorf("Unexpected PATCH: %v", patches)
+	}
+}
+
+// TestThermalFanUpdateRefusesFragmentID tests that Update on a fan sent inline
+// in Thermal returns ErrArrayMemberUpdate and sends no PATCH.
+func TestThermalFanUpdateRefusesFragmentID(t *testing.T) {
+	var patches []string
+	client := inlineThermalClient(t, &patches)
+	thermal, err := redfish.GetThermal(client, "/redfish/v1/Chassis/1/Thermal")
+	if err != nil {
+		t.Fatalf("Error getting thermal: %v", err)
+	}
+
+	lit := common.LitIndicatorLED
+	thermal.Fans[0].IndicatorLED = &lit
+	if err := thermal.Fans[0].Update(); !errors.Is(err, common.ErrArrayMemberUpdate) {
+		t.Errorf("Expected ErrArrayMemberUpdate, got: %v", err)
+	}
+	if len(patches) != 0 {
+		t.Errorf("Unexpected PATCH: %v", patches)
+	}
+}

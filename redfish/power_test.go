@@ -6,6 +6,8 @@ package redfish
 
 import (
 	"encoding/json"
+	"errors"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -1057,5 +1059,87 @@ func TestCiscoPower(t *testing.T) {
 
 	if *voltage.UpperThresholdCritical != 14.0 {
 		t.Errorf("Expected UpperThresholdCritical to be 14.0: %v", voltage.UpperThresholdCritical)
+	}
+}
+
+// inlinePowerBody is a Power resource whose array members have fragment IDs.
+var inlinePowerBody = `{
+	"@odata.id": "/redfish/v1/Chassis/1/Power",
+	"Id": "Power",
+	"Name": "Power",
+	"PowerControl": [{"@odata.id": "/redfish/v1/Chassis/1/Power#/PowerControl/0", "MemberId": "0"}],
+	"PowerSupplies": [{
+		"@odata.id": "/redfish/v1/Chassis/1/Power#/PowerSupplies/0",
+		"MemberId": "0",
+		"IndicatorLED": "Off",
+		"Assembly": {"@odata.id": "/redfish/v1/Chassis/1/PowerSupplies/0/Assembly"}
+	}],
+	"Redundancy": [{"@odata.id": "/redfish/v1/Chassis/1/Power#/Redundancy/0", "MemberId": "0", "Mode": "N+m"}],
+	"Voltages": [{"@odata.id": "/redfish/v1/Chassis/1/Power#/Voltages/0", "MemberId": "0"}]
+}`
+
+// TestGetPowerSetsMemberClients tests that GetPower gives the inline array
+// members the client, so their getters can reach the service.
+func TestGetPowerSetsMemberClients(t *testing.T) {
+	testClient := &common.TestClient{
+		CustomReturnForActions: map[string][]interface{}{
+			http.MethodGet: {
+				getCall(inlinePowerBody),
+				getCall(`{"@odata.id": "/redfish/v1/Chassis/1/PowerSupplies/0/Assembly", "Id": "Assembly"}`),
+			},
+		},
+	}
+	power, err := GetPower(testClient, "/redfish/v1/Chassis/1/Power")
+	if err != nil {
+		t.Fatalf("Error getting power: %s", err)
+	}
+
+	members := map[string]common.Client{
+		"PowerControl":  power.PowerControl[0].GetClient(),
+		"PowerSupplies": power.PowerSupplies[0].GetClient(),
+		"Redundancy":    power.Redundancy[0].GetClient(),
+		"Voltages":      power.Voltages[0].GetClient(),
+	}
+	for name, client := range members {
+		if client != testClient {
+			t.Errorf("%s[0] has no client", name)
+		}
+	}
+	if t.Failed() {
+		t.FailNow()
+	}
+
+	assembly, err := power.PowerSupplies[0].Assembly()
+	if err != nil {
+		t.Fatalf("Error getting assembly: %s", err)
+	}
+	if assembly.ID != "Assembly" {
+		t.Errorf("Unexpected assembly ID: %s", assembly.ID)
+	}
+}
+
+// TestPowerSupplyUpdateRefusesFragmentID tests that Update on a power supply
+// sent inline in Power returns ErrArrayMemberUpdate and sends no PATCH.
+func TestPowerSupplyUpdateRefusesFragmentID(t *testing.T) {
+	testClient := &common.TestClient{
+		CustomReturnForActions: map[string][]interface{}{
+			http.MethodGet: {getCall(inlinePowerBody)},
+		},
+	}
+	power, err := GetPower(testClient, "/redfish/v1/Chassis/1/Power")
+	if err != nil {
+		t.Fatalf("Error getting power: %s", err)
+	}
+
+	psu := &power.PowerSupplies[0]
+	psu.IndicatorLED = common.LitIndicatorLED
+	if err := psu.Update(); !errors.Is(err, common.ErrArrayMemberUpdate) {
+		t.Errorf("Expected ErrArrayMemberUpdate, got: %v", err)
+	}
+
+	for _, call := range testClient.CapturedCalls() {
+		if call.Action == http.MethodPatch {
+			t.Errorf("Unexpected PATCH %s %s", call.URL, call.Payload)
+		}
 	}
 }
