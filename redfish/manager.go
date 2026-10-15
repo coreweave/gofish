@@ -372,6 +372,11 @@ type Manager struct {
 
 	// RawData holds the original serialized JSON so we can compare updates.
 	RawData []byte
+
+	// supportedResetTypes and supportedResetToDefaultsTypes cache the values
+	// read from ActionInfo. They stay out of Actions, which Update compares.
+	supportedResetTypes           []ResetType
+	supportedResetToDefaultsTypes []ResetToDefaultsType
 }
 
 // UnmarshalJSON unmarshals a Manager object from the raw JSON.
@@ -485,6 +490,9 @@ func (manager *Manager) GetSupportedResetTypesWithContext(ctx context.Context) (
 	if len(manager.Actions.Reset.AllowedResetTypes) > 0 {
 		return manager.Actions.Reset.AllowedResetTypes, nil
 	}
+	if len(manager.supportedResetTypes) > 0 {
+		return manager.supportedResetTypes, nil
+	}
 
 	// if we don't have ResetTypes, try to get from ActionInfo
 	if manager.Actions.Reset.ActionInfoTarget != "" {
@@ -499,8 +507,9 @@ func (manager *Manager) GetSupportedResetTypesWithContext(ctx context.Context) (
 		}
 
 		for _, val := range vals {
-			manager.Actions.Reset.AllowedResetTypes = append(manager.Actions.Reset.AllowedResetTypes, ResetType(val))
+			manager.supportedResetTypes = append(manager.supportedResetTypes, ResetType(val))
 		}
+		return manager.supportedResetTypes, nil
 	}
 
 	return manager.Actions.Reset.AllowedResetTypes, nil
@@ -529,6 +538,9 @@ func (manager *Manager) Reset(resetType ResetType) error {
 func (manager *Manager) ResetWithContext(ctx context.Context, resetType ResetType) error {
 	resetTarget := manager.Actions.Reset.Target
 	supportedResetTypes := manager.Actions.Reset.AllowedResetTypes
+	if len(supportedResetTypes) == 0 {
+		supportedResetTypes = manager.supportedResetTypes
+	}
 
 	if len(supportedResetTypes) == 0 {
 		if manager.Actions.Reset.ActionInfoTarget != "" {
@@ -574,6 +586,9 @@ func (manager *Manager) GetSupportedResetToDefaultsTypesWithContext(ctx context.
 	if len(manager.Actions.ResetToDefaults.AllowedResetTypes) > 0 {
 		return manager.Actions.ResetToDefaults.AllowedResetTypes, nil
 	}
+	if len(manager.supportedResetToDefaultsTypes) > 0 {
+		return manager.supportedResetToDefaultsTypes, nil
+	}
 
 	// if we don't have ResetTypes, try to get from ActionInfo
 	if manager.Actions.ResetToDefaults.ActionInfoTarget != "" {
@@ -588,10 +603,11 @@ func (manager *Manager) GetSupportedResetToDefaultsTypesWithContext(ctx context.
 		}
 
 		for _, val := range vals {
-			manager.Actions.ResetToDefaults.AllowedResetTypes = append(
-				manager.Actions.ResetToDefaults.AllowedResetTypes, ResetToDefaultsType(val),
+			manager.supportedResetToDefaultsTypes = append(
+				manager.supportedResetToDefaultsTypes, ResetToDefaultsType(val),
 			)
 		}
+		return manager.supportedResetToDefaultsTypes, nil
 	}
 
 	return manager.Actions.ResetToDefaults.AllowedResetTypes, nil

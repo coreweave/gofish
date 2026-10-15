@@ -377,7 +377,9 @@ type Chassis struct {
 	// resetActionInfoTarget is the URL to check what values are supported
 	resetActionInfoTarget string
 	// SupportedResetTypes, if provided, is the reset types this chassis supports.
-	SupportedResetTypes []ResetType
+	// GetSupportedResetTypes fills it from ActionInfo, so Update must not
+	// compare it.
+	SupportedResetTypes []ResetType `json:"-"`
 
 	// Links
 

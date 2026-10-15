@@ -578,3 +578,37 @@ func TestChassisSupportedReset(t *testing.T) {
 		t.Errorf("Expected 3 reset types to be returned, got %d", len(resetTypes))
 	}
 }
+
+// TestChassisUpdateAfterSupportedResetTypes checks that the reset types
+// GetSupportedResetTypes reads from ActionInfo are not a change to the chassis,
+// so a later Update sends only what the caller set.
+func TestChassisUpdateAfterSupportedResetTypes(t *testing.T) {
+	var result Chassis
+	if err := json.Unmarshal([]byte(chassisBodyResetActionInfo), &result); err != nil {
+		t.Fatalf("Error decoding JSON: %s", err)
+	}
+
+	testClient := &common.TestClient{
+		CustomReturnForActions: map[string][]interface{}{
+			http.MethodGet: {getCall(chassisResetActionInfoRes)},
+		},
+	}
+	result.SetClient(testClient)
+
+	if _, err := result.GetSupportedResetTypes(); err != nil {
+		t.Fatalf("Error getting reset types: %s", err)
+	}
+
+	result.AssetTag = TestAssetTag
+	if err := result.Update(); err != nil {
+		t.Fatalf("Error making Update call: %s", err)
+	}
+
+	calls := testClient.CapturedCalls()
+	patch := calls[len(calls)-1]
+	if patch.Action != http.MethodPatch ||
+		!strings.Contains(patch.Payload, TestAssetTag) ||
+		strings.Contains(patch.Payload, "ResetTypes") {
+		t.Errorf("Unexpected update call: %+v", patch)
+	}
+}

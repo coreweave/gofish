@@ -592,3 +592,63 @@ func TestManagerResetToDefaultsTypes(t *testing.T) {
 		t.Errorf("Expected 1 reset to defaults types to be returned, got %d", len(resetTypes))
 	}
 }
+
+// TestManagerUpdateAfterSupportedResetTypes checks that the reset types read
+// from ActionInfo are not a change to the manager, so a later Update sends only
+// what the caller set, and that Reset still checks them without a new fetch.
+func TestManagerUpdateAfterSupportedResetTypes(t *testing.T) {
+	var result Manager
+	if err := json.Unmarshal([]byte(managerResetBody), &result); err != nil {
+		t.Fatalf("Error decoding JSON: %s", err)
+	}
+
+	// the last two responses let a fetch the cache should have saved show up
+	// in the checks below instead of panicking past the end of the list
+	testClient := &common.TestClient{
+		CustomReturnForActions: map[string][]interface{}{
+			http.MethodGet: {
+				getCall(managerResetActionInfo),
+				getCall(managerResetToDefaultsActionInfo),
+				getCall(managerResetActionInfo),
+				getCall(managerResetToDefaultsActionInfo),
+			},
+		},
+	}
+	result.SetClient(testClient)
+
+	if _, err := result.GetSupportedResetTypes(); err != nil {
+		t.Fatalf("Error getting reset types: %s", err)
+	}
+	if _, err := result.GetSupportedResetToDefaultsTypes(); err != nil {
+		t.Fatalf("Error getting reset to defaults types: %s", err)
+	}
+
+	result.DateTimeLocalOffset = "+05:00"
+	if err := result.Update(); err != nil {
+		t.Fatalf("Error making Update call: %s", err)
+	}
+
+	calls := testClient.CapturedCalls()
+	patch := calls[len(calls)-1]
+	if patch.Action != http.MethodPatch ||
+		!strings.Contains(patch.Payload, "DateTimeLocalOffset:+05:00") ||
+		strings.Contains(patch.Payload, "Actions") {
+		t.Errorf("Unexpected update call: %+v", patch)
+	}
+
+	// the ActionInfo lists On, ForceOn and ForceOff only
+	if err := result.Reset(GracefulRestartResetType); err == nil {
+		t.Error("Reset accepted a reset type the ActionInfo does not list")
+	}
+	resetTypes, err := result.GetSupportedResetTypes()
+	if err != nil || len(resetTypes) != 3 {
+		t.Errorf("Second GetSupportedResetTypes = %v, %v; want the 3 cached types", resetTypes, err)
+	}
+	resetToDefaultsTypes, err := result.GetSupportedResetToDefaultsTypes()
+	if err != nil || len(resetToDefaultsTypes) != 1 {
+		t.Errorf("Second GetSupportedResetToDefaultsTypes = %v, %v; want the 1 cached type", resetToDefaultsTypes, err)
+	}
+	if gets := testClient.CapturedCalls(); len(gets) != len(calls) {
+		t.Errorf("Expected no calls after Update, captured: %v", gets[len(calls):])
+	}
+}
