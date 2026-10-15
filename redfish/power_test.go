@@ -1059,3 +1059,54 @@ func TestCiscoPower(t *testing.T) {
 		t.Errorf("Expected UpperThresholdCritical to be 14.0: %v", voltage.UpperThresholdCritical)
 	}
 }
+
+// powerWithoutPowerControlBody is a Power resource that omits the optional
+// PowerControl property.
+var powerWithoutPowerControlBody = `{
+	"@odata.type": "#Power.v1_7_1.Power",
+	"@odata.id": "/redfish/v1/Chassis/1/Power",
+	"Id": "Power",
+	"Name": "Power",
+	"PowerSupplies": [
+		{
+			"@odata.id": "/redfish/v1/Chassis/1/Power#/PowerSupplies/0",
+			"MemberId": "0",
+			"Name": "PSU0",
+			"LastPowerOutputWatts": 412
+		}
+	],
+	"Actions": {
+		"#Power.PowerSupplyReset": {
+			"target": "/redfish/v1/Chassis/1/Power/Actions/Power.PowerSupplyReset"
+		}
+	}
+}`
+
+// TestPowerWithoutPowerControl tests that a Power resource without
+// PowerControl decodes with no PowerControl entries and keeps the rest.
+func TestPowerWithoutPowerControl(t *testing.T) {
+	var result Power
+	if err := json.Unmarshal([]byte(powerWithoutPowerControlBody), &result); err != nil {
+		t.Fatalf("Error decoding JSON: %s", err)
+	}
+
+	if len(result.PowerControl) != 0 {
+		t.Errorf("Expected no PowerControl, got %d", len(result.PowerControl))
+	}
+
+	if len(result.PowerSupplies) != 1 {
+		t.Fatalf("Expected 1 PowerSupply, got %d", len(result.PowerSupplies))
+	}
+
+	psu := result.PowerSupplies[0]
+	if psu.MemberID != "0" {
+		t.Errorf("Invalid PowerSupply MemberID: %s", psu.MemberID)
+	}
+	if psu.LastPowerOutputWatts == nil || *psu.LastPowerOutputWatts != 412 {
+		t.Errorf("Invalid PowerSupply LastPowerOutputWatts: %v", psu.LastPowerOutputWatts)
+	}
+
+	if result.powerSupplyResetTarget != "/redfish/v1/Chassis/1/Power/Actions/Power.PowerSupplyReset" {
+		t.Errorf("Invalid PowerSupplyReset target: %s", result.powerSupplyResetTarget)
+	}
+}

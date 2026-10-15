@@ -154,22 +154,26 @@ func (power *Power) UnmarshalJSON(b []byte) error {
 
 	*power = Power(t.temp)
 
-	powerControls := []PowerControl{}
-	err = json.Unmarshal(t.PowerControl, &powerControls)
-	if err != nil {
-		// Some Cisco implementations return a singular object instead of the
-		// expected array.
-		powerControl := PowerControl{}
-		err2 := json.Unmarshal(t.PowerControl, &powerControl)
-		if err2 != nil {
-			// Return the original error
-			return err
+	// PowerControl is optional. When the key is absent the raw message is
+	// empty, and decoding it would fail.
+	if len(t.PowerControl) > 0 {
+		powerControls := []PowerControl{}
+		err = json.Unmarshal(t.PowerControl, &powerControls)
+		if err != nil {
+			// Some Cisco implementations return a singular object instead of the
+			// expected array.
+			powerControl := PowerControl{}
+			err2 := json.Unmarshal(t.PowerControl, &powerControl)
+			if err2 != nil {
+				// Return the original error
+				return err
+			}
+
+			powerControls = append(powerControls, powerControl)
 		}
 
-		powerControls = append(powerControls, powerControl)
+		power.PowerControl = powerControls
 	}
-
-	power.PowerControl = powerControls
 
 	// Extract the links to other entities for later
 	power.powerSupplyResetTarget = t.Actions.PowerSupplyReset.Target
