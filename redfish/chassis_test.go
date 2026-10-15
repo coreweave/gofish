@@ -27,6 +27,7 @@ var chassisBody = `{
 		"Name": "Computer System Chassis",
 		"ChassisType": "RackMount",
 		"Manufacturer": "Redfish Computers",
+		"MaxPowerWatts": 1200,
 		"Model": "3500RX",
 		"SKU": "8675309",
 		"SerialNumber": "437XR1138R2",
@@ -192,6 +193,10 @@ func TestChassis(t *testing.T) {
 		t.Errorf("Received invalid chassis type: %s", result.ChassisType)
 	}
 
+	if result.MaxPowerWatts == nil || *result.MaxPowerWatts != 1200 {
+		t.Errorf("Received invalid max power watts: %v", result.MaxPowerWatts)
+	}
+
 	if result.Status.Health != common.OKHealth {
 		t.Errorf("Received invalid health status: %s", result.Status.Health)
 	}
@@ -284,6 +289,10 @@ func TestMinimumChassis(t *testing.T) {
 
 	if result.ChassisType != EnclosureChassisType {
 		t.Errorf("Received invalid chassis type: %s", result.ChassisType)
+	}
+
+	if result.MaxPowerWatts != nil {
+		t.Errorf("Expected nil max power watts when absent, got %v", *result.MaxPowerWatts)
 	}
 }
 

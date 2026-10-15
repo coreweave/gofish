@@ -288,7 +288,7 @@ type Chassis struct {
 	// not necessarily true.
 	Manufacturer string
 	// MaxPowerWatts shall contain the upper bound of the total power consumed by the chassis.
-	MaxPowerWatts float64
+	MaxPowerWatts *float64
 	// Memory shall contain a link to a resource collection of type MemoryCollection that represents memory in this
 	// chassis that belong to fabric-related resource pools.
 	memory string
