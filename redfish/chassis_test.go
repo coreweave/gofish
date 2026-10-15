@@ -193,8 +193,10 @@ func TestChassis(t *testing.T) {
 		t.Errorf("Received invalid chassis type: %s", result.ChassisType)
 	}
 
-	if result.MaxPowerWatts == nil || *result.MaxPowerWatts != 1200 {
-		t.Errorf("Received invalid max power watts: %v", result.MaxPowerWatts)
+	if result.MaxPowerWatts == nil {
+		t.Error("Expected max power watts to be set")
+	} else if *result.MaxPowerWatts != 1200 {
+		t.Errorf("Received invalid max power watts: %v", *result.MaxPowerWatts)
 	}
 
 	if result.Status.Health != common.OKHealth {
@@ -293,6 +295,21 @@ func TestMinimumChassis(t *testing.T) {
 
 	if result.MaxPowerWatts != nil {
 		t.Errorf("Expected nil max power watts when absent, got %v", *result.MaxPowerWatts)
+	}
+}
+
+// TestChassisZeroMaxPowerWatts ensures a reported 0 is distinguishable from absent.
+func TestChassisZeroMaxPowerWatts(t *testing.T) {
+	var result Chassis
+	err := json.NewDecoder(strings.NewReader(`{"Id": "1", "MaxPowerWatts": 0}`)).Decode(&result)
+	if err != nil {
+		t.Fatalf("Error decoding JSON: %s", err)
+	}
+
+	if result.MaxPowerWatts == nil {
+		t.Error("Expected max power watts to be set when reported as 0")
+	} else if *result.MaxPowerWatts != 0 {
+		t.Errorf("Received invalid max power watts: %v", *result.MaxPowerWatts)
 	}
 }
 
