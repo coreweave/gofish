@@ -63,6 +63,8 @@ type CoolingUnit struct {
 	leakDetection string
 	// Location shall contain the location information of the associated equipment.
 	Location common.Location
+	// LocationIndicatorActive is the state of the indicator used to physically identify or locate this resource.
+	LocationIndicatorActive *bool
 	// Manufacturer shall contain the name of the organization responsible for producing the equipment. This
 	// organization may be the entity from which the equipment is purchased, but this is not necessarily true.
 	Manufacturer string
@@ -208,6 +210,7 @@ func (coolingunit *CoolingUnit) Update() error {
 func (coolingunit *CoolingUnit) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"AssetTag",
+		"LocationIndicatorActive",
 		"UserLabel",
 	}
 
