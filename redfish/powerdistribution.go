@@ -268,8 +268,9 @@ func (powerDistribution *PowerDistribution) Update() error {
 
 // UpdateWithContext commits updates to this object's properties to the running system.
 func (powerDistribution *PowerDistribution) UpdateWithContext(ctx context.Context) error {
-	// Legacy transfer-related fields are retained for backwards compatibility;
-	// services may reject updates to those fields.
+	// Note: current definition (2023.3) only includes AssetTag and UserLabel.
+	// May have errors trying to set other values, but keeping in here for backwards
+	// compatibility.
 	readWriteFields := []string{
 		"AssetTag",
 		"LocationIndicatorActive",
