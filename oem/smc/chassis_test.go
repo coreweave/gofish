@@ -113,4 +113,10 @@ func TestChassis(t *testing.T) {
 	if result.BoardID != "0x1d14" {
 		t.Errorf("Unexpected board ID: %s", result.BoardID)
 	}
+
+	if result.MaxPowerWatts == nil {
+		t.Error("Expected max power watts to be set")
+	} else if *result.MaxPowerWatts != 18000 {
+		t.Errorf("Unexpected max power watts: %v", *result.MaxPowerWatts)
+	}
 }
