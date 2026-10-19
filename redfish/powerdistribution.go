@@ -118,6 +118,8 @@ type PowerDistribution struct {
 	FirmwareVersion string
 	// The location of the equipment.
 	Location common.Location
+	// LocationIndicatorActive is the state of the indicator used to physically identify or locate this resource.
+	LocationIndicatorActive *bool
 	// A link to the power input circuits for this equipment.
 	mains string
 	// The redundancy information for the mains (input) circuits for this equipment.
@@ -271,6 +273,7 @@ func (powerDistribution *PowerDistribution) UpdateWithContext(ctx context.Contex
 	// compatibility.
 	readWriteFields := []string{
 		"AssetTag",
+		"LocationIndicatorActive",
 		"UserLabel",
 		"ActiveMainsId",
 		"AutoTransferEnabled",
