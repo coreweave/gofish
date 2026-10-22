@@ -48,7 +48,7 @@ type EndpointGroup struct {
 	// TARGET PORT GROUP field in the REPORT TARGET PORT GROUPS response and the TARGET PORT GROUP field in an INQUIRY
 	// VPD page 85 response, type 5h identifier. See the INCITS SAM-5 specification. This property may not be present
 	// if the endpoint group does not represent a SCSI target group.
-	TargetEndpointGroupIdentifier int
+	TargetEndpointGroupIdentifier *int `json:",omitempty"`
 	// rawData holds the original serialized JSON so we can compare updates.
 	rawData []byte
 

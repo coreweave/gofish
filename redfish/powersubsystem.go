@@ -14,10 +14,10 @@ import (
 // PowerAllocation shall contain the set of properties describing the allocation of power for a subsystem.
 type PowerAllocation struct {
 	// AllocatedWatts shall represent the total power currently allocated or budgeted to this subsystem.
-	AllocatedWatts float64
+	AllocatedWatts *float64 `json:",omitempty"`
 	// RequestedWatts shall represent the amount of power, in watt units, that the subsystem currently requests to be
 	// budgeted for future use.
-	RequestedWatts float64
+	RequestedWatts *float64 `json:",omitempty"`
 }
 
 // PowerSubsystem shall represent a power subsystem for a Redfish implementation.
@@ -32,7 +32,7 @@ type PowerSubsystem struct {
 	// Batteries shall contain a link to a resource collection of type BatteryCollection.
 	batteries string
 	// CapacityWatts shall represent the total power capacity that can be allocated to this subsystem.
-	CapacityWatts float64
+	CapacityWatts *float64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// LocationIndicatorActive in the resource that represents the functional view of this Chassis, such as a PowerSubsystem

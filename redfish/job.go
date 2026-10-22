@@ -124,7 +124,7 @@ type Job struct {
 	// PercentComplete shall indicate the completion progress of the job,
 	// reported in percent of completion. If the job has not been started,
 	// the value shall be zero.
-	PercentComplete int
+	PercentComplete *int `json:",omitempty"`
 	// Schedule shall contain the scheduling details for this job and the
 	// recurrence frequency for future instances of this job.
 	Schedule common.Schedule

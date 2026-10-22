@@ -35,7 +35,7 @@ type Reservoir struct {
 	// Assembly shall contain a link to a resource of type Assembly.
 	assembly string
 	// CapacityLiters shall contain the capacity of the reservoir in liter units.
-	CapacityLiters float64
+	CapacityLiters *float64 `json:",omitempty"`
 	// Coolant shall contain details regarding the coolant contained or used by this unit.
 	Coolant Coolant
 	// Description provides a description of this resource.

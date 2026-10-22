@@ -77,7 +77,7 @@ const (
 
 type SPDM struct {
 	// Slot identifier of the certificate.
-	SlotID int64 `json:"SlotId"`
+	SlotID *int64 `json:"SlotId,omitempty"`
 }
 
 type CertificateIdentifier struct {

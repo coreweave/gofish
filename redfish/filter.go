@@ -51,7 +51,7 @@ type Filter struct {
 	PhysicalContext PhysicalContext
 	// RatedServiceHours shall contain the number of hours of service that the filter or filter media is rated to
 	// provide before servicing or replacement is necessary.
-	RatedServiceHours float64
+	RatedServiceHours *float64 `json:",omitempty"`
 	// Replaceable shall indicate whether this component can be independently replaced as allowed by the vendor's
 	// replacement policy. A value of 'false' indicates the component needs to be replaced by policy as part of another
 	// component. If the 'LocationType' property of this component contains 'Embedded', this property shall contain
@@ -60,7 +60,7 @@ type Filter struct {
 	// SerialNumber shall contain the serial number as defined by the manufacturer for this filter.
 	SerialNumber string
 	// ServiceHours shall contain the number of hours of service that the filter or filter media has provided.
-	ServiceHours float64
+	ServiceHours *float64 `json:",omitempty"`
 	// ServicedDate shall contain the date the filter or filter media was put into active service.
 	ServicedDate string
 	// SparePartNumber shall contain the spare or replacement part number as defined by the manufacturer for this

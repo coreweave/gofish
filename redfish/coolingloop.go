@@ -30,22 +30,22 @@ type Coolant struct {
 	AdditiveName string
 	// AdditivePercent shall contain the percent of additives, '0' to '100', by volume, contained in the coolant
 	// mixture.
-	AdditivePercent float64
+	AdditivePercent *float64 `json:",omitempty"`
 	// CoolantType shall contain the type of coolant used by this resource.
 	CoolantType CoolantType
 	// DensityKgPerCubicMeter shall contain the density of the coolant, in kilograms per cubic meter units, as measured
 	// at room temperature (20-25 degrees C) and atmospheric pressure.
-	DensityKgPerCubicMeter float64
+	DensityKgPerCubicMeter *float64 `json:",omitempty"`
 	// RatedServiceHours shall contain the number of hours of service that the coolant is rated to provide before
 	// servicing or replacement is necessary.
-	RatedServiceHours float64
+	RatedServiceHours *float64 `json:",omitempty"`
 	// ServiceHours shall contain the number of hours of service that the coolant has provided.
-	ServiceHours float64
+	ServiceHours *float64 `json:",omitempty"`
 	// ServicedDate shall contain the date the coolant was last serviced or tested for quality.
 	ServicedDate string
 	// SpecificHeatkJoulesPerKgK shall contain the specific heat capacity of the coolant, in kilojoules per kilogram
 	// per degree kelvin units, as measured at room temperature (20-25 degrees C) and atmospheric pressure.
-	SpecificHeatkJoulesPerKgK float64
+	SpecificHeatkJoulesPerKgK *float64 `json:",omitempty"`
 }
 
 // CoolingLoop shall represent a cooling loop for a Redfish implementation.
@@ -81,9 +81,9 @@ type CoolingLoop struct {
 	// contains the primary coolant connectors for this equipment.
 	primaryCoolantConnectors string
 	// RatedFlowLitersPerMinute shall contain the rated liquid flow, in liters per minute units, for this cooling loop.
-	RatedFlowLitersPerMinute float64
+	RatedFlowLitersPerMinute *float64 `json:",omitempty"`
 	// RatedPressurekPa shall contain the rated maximum pressure, in kilopascal units, for this cooling loop.
-	RatedPressurekPa float64
+	RatedPressurekPa *float64 `json:",omitempty"`
 	// SecondaryCoolantConnectors shall contain a link to a resource collection of type CoolantConnectorCollection that
 	// contains the secondary coolant connectors for this equipment.
 	secondaryCoolantConnectors string

@@ -73,14 +73,14 @@ type ExternalAccountProvider struct {
 	// does not have a priority assignment or two or more external providers have the same priority, the behavior shall
 	// be determined by the Redfish service. The priority is used to determine the order of authentication and
 	// authorization for each external account provider.
-	Priority int
+	Priority *int `json:",omitempty"`
 	// RemoteRoleMapping shall contain a set of the mapping rules that are used to convert the external account
 	// providers account information to the local Redfish role.
 	RemoteRoleMapping []RoleMapping
 	// Retries shall contain the number of retries to attempt a connection to an address in the ServiceAddresses
 	// property before attempting a connection to the next address in the array or giving up. If this property is not
 	// present, the service has internal policies for handling retries.
-	Retries int
+	Retries *int `json:",omitempty"`
 	// ServiceAddresses shall contain the addresses of the account providers to which this external account provider
 	// links. The format of this field depends on the type of external account provider. Each item in the array shall
 	// contain a single address. Services can define their own behavior for managing multiple addresses.
@@ -93,7 +93,7 @@ type ExternalAccountProvider struct {
 	// TimeoutSeconds shall contain the period of time, in seconds, this account service will wait for a response from
 	// an address of a user account provider before timing out. If this property is not present, the service has
 	// internal policies for handling timeouts.
-	TimeoutSeconds int
+	TimeoutSeconds *int `json:",omitempty"`
 	// rawData holds the original serialized JSON so we can compare updates.
 	rawData []byte
 }

@@ -102,7 +102,7 @@ type Task struct {
 	// PercentComplete shall indicate the completion progress of the task,
 	// reported in percent of completion. If the task has not been started, the
 	// value shall be zero.
-	PercentComplete int
+	PercentComplete *int `json:",omitempty"`
 	// StartTime shall indicate the time the task was started.
 	StartTime string
 	// SubTasks shall contain a link to a resource collection of type TaskCollection. This property shall not be

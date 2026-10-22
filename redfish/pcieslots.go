@@ -39,7 +39,7 @@ type PCIeSlot struct {
 	// HotPluggable is an indication of whether this PCIe slot supports hotplug.
 	HotPluggable bool
 	// Lanes is the number of PCIe lanes supported by this slot.
-	Lanes int
+	Lanes *int `json:",omitempty"`
 	// Location is the location of the PCIe slot.
 	Location common.Location
 	// LocationIndicatorActive is an indicator allowing an operator to physically locate this resource.

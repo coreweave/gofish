@@ -39,9 +39,9 @@ const (
 // The efficiency ratings of this power supply.
 type EfficiencyRating struct {
 	// The rated efficiency of this power supply at the specified load.
-	EfficiencyPercent float32
+	EfficiencyPercent *float32 `json:",omitempty"`
 	// The electrical load for this rating.
-	LoadPercent float32
+	LoadPercent *float32 `json:",omitempty"`
 }
 
 // The input ranges that the power supply can use.
@@ -55,7 +55,7 @@ type PowerSupplyInputRange struct {
 // The input ranges that the power supply can use.
 type OutputRail struct {
 	// The nominal voltage of this output power rail.
-	NominalVoltage float32
+	NominalVoltage *float32 `json:",omitempty"`
 	// The area or device to which this power rail applies.
 	PhysicalContext common.PhysicalContext
 }
@@ -117,7 +117,7 @@ type PowerSupplyUnit struct {
 	// The type of plug according to NEMA, IEC, or regional standards.
 	PlugType PlugType
 	// The maximum capacity of this power supply.
-	PowerCapacityWatts float32
+	PowerCapacityWatts *float32 `json:",omitempty"`
 	// The power supply type (AC or DC).
 	PowerSupplyType PowerSupplyUnitType
 	// The production or manufacturing date of this power supply.

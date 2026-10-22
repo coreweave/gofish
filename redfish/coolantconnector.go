@@ -78,12 +78,12 @@ type CoolantConnector struct {
 	LocationIndicatorActive *bool
 	// RatedFlowLitersPerMinute shall contain the rated liquid flow, in liters per minute units, for this loop
 	// interface.
-	RatedFlowLitersPerMinute float64
+	RatedFlowLitersPerMinute *float64 `json:",omitempty"`
 	// RatedFlowPressurekPa shall contain the pressure, in kilopascal units, that the rated liquid flow is valid for
 	// this connector.
-	RatedFlowPressurekPa float64
+	RatedFlowPressurekPa *float64 `json:",omitempty"`
 	// RatedPressurekPa shall contain the rated maximum pressure, in kilopascal units, for this connector.
-	RatedPressurekPa float64
+	RatedPressurekPa *float64 `json:",omitempty"`
 	// ReturnPressurekPa shall contain the pressure, in kilopascal units, for the outflow or return connection to the
 	// cooling loop. The value of the DataSourceUri property, if present, shall reference a resource of type Sensor
 	// with the ReadingType property containing the value 'PressurekPa'.

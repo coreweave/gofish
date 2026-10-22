@@ -344,8 +344,8 @@ func (pm *PowerMetric) UnmarshalJSON(b []byte) error {
 	// Extract the links to other entities for later
 	*pm = PowerMetric(t.temp)
 
-	if t.IntervalInMin != nil {
-		val := int(math.Round(float64(*toFloat32(t.IntervalInMin))))
+	if interval := toFloat32(t.IntervalInMin); interval != nil {
+		val := int(math.Round(float64(*interval)))
 		pm.IntervalInMin = &val
 	}
 	pm.MaxConsumedWatts = toFloat32(t.MaxConsumedWatts)
@@ -660,9 +660,11 @@ func toFloat32(val any) *float32 {
 	switch valu := val.(type) {
 	case string:
 		fl, err := strconv.ParseFloat(valu, 32)
-		if err == nil {
-			ret = float32(fl)
+		if err != nil {
+			// Cisco BMCs send "N/A" for unset thresholds; treat it as absent, not 0.
+			return nil
 		}
+		ret = float32(fl)
 	case int:
 		ret = float32(valu)
 	case float32:
@@ -678,6 +680,8 @@ func toFloat32(val any) *float32 {
 		} else {
 			ret = conv
 		}
+	default:
+		return nil
 	}
 
 	return &ret

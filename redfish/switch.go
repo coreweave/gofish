@@ -39,12 +39,12 @@ type Switch struct {
 	certificates string
 	// CurrentBandwidthGbps shall contain the internal unidirectional bandwidth of this switch currently negotiated and
 	// running.
-	CurrentBandwidthGbps float64
+	CurrentBandwidthGbps *float64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// DomainID shall contain the domain ID for this switch. This property has a scope of uniqueness within the fabric
 	// of which the switch is a member.
-	DomainID int
+	DomainID *int `json:",omitempty"`
 	// Enabled shall indicate if this switch is enabled.
 	Enabled bool
 	// EnvironmentMetrics shall contain a link to a resource of type EnvironmentMetrics that specifies the environment
@@ -68,7 +68,7 @@ type Switch struct {
 	// MaxBandwidthGbps shall contain the maximum internal unidirectional bandwidth this switch is capable of being
 	// configured. If capable of autonegotiation, the switch shall attempt to negotiate to the specified maximum
 	// bandwidth.
-	MaxBandwidthGbps float64
+	MaxBandwidthGbps *float64 `json:",omitempty"`
 	// Metrics shall contain a link to the metrics associated with this switch.
 	metrics string
 	// Model shall contain the manufacturer-provided model information of this switch.
@@ -102,7 +102,7 @@ type Switch struct {
 	SwitchType common.Protocol
 	// TotalSwitchWidth shall contain the number of physical transport lanes, phys, or other physical transport links
 	// that this switch contains. For PCIe, this value shall be the lane count.
-	TotalSwitchWidth int
+	TotalSwitchWidth *int `json:",omitempty"`
 	// UUID shall contain a universally unique identifier number for the switch.
 	UUID string
 	// rawData holds the original serialized JSON so we can compare updates.

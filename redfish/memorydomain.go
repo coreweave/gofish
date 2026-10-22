@@ -38,14 +38,14 @@ type MemoryDomain struct {
 	InterleavableMemorySets []MemorySet
 	// MemoryChunkIncrementMiB shall contain the incremental size, from MemoryChunkIncrementMiB, allowed for a memory
 	// chunk within this domain in mebibytes (MiB).
-	MemoryChunkIncrementMiB int
+	MemoryChunkIncrementMiB *int `json:",omitempty"`
 	// memoryChunks shall be a link to a collection of type MemoryChunkCollection.
 	memoryChunks string
 	// MemorySizeMiB shall contain the total size of the memory domain in mebibytes (MiB).
-	MemorySizeMiB int
+	MemorySizeMiB *int `json:",omitempty"`
 	// MinMemoryChunkSizeMiB shall contain the minimum size allowed for a memory chunk within this domain in mebibytes
 	// (MiB).
-	MinMemoryChunkSizeMiB int
+	MinMemoryChunkSizeMiB *int `json:",omitempty"`
 	// Status shall contain any status or health properties of the resource.
 	Status common.Status
 

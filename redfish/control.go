@@ -91,10 +91,10 @@ type Control struct {
 	ODataType string `json:"@odata.type"`
 	// AllowableMax shall indicate the maximum possible value of the SetPoint or SettingMax properties for this
 	// control. Services shall not accept values for SetPoint or SettingMax above this value.
-	AllowableMax float64
+	AllowableMax *float64 `json:",omitempty"`
 	// AllowableMin shall indicate the minimum possible value of the SetPoint or SettingMin properties for this
 	// control. Services shall not accept values for SetPoint or SettingMin below this value.
-	AllowableMin float64
+	AllowableMin *float64 `json:",omitempty"`
 	// AllowableNumericValues shall contain the supported values for this control. The units shall follow the value of
 	// SetPointUnits. This property should only be present when the set point or range has a limited set of supported
 	// values that cannot be accurately described using the Increment property.
@@ -106,7 +106,7 @@ type Control struct {
 	AssociatedSensorsCount int `json:"AssociatedSensors@odata.count"`
 	// ControlDelaySeconds shall contain the time in seconds that will elapse after the control value deviates above or
 	// below the value of SetPoint before the control will activate.
-	ControlDelaySeconds float64
+	ControlDelaySeconds *float64 `json:",omitempty"`
 	// ControlLoop shall contain the details for the control loop described by this resource.
 	ControlLoop ControlLoop
 	// ControlMode shall contain the operating mode of the control.
@@ -115,18 +115,18 @@ type Control struct {
 	ControlType ControlType
 	// DeadBand shall contain the maximum deviation value allowed above or below the value of SetPoint before the
 	// control will activate.
-	DeadBand float64
+	DeadBand *float64 `json:",omitempty"`
 	// DefaultSetPoint shall contain the default set point control value. The units shall follow the value of
 	// SetPointUnits. Services apply this value to the SetPoint property under certain conditions, such as a reset of
 	// the manager or a ResetToDefaults action.
-	DefaultSetPoint float64
+	DefaultSetPoint *float64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// Implementation shall contain the implementation of the control.
 	Implementation ControlImplementationType
 	// Increment shall contain the smallest change allowed to the value of the SetPoint, SettingMin, or SettingMax
 	// properties. The units shall follow the value of SetPointUnits.
-	Increment float64
+	Increment *float64 `json:",omitempty"`
 	// Location shall indicate the location information for this control.
 	Location common.Location
 	// PhysicalContext shall contain a description of the affected component or region within the equipment to which
@@ -147,11 +147,11 @@ type Control struct {
 	// SetPoint shall contain the desired set point control value. The units shall follow the value of SetPointUnits.
 	// If the DefaultSetPoint property is not supported and if a user-defined set point is not configured, the property
 	// may contain 'null' in responses.
-	SetPoint float64
+	SetPoint *float64 `json:",omitempty"`
 	// SetPointAccuracy shall contain the accuracy of the value of the SetPoint for this control. The value shall be
 	// the absolute value of the maximum deviation of the SetPoint from its actual value. The value shall be in units
 	// that follow the SetPointUnits for this control.
-	SetPointAccuracy float64
+	SetPointAccuracy *float64 `json:",omitempty"`
 	// SetPointType shall contain the type of set point definitions used to describe this control.
 	SetPointType SetPointType
 	// SetPointUnits shall contain the units of the control's set point.
@@ -160,10 +160,10 @@ type Control struct {
 	SetPointUpdateTime string
 	// SettingMax shall contain the maximum desired set point within the acceptable range. The service shall reject
 	// values greater than the value of AllowableMax. The units shall follow the value of SetPointUnits.
-	SettingMax float64
+	SettingMax *float64 `json:",omitempty"`
 	// SettingMin shall contain the minimum desired set point within the acceptable range. The service shall reject
 	// values less than the value of AllowableMin. The units shall follow the value of SetPointUnits.
-	SettingMin float64
+	SettingMin *float64 `json:",omitempty"`
 	// Status shall contain any status or health properties of the resource.
 	Status common.Status
 	// rawData holds the original serialized JSON so we can compare updates.
@@ -262,10 +262,10 @@ func (control *Control) ResetToDefaultWithContext(ctx context.Context) error {
 type ControlExcerpt struct {
 	// AllowableMax shall indicate the maximum possible value of the SetPoint or SettingMax properties for this
 	// control. Services shall not accept values for SetPoint or SettingMax above this value.
-	AllowableMax float64
+	AllowableMax *float64 `json:",omitempty"`
 	// AllowableMin shall indicate the minimum possible value of the SetPoint or SettingMin properties for this
 	// control. Services shall not accept values for SetPoint or SettingMin below this value.
-	AllowableMin float64
+	AllowableMin *float64 `json:",omitempty"`
 	// ControlMode shall contain the operating mode of the control.
 	ControlMode ControlMode
 	// DataSourceURI shall contain a URI to the resource that provides the source of the excerpt contained within this
@@ -274,7 +274,7 @@ type ControlExcerpt struct {
 	DataSourceURI string
 	// Reading shall contain the value of the Reading property of the Sensor resource directly associated with this
 	// control. This property shall not be present if multiple sensors are associated with a single control.
-	Reading float64
+	Reading *float64 `json:",omitempty"`
 	// ReadingUnits shall contain the units of the sensor's reading and thresholds. This property shall not be present
 	// if multiple sensors are associated with a single control.
 	ReadingUnits string
@@ -286,21 +286,21 @@ type ControlLoop struct {
 	// last changed.
 	CoefficientUpdateTime string
 	// Differential shall contain the coefficient for the differential factor in a control loop.
-	Differential float64
+	Differential *float64 `json:",omitempty"`
 	// Integral shall contain the coefficient for the integral factor in a control loop.
-	Integral float64
+	Integral *float64 `json:",omitempty"`
 	// Proportional shall contain the coefficient for the proportional factor in a control loop.
-	Proportional float64
+	Proportional *float64 `json:",omitempty"`
 }
 
 // ControlRangeExcerpt shall represent a control point for a Redfish implementation.
 type ControlRangeExcerpt struct {
 	// AllowableMax shall indicate the maximum possible value of the SetPoint or SettingMax properties for this
 	// control. Services shall not accept values for SetPoint or SettingMax above this value.
-	AllowableMax float64
+	AllowableMax *float64 `json:",omitempty"`
 	// AllowableMin shall indicate the minimum possible value of the SetPoint or SettingMin properties for this
 	// control. Services shall not accept values for SetPoint or SettingMin below this value.
-	AllowableMin float64
+	AllowableMin *float64 `json:",omitempty"`
 	// AllowableNumericValues shall contain the supported values for this control. The units shall follow the value of
 	// SetPointUnits. This property should only be present when the set point or range has a limited set of supported
 	// values that cannot be accurately described using the Increment property.
@@ -313,26 +313,26 @@ type ControlRangeExcerpt struct {
 	DataSourceURI string
 	// Reading shall contain the value of the Reading property of the Sensor resource directly associated with this
 	// control. This property shall not be present if multiple sensors are associated with a single control.
-	Reading float64
+	Reading *float64 `json:",omitempty"`
 	// ReadingUnits shall contain the units of the sensor's reading and thresholds. This property shall not be present
 	// if multiple sensors are associated with a single control.
 	ReadingUnits string
 	// SettingMax shall contain the maximum desired set point within the acceptable range. The service shall reject
 	// values greater than the value of AllowableMax. The units shall follow the value of SetPointUnits.
-	SettingMax float64
+	SettingMax *float64 `json:",omitempty"`
 	// SettingMin shall contain the minimum desired set point within the acceptable range. The service shall reject
 	// values less than the value of AllowableMin. The units shall follow the value of SetPointUnits.
-	SettingMin float64
+	SettingMin *float64 `json:",omitempty"`
 }
 
 // ControlSingleExcerpt shall represent a control point for a Redfish implementation.
 type ControlSingleExcerpt struct {
 	// AllowableMax shall indicate the maximum possible value of the SetPoint or SettingMax properties for this
 	// control. Services shall not accept values for SetPoint or SettingMax above this value.
-	AllowableMax float64
+	AllowableMax *float64 `json:",omitempty"`
 	// AllowableMin shall indicate the minimum possible value of the SetPoint or SettingMin properties for this
 	// control. Services shall not accept values for SetPoint or SettingMin below this value.
-	AllowableMin float64
+	AllowableMin *float64 `json:",omitempty"`
 	// ControlMode shall contain the operating mode of the control.
 	ControlMode ControlMode
 	// DataSourceURI shall contain a URI to the resource that provides the source of the excerpt contained within this
@@ -342,10 +342,10 @@ type ControlSingleExcerpt struct {
 	// DefaultSetPoint shall contain the default set point control value. The units shall follow the value of
 	// SetPointUnits. Services apply this value to the SetPoint property under certain conditions, such as a reset of
 	// the manager or a ResetToDefaults action.
-	DefaultSetPoint float64
+	DefaultSetPoint *float64 `json:",omitempty"`
 	// Reading shall contain the value of the Reading property of the Sensor resource directly associated with this
 	// control. This property shall not be present if multiple sensors are associated with a single control.
-	Reading float64
+	Reading *float64 `json:",omitempty"`
 	// ReadingUnits shall contain the units of the sensor's reading and thresholds. This property shall not be present
 	// if multiple sensors are associated with a single control.
 	ReadingUnits string

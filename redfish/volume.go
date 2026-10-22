@@ -34,11 +34,11 @@ const (
 
 type LBAFormat struct {
 	// LBADataSizeBytes shall be the LBA data size reported in bytes.
-	LBADataSizeBytes int
+	LBADataSizeBytes *int `json:",omitempty"`
 	// LBAFormatType shall be the LBA format type. This property is intended for capabilities instrumentation.
 	LBAFormatType string
 	// LBAMetadataSizeBytes shall be the LBA metadata size reported in bytes.
-	LBAMetadataSizeBytes int
+	LBAMetadataSizeBytes *int `json:",omitempty"`
 	// RelativePerformance shall be the LBA Relative Performance type. This field indicates the relative performance of
 	// the LBA format indicated relative to other LBA formats supported by the controller. This property is intended
 	// for capabilities instrumentation.
@@ -78,7 +78,7 @@ type NVMeNamespaceProperties struct {
 	// NumberLBAFormats shall contain the number of LBA data size and metadata size combinations supported by this
 	// namespace. The value of this property is between 0 and 16. LBA formats with an index set beyond this value will
 	// not be supported.
-	NumberLBAFormats int
+	NumberLBAFormats *int `json:",omitempty"`
 	// Type shall identify the type of namespace.
 	Type string
 }
@@ -110,7 +110,7 @@ type Operation struct {
 	// Operation shall contain the type of the operation.
 	Operation string
 	// PercentageComplete The percentage of the operation that has been completed.
-	PercentageComplete int
+	PercentageComplete *int `json:",omitempty"`
 }
 
 // RAIDType is
@@ -416,11 +416,11 @@ type Volume struct {
 	// AllocatedPools shall contain references to all storage pools allocated from this volume.
 	AllocatedPools string
 	// BlockSizeBytes shall contain size of the smallest addressable unit of the associated volume.
-	BlockSizeBytes int
+	BlockSizeBytes *int `json:",omitempty"`
 	// Capacity Information about the utilization of capacity allocated to this storage volume.
 	Capacity string
 	// CapacityBytes shall contain the size in bytes of the associated volume.
-	CapacityBytes int
+	CapacityBytes *int `json:",omitempty"`
 	// CapacitySources Fully or partially consumed storage from a source resource. Each entry provides capacity
 	// allocation information from a named source resource. Uses the Swordfish CapacitySource.
 	CapacitySources json.RawMessage
@@ -460,17 +460,17 @@ type Volume struct {
 	IsBootCapable bool
 	// LogicalUnitNumber shall contain host-visible LogicalUnitNumber assigned to this Volume. This property shall only
 	// be used when in a single connect configuration and no StorageGroup configuration is used.
-	LogicalUnitNumber int
+	LogicalUnitNumber *int `json:",omitempty"`
 	// LowSpaceWarningThresholdPercents shall be triggered: Across all CapacitySources entries, percent =
 	// (SUM(AllocatedBytes) - SUM(ConsumedBytes))/SUM(AllocatedBytes).
 	LowSpaceWarningThresholdPercents []string
 	// Manufacturer shall contain a value that represents the manufacturer or implementer of the storage volume.
 	Manufacturer string
 	// MaxBlockSizeBytes shall contain size of the largest addressable unit of this storage volume.
-	MaxBlockSizeBytes int
+	MaxBlockSizeBytes *int `json:",omitempty"`
 	// MediaSpanCount shall indicate the number of media elements used per span in the secondary RAID for a
 	// hierarchical RAID type.
-	MediaSpanCount int
+	MediaSpanCount *int `json:",omitempty"`
 	// Metrics shall contain a link to a resource of type VolumeMetrics that specifies the metrics for this volume. IO
 	// metrics are reported in the IOStatistics property.
 	// Uses Swordfish VolumeMetrics.
@@ -486,7 +486,7 @@ type Volume struct {
 	Operations []common.Operations
 	// OptimumIOSizeBytes shall contain the optimum IO size to use when performing IO on this volume. For logical
 	// disks, this is the stripe size. For physical disks, this describes the physical sector size.
-	OptimumIOSizeBytes int
+	OptimumIOSizeBytes *int `json:",omitempty"`
 	// ProvisioningPolicy shall specify the volume's supported storage allocation policy.
 	ProvisioningPolicy ProvisioningPolicy
 	// RAIDType shall contain the RAID type of the associated Volume.
@@ -495,10 +495,10 @@ type Volume struct {
 	ReadCachePolicy ReadCachePolicyType
 	// RecoverableCapacitySourceCount The value is the number of available capacity source resources currently
 	// available in the event that an equivalent capacity source resource fails.
-	RecoverableCapacitySourceCount int
+	RecoverableCapacitySourceCount *int `json:",omitempty"`
 	// RemainingCapacityPercent shall return {[(SUM(AllocatedBytes) - SUM(ConsumedBytes)]/SUM(AllocatedBytes)}*100
 	// represented as an integer value.
-	RemainingCapacityPercent int
+	RemainingCapacityPercent *int `json:",omitempty"`
 	// RemoteReplicaTargets shall reference the URIs to the remote target replicas that are sourced by this replica.
 	// Remote indicates that the replica is managed by a separate Swordfish service instance.
 	RemoteReplicaTargets []string
@@ -517,7 +517,7 @@ type Volume struct {
 	Status common.Status
 	// StripSizeBytes The number of consecutively addressed virtual disk blocks (bytes) mapped to consecutively
 	// addressed blocks on a single member extent of a disk array. Synonym for stripe depth and chunk size.
-	StripSizeBytes int
+	StripSizeBytes *int `json:",omitempty"`
 	// VolumeUsage shall contain the volume usage type for the Volume.
 	VolumeUsage string
 	// WriteCachePolicy shall contain a boolean indicator of the write cache policy for the Volume.

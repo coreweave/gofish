@@ -74,38 +74,38 @@ type NetworkDeviceFunctionMetrics struct {
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
 	// RXAvgQueueDepthPercent shall contain the average RX queue depth as a percentage, typically '0' to '100'.
-	RXAvgQueueDepthPercent float64
+	RXAvgQueueDepthPercent *float64 `json:",omitempty"`
 	// RXBytes shall contain the total number of bytes received on a network function, inclusive of all protocol
 	// overhead.
-	RXBytes int
+	RXBytes *int `json:",omitempty"`
 	// RXFrames shall contain the total number of frames received on a network function.
-	RXFrames int
+	RXFrames *int `json:",omitempty"`
 	// RXMulticastFrames shall contain the total number of good multicast frames received on a network function since
 	// reset, including host and remote management passthrough traffic.
-	RXMulticastFrames int
+	RXMulticastFrames *int `json:",omitempty"`
 	// RXQueuesEmpty shall indicate whether nothing is in a network function's RX queues to DMA.
 	RXQueuesEmpty bool
 	// RXQueuesFull shall contain the number of RX queues that are full.
-	RXQueuesFull int
+	RXQueuesFull *int `json:",omitempty"`
 	// RXUnicastFrames shall contain the total number of good unicast frames received on a network function since
 	// reset.
-	RXUnicastFrames int
+	RXUnicastFrames *int `json:",omitempty"`
 	// TXAvgQueueDepthPercent shall contain the average TX queue depth as a percentage, typically '0' to '100'.
-	TXAvgQueueDepthPercent float64
+	TXAvgQueueDepthPercent *float64 `json:",omitempty"`
 	// TXBytes shall contain the total number of bytes sent on a network function, inclusive of all protocol overhead.
-	TXBytes int
+	TXBytes *int `json:",omitempty"`
 	// TXFrames shall contain the total number of frames sent on a network function.
-	TXFrames int
+	TXFrames *int `json:",omitempty"`
 	// TXMulticastFrames shall contain the total number of good multicast frames transmitted on a network function
 	// since reset, including host and remote management passthrough traffic.
-	TXMulticastFrames int
+	TXMulticastFrames *int `json:",omitempty"`
 	// TXQueuesEmpty shall indicate whether all TX queues for a network function are empty.
 	TXQueuesEmpty bool
 	// TXQueuesFull shall contain the number of TX queues that are full.
-	TXQueuesFull int
+	TXQueuesFull *int `json:",omitempty"`
 	// TXUnicastFrames shall contain the total number of good unicast frames transmitted on a network function since
 	// reset, including host and remote management passthrough traffic.
-	TXUnicastFrames int
+	TXUnicastFrames *int `json:",omitempty"`
 }
 
 // GetNetworkDeviceFunctionMetrics will get a NetworkDeviceFunctionMetrics instance from the service.

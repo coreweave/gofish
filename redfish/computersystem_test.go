@@ -390,8 +390,10 @@ func TestComputerSystem(t *testing.T) { //nolint
 	if result.PowerState != OnPowerState {
 		t.Errorf("Received invalid power status: %s", result.PowerState)
 	}
-	if result.Boot.AutomaticRetryAttempts != 3 {
-		t.Errorf("Received invalid boot automatic retry attempts: %d", result.Boot.AutomaticRetryAttempts)
+	if result.Boot.AutomaticRetryAttempts == nil {
+		t.Error("Expected Boot.AutomaticRetryAttempts to be set")
+	} else if *result.Boot.AutomaticRetryAttempts != 3 {
+		t.Errorf("Received invalid boot automatic retry attempts: %d", *result.Boot.AutomaticRetryAttempts)
 	}
 
 	if result.Boot.AutomaticRetryConfig != "Disabled" {
@@ -422,21 +424,27 @@ func TestComputerSystem(t *testing.T) { //nolint
 		t.Errorf("Received invalid processor summary state: %s", result.ProcessorSummary.Status.State)
 	}
 
-	if result.ProcessorSummary.Count != 2 {
-		t.Errorf("Received invalid processor count: %d", result.ProcessorSummary.Count)
+	if result.ProcessorSummary.Count == nil {
+		t.Error("Expected ProcessorSummary.Count to be set")
+	} else if *result.ProcessorSummary.Count != 2 {
+		t.Errorf("Received invalid processor count: %d", *result.ProcessorSummary.Count)
 	}
 
 	if result.MemorySummary.Status.State != common.EnabledState {
 		t.Errorf("Received invalid memory summary state: %s", result.MemorySummary.Status.State)
 	}
 
-	if result.MemorySummary.TotalSystemMemoryGiB != 65536 {
-		t.Errorf("Received invalid total system memory: %f", result.MemorySummary.TotalSystemMemoryGiB)
+	if result.MemorySummary.TotalSystemMemoryGiB == nil {
+		t.Error("Expected MemorySummary.TotalSystemMemoryGiB to be set")
+	} else if *result.MemorySummary.TotalSystemMemoryGiB != 65536 {
+		t.Errorf("Received invalid total system memory: %f", *result.MemorySummary.TotalSystemMemoryGiB)
 	}
 
-	if result.MemorySummary.TotalSystemPersistentMemoryGiB != 262144 {
+	if result.MemorySummary.TotalSystemPersistentMemoryGiB == nil {
+		t.Error("Expected MemorySummary.TotalSystemPersistentMemoryGiB to be set")
+	} else if *result.MemorySummary.TotalSystemPersistentMemoryGiB != 262144 {
 		t.Errorf("Received invalid total system persistent memory: %f",
-			result.MemorySummary.TotalSystemPersistentMemoryGiB)
+			*result.MemorySummary.TotalSystemPersistentMemoryGiB)
 	}
 
 	if len(result.TrustedModules) != 1 {
@@ -513,8 +521,10 @@ func TestComputerSystem(t *testing.T) { //nolint
 	if result.BootProgress.LastStateTime != "2026-01-08T23:29:18+00:00" {
 		t.Errorf("Received invalid boot progress last state time: %s", result.BootProgress.LastStateTime)
 	}
-	if result.BootProgress.LastBootTimeSeconds != 45.5 {
-		t.Errorf("Received invalid boot progress last boot time: %f", result.BootProgress.LastBootTimeSeconds)
+	if result.BootProgress.LastBootTimeSeconds == nil {
+		t.Error("Expected BootProgress.LastBootTimeSeconds to be set")
+	} else if *result.BootProgress.LastBootTimeSeconds != 45.5 {
+		t.Errorf("Received invalid boot progress last boot time: %f", *result.BootProgress.LastBootTimeSeconds)
 	}
 	if len(result.BootProgress.OEM) == 0 {
 		t.Errorf("Expected BootProgress OEM data to be present")

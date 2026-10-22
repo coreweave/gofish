@@ -133,8 +133,10 @@ func TestEthernetInterface(t *testing.T) {
 		t.Errorf("Should have received LinkUp status, got %s", result.LinkStatus)
 	}
 
-	if result.SpeedMbps != 10000 {
-		t.Errorf("Expected 10000 speed, got %d", result.SpeedMbps)
+	if result.SpeedMbps == nil {
+		t.Error("Expected SpeedMbps to be set")
+	} else if *result.SpeedMbps != 10000 {
+		t.Errorf("Expected 10000 speed, got %d", *result.SpeedMbps)
 	}
 
 	if result.VLAN.VLANID != 0 {
@@ -162,12 +164,13 @@ func TestEthernetInterfaceUpdate(t *testing.T) {
 	result.HostName = "test"
 	result.InterfaceEnabled = false
 	result.MACAddress = "de:ad:de:ad:de:ad"
-	result.MTUSize = 9216
-	result.SpeedMbps = 1000
+	mtuSize, speedMbps, label := 9216, 1000, 5
+	result.MTUSize = &mtuSize
+	result.SpeedMbps = &speedMbps
 
 	result.DHCPv4.DHCPEnabled = true
 	result.DHCPv6.UseDNSServers = true
-	result.IPv6AddressPolicyTable = append(result.IPv6AddressPolicyTable, IPv6AddressPolicyEntry{Label: 5})
+	result.IPv6AddressPolicyTable = append(result.IPv6AddressPolicyTable, IPv6AddressPolicyEntry{Label: &label})
 	result.StatelessAddressAutoConfig.IPv6AutoConfigEnabled = true
 	result.VLAN.VLANID = 8
 

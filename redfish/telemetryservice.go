@@ -55,7 +55,7 @@ type TelemetryService struct {
 	// LogService shall contain a link to a resource of type LogService that this telemetry service uses.
 	logService string
 	// MaxReports shall contain the maximum number of metric reports that this service supports.
-	MaxReports int
+	MaxReports *int `json:",omitempty"`
 	// MetricDefinitions shall contain a link to a resource collection of type MetricDefinitionCollection.
 	metricDefinitions string
 	// MetricReportDefinitions shall contain a link to a resource collection of type MetricReportDefinitionCollection.

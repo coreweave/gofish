@@ -183,7 +183,7 @@ type PhysicalSecurity struct {
 	// IntrusionSensorNumber is This property shall contain a numerical
 	// identifier for this physical security sensor that is unique within
 	// this resource.
-	IntrusionSensorNumber int
+	IntrusionSensorNumber *int `json:",omitempty"`
 	// IntrusionSensorReArm is This property shall represent the method that
 	// restores this physical security sensor to the normal state.  Manual
 	// indicates manual re-arm is needed.  Automatic indicates the state is
@@ -218,7 +218,7 @@ type Chassis struct {
 	controls    string
 	// DepthMm shall represent the depth (length) of the
 	// chassis, in millimeters, as specified by the manufacturer.
-	DepthMm float64
+	DepthMm *float64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// linkedDrives shall contain an array of links to resources
@@ -259,7 +259,7 @@ type Chassis struct {
 	HeatingCoolingManagerURIs []string
 	// HeightMm shall represent the height of the chassis,
 	// in millimeters, as specified by the manufacturer.
-	HeightMm float64
+	HeightMm *float64 `json:",omitempty"`
 	// HotPluggable shall indicate whether the component can be inserted or removed while the underlying equipment
 	// otherwise remains in its current operational state. Components indicated as hot-pluggable shall allow the
 	// component to become operable without altering the operational state of the underlying equipment. Components that
@@ -288,7 +288,7 @@ type Chassis struct {
 	// not necessarily true.
 	Manufacturer string
 	// MaxPowerWatts shall contain the upper bound of the total power consumed by the chassis.
-	MaxPowerWatts *float64
+	MaxPowerWatts *float64 `json:",omitempty"`
 	// Memory shall contain a link to a resource collection of type MemoryCollection that represents memory in this
 	// chassis that belong to fabric-related resource pools.
 	memory string
@@ -296,7 +296,7 @@ type Chassis struct {
 	// memory domains in this chassis that belong to fabric-related resource pools.
 	memoryDomains string
 	// MinPowerWatts shall contain the lower bound of the total power consumed by the chassis.
-	MinPowerWatts float64
+	MinPowerWatts *float64 `json:",omitempty"`
 	// Model shall contain the name by which the
 	// manufacturer generally refers to the chassis.
 	Model           string
@@ -357,10 +357,10 @@ type Chassis struct {
 	UUID string
 	// WeightKg shall represent the published mass, commonly
 	// referred to as weight, of the chassis, in kilograms.
-	WeightKg float64
+	WeightKg *float64 `json:",omitempty"`
 	// WidthMm shall represent the width of the chassis, in
 	// millimeters, as specified by the manufacturer.
-	WidthMm float64
+	WidthMm *float64 `json:",omitempty"`
 	// rawData holds the original serialized JSON so we can compare updates.
 	RawData []byte
 

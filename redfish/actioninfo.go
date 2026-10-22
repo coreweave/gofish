@@ -44,9 +44,9 @@ type ActionInfoParameter struct {
 	// AllowableValues shall indicate the allowable values for this parameter as applied to this action target.
 	AllowableValues []string
 	// ArraySizeMaximum shall contain the maximum number of array elements that this service supports for this parameter.
-	ArraySizeMaximum uint64
+	ArraySizeMaximum *uint64 `json:",omitempty"`
 	// ArraySizeMinimum shall contain the minimum number of array elements required by this service for this parameter.
-	ArraySizeMinimum uint64
+	ArraySizeMinimum *uint64 `json:",omitempty"`
 	// DataType shall contain the JSON property type for this parameter.
 	DataType ActionInfoDataTypes
 	// MaximumValue integer or number property shall contain the maximum value that this service supports.

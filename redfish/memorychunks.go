@@ -49,14 +49,14 @@ type InterleaveSet struct {
 	// Memory shall contain the memory device to which these settings apply.
 	memory string
 	// MemoryLevel shall contain the level of this interleave set for multi-level tiered memory.
-	MemoryLevel int
+	MemoryLevel *int `json:",omitempty"`
 	// OffsetMiB shall contain the offset within the DIMM that corresponds to the start of this memory region, with
 	// units in MiB.
-	OffsetMiB int
+	OffsetMiB *int `json:",omitempty"`
 	// RegionID shall contain the DIMM region identifier.
 	RegionID string
 	// SizeMiB shall contain the size of this memory region, with units in MiB.
-	SizeMiB int
+	SizeMiB *int `json:",omitempty"`
 }
 
 // UnmarshalJSON unmarshals a InterleaveSet object from the raw JSON.
@@ -101,7 +101,7 @@ type MemoryChunks struct {
 	// ODataType is the odata type.
 	ODataType string `json:"@odata.type"`
 	// AddressRangeOffsetMiB shall be the offset of the memory chunk in the address range in MiB.
-	AddressRangeOffsetMiB int
+	AddressRangeOffsetMiB *int `json:",omitempty"`
 	// AddressRangeType shall contain the type of memory chunk.
 	AddressRangeType AddressRangeType
 	// Description provides a description of this resource.
@@ -118,7 +118,7 @@ type MemoryChunks struct {
 	// MediaLocation shall contain the location of the memory media for this memory chunk.
 	MediaLocation MediaLocation
 	// MemoryChunkSizeMiB shall contain the size of the memory chunk in MiB.
-	MemoryChunkSizeMiB int
+	MemoryChunkSizeMiB *int `json:",omitempty"`
 	// RequestedOperationalState shall contain the requested operational state of this memory chunk.
 	RequestedOperationalState OperationalState
 	// Status shall contain any status or health properties of the resource.

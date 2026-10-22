@@ -30,7 +30,7 @@ type BatteryMetrics struct {
 	// Description provides a description of this resource.
 	Description string
 	// DischargeCycles shall contain the number of discharges this battery has sustained.
-	DischargeCycles float64
+	DischargeCycles *float64 `json:",omitempty"`
 	// InputCurrentAmps shall contain the input current, in ampere units, for this battery. The value of the
 	// DataSourceUri property, if present, shall reference a resource of type Sensor with the ReadingType property
 	// containing the value 'Current'.

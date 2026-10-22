@@ -290,9 +290,11 @@ func TestStorage(t *testing.T) {
 		t.Errorf("Unexpected number of drives: %d", len(result.drives))
 	}
 
-	if result.StorageControllers[0].CacheSummary.PersistentCacheSizeMiB != 1024 {
+	if result.StorageControllers[0].CacheSummary.PersistentCacheSizeMiB == nil {
+		t.Error("Expected StorageControllers[0].CacheSummary.PersistentCacheSizeMiB to be set")
+	} else if *result.StorageControllers[0].CacheSummary.PersistentCacheSizeMiB != 1024 {
 		t.Errorf("Invalid PersistenCacheSize: %d",
-			result.StorageControllers[0].CacheSummary.PersistentCacheSizeMiB)
+			*result.StorageControllers[0].CacheSummary.PersistentCacheSizeMiB)
 	}
 
 	if result.StorageControllers[0].PCIeInterface.MaxPCIeType != Gen4PCIeTypes {

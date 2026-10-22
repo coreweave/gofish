@@ -580,7 +580,7 @@ type SPDMsingleMeasurement struct {
 	// 'DMTF'.
 	MeasurementHashAlgorithm string
 	// MeasurementIndex shall contain the index of the measurement.
-	MeasurementIndex int
+	MeasurementIndex *int `json:",omitempty"`
 	// MeasurementType shall contain the type or characteristics of the data that this measurement represents. This
 	// property shall not be present if MeasurementSpecification does not contain 'DMTF'.
 	MeasurementType DMTFmeasurementTypes
@@ -598,7 +598,7 @@ type SPDMsingleMeasurement struct {
 type SingleSessionInfo struct {
 	// SessionID shall contain the unique identifier for the active session or communication channel between two
 	// components.
-	SessionID int `json:"SessionId"`
+	SessionID *int `json:"SessionId,omitempty"`
 	// SessionType shall contain the type of session or communication channel between two components.
 	SessionType SecureSessionType
 }
@@ -719,7 +719,7 @@ type TPMinfo struct {
 	MeasurementSet TPMmeasurementSet
 	// NonceSizeBytesMaximum shall contain the maximum number of bytes that can be specified in the Nonce parameter of
 	// the TPMGetSignedMeasurements action.
-	NonceSizeBytesMaximum int
+	NonceSizeBytesMaximum *int `json:",omitempty"`
 }
 
 // TPMmeasurementSet shall contain Trusted Computing Group TPM measurement information.
@@ -740,5 +740,5 @@ type TPMsingleMeasurement struct {
 	// the 'Trusted Computing Group Algorithm Registry'.
 	MeasurementHashAlgorithm string
 	// PCR shall contain the Platform Configuration Register (PCR) bank of the measurement.
-	PCR int
+	PCR *int `json:",omitempty"`
 }

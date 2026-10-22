@@ -48,7 +48,9 @@ func TestAllowDeny(t *testing.T) {
 		t.Error("Expected StatefulSession to be true")
 	}
 
-	if result.SourcePortLower != 5 {
-		t.Errorf("Expected source lower port to be 5, got %d", result.SourcePortLower)
+	if result.SourcePortLower == nil {
+		t.Error("Expected SourcePortLower to be set")
+	} else if *result.SourcePortLower != 5 {
+		t.Errorf("Expected source lower port to be 5, got %d", *result.SourcePortLower)
 	}
 }

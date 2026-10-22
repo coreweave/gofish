@@ -262,7 +262,7 @@ type Placement struct {
 	// Rack shall contain the name of the rack within a row.
 	Rack string
 	// RackOffset shall be measured from bottom to top, starting with 0.
-	RackOffset int
+	RackOffset *int `json:",omitempty"`
 	// RackOffsetUnits shall contain a RackUnit enumeration literal that indicates the type of rack units in use.
 	RackOffsetUnits RackUnits
 	// Row shall contain the name of the row.
@@ -296,7 +296,7 @@ type PostalAddress struct {
 	Floor string
 	// HouseNumber shall conform to the RFC5139-defined requirements of the HNO field. The numeric portion of the house
 	// number.
-	HouseNumber int
+	HouseNumber *int `json:",omitempty"`
 	// HouseNumberSuffix shall conform to the RFC5139-defined requirements of the HNS field. Provides a suffix to a
 	// house number, (F, B, or 1/2).
 	HouseNumberSuffix string

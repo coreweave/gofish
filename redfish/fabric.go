@@ -32,7 +32,7 @@ type Fabric struct {
 	FabricType common.Protocol
 	// MaxZones shall contain the maximum number of zones the switch can currently configure. Changes in the logical or
 	// physical configuration of the system can change this value.
-	MaxZones int
+	MaxZones *int `json:",omitempty"`
 	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`

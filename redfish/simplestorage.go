@@ -14,7 +14,7 @@ import (
 // Device shall describe a storage device visible to SimpleStorage.
 type Device struct {
 	// CapacityBytes shall represent the size (in bytes) of the Storage Device.
-	CapacityBytes int64
+	CapacityBytes *int64 `json:",omitempty"`
 	// Manufacturer shall indicate the name of the manufacturer of this storage device.
 	Manufacturer string
 	// Model shall indicate the model information as provided by the manufacturer

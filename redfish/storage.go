@@ -65,24 +65,24 @@ type CacheSummary struct {
 	// PersistentCacheSizeMiB shall contain the amount of
 	// cache memory that is persistent as measured in mebibytes. This size
 	// shall be less than or equal to the TotalCacheSizeMib.
-	PersistentCacheSizeMiB int
+	PersistentCacheSizeMiB *int `json:",omitempty"`
 	// Status shall contain any status or health properties
 	// of the resource.
 	Status common.Status
 	// TotalCacheSizeMiB shall contain the amount of
 	// configured cache memory as measured in mebibytes.
-	TotalCacheSizeMiB int
+	TotalCacheSizeMiB *int `json:",omitempty"`
 }
 
 // Rates shall contain all the rate settings available on the controller.
 type Rates struct {
 	// ConsistencyCheckRatePercent shall contain the percentage of controller resources used for checking data
 	// consistency on volumes.
-	ConsistencyCheckRatePercent int
+	ConsistencyCheckRatePercent *int `json:",omitempty"`
 	// RebuildRatePercent shall contain the percentage of controller resources used for rebuilding volumes.
-	RebuildRatePercent int
+	RebuildRatePercent *int `json:",omitempty"`
 	// TransformationRatePercent shall contain the percentage of controller resources used for transforming volumes.
-	TransformationRatePercent int
+	TransformationRatePercent *int `json:",omitempty"`
 }
 
 // Storage is used to represent resources that represent a storage

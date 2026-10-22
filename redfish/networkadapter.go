@@ -43,10 +43,10 @@ type ControllerCapabilities struct {
 	}
 	// NetworkDeviceFunctionCount shall be the
 	// number of physical functions available on this controller.
-	NetworkDeviceFunctionCount int
+	NetworkDeviceFunctionCount *int `json:",omitempty"`
 	// NetworkPortCount shall be the number of
 	// physical ports on this controller.
-	NetworkPortCount int
+	NetworkPortCount *int `json:",omitempty"`
 	// VirtualizationOffload shall contain capability, status,
 	// and configuration values related to virtualization offload for this
 	// controller.
@@ -244,10 +244,10 @@ type DataCenterBridging struct {
 type NPIV struct {
 	// MaxDeviceLogins shall be the maximum number of N_Port ID Virtualization
 	// (NPIV) logins allowed simultaneously from all ports on this controller.
-	MaxDeviceLogins int
+	MaxDeviceLogins *int `json:",omitempty"`
 	// MaxPortLogins shall be the maximum number of N_Port ID Virtualization
 	// (NPIV) logins allowed per physical port on this controller.
-	MaxPortLogins int
+	MaxPortLogins *int `json:",omitempty"`
 }
 
 // A NetworkAdapter represents the physical network adapter capable of

@@ -49,8 +49,10 @@ func TestRedundancy(t *testing.T) {
 		t.Errorf("Received invalid name: %s", result.Name)
 	}
 
-	if result.MaxNumSupported != 2 {
-		t.Errorf("Invalid MaxNumSupported: %d", result.MaxNumSupported)
+	if result.MaxNumSupported == nil {
+		t.Error("Expected MaxNumSupported to be set")
+	} else if *result.MaxNumSupported != 2 {
+		t.Errorf("Invalid MaxNumSupported: %d", *result.MaxNumSupported)
 	}
 
 	if result.Mode != SparingRedundancyMode {

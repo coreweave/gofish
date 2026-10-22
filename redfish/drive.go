@@ -197,12 +197,12 @@ type Drive struct {
 	AssetTag string
 	// BlockSizeBytes shall contain size of the smallest addressable unit of the
 	// associated drive.
-	BlockSizeBytes int
+	BlockSizeBytes *int `json:",omitempty"`
 	// CapableSpeedGbs shall contain fastest capable bus speed of the associated
 	// drive.
-	CapableSpeedGbs float32
+	CapableSpeedGbs *float32 `json:",omitempty"`
 	// CapacityBytes shall contain the raw size in bytes of the associated drive.
-	CapacityBytes int64
+	CapacityBytes *int64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// DriveFormFactor shall contain the form factor of the drive inserted in this slot.
@@ -257,7 +257,7 @@ type Drive struct {
 	Multipath bool
 	// NegotiatedSpeedGbs shall contain current bus speed of the associated
 	// drive.
-	NegotiatedSpeedGbs float32
+	NegotiatedSpeedGbs *float32 `json:",omitempty"`
 	// Operations shall contain a list of all operations currently running on
 	// the Drive.
 	Operations []common.Operations
@@ -269,7 +269,7 @@ type Drive struct {
 	PhysicalLocation common.Location
 	// PredictedMediaLifeLeftPercent shall contain an indicator of the
 	// percentage of life remaining in the Drive's media.
-	PredictedMediaLifeLeftPercent float32
+	PredictedMediaLifeLeftPercent *float32 `json:",omitempty"`
 	// Protocol shall contain the protocol the associated drive is using to
 	// communicate to the storage controller for this system.
 	Protocol common.Protocol
@@ -279,7 +279,7 @@ type Drive struct {
 	// the associated drive.
 	Revision string
 	// RotationSpeedRPM shall contain rotation speed of the associated drive.
-	RotationSpeedRPM float32
+	RotationSpeedRPM *float32 `json:",omitempty"`
 	// SKU shall be the stock-keeping unit number for this drive.
 	SKU string
 	// SerialNumber is used to identify the drive.

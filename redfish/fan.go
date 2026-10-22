@@ -25,7 +25,7 @@ type Fan struct {
 	// Description provides a description of this resource.
 	Description string
 	// FanDiameterMm shall contain the diameter of the fan assembly in millimeter units.
-	FanDiameterMm int
+	FanDiameterMm *int `json:",omitempty"`
 	// HotPluggable shall indicate whether the device can be inserted or removed while the underlying equipment
 	// otherwise remains in its current operational state. Hot-pluggable devices can become operable without altering
 	// the operational state of the underlying equipment. Devices that cannot be inserted or removed from equipment in
