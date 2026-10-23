@@ -84,7 +84,7 @@ type Schedule struct {
 	// Lifetime shall contain a Redfish Duration that describes the time after provisioning when the schedule expires.
 	Lifetime string
 	// MaxOccurrences shall contain the maximum number of scheduled occurrences.
-	MaxOccurrences int
+	MaxOccurrences *int `json:",omitempty"`
 	// RecurrenceInterval shall contain the duration between consecutive occurrences.
 	RecurrenceInterval string
 	// rawData holds the original serialized JSON so we can compare updates.

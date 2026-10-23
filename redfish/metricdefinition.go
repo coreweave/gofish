@@ -90,7 +90,7 @@ type MetricDefinition struct {
 	ODataType string `json:"@odata.type"`
 	// Accuracy shall contain the percent error +/- of the measured versus actual values. The property is not
 	// meaningful when the MetricType property is 'Discrete'.
-	Accuracy float64
+	Accuracy *float64 `json:",omitempty"`
 	// Calculable shall specify whether the metric can be used in a calculation.
 	Calculable Calculable
 	// CalculationAlgorithm shall contain the calculation performed to obtain the metric.
@@ -103,7 +103,7 @@ type MetricDefinition struct {
 	CalculationTimeInterval string
 	// Calibration shall contain the calibration offset added to the metric reading. The value shall have the units
 	// specified in the Units property. The property is not meaningful when the MetricType property is 'Discrete'.
-	Calibration float64
+	Calibration *float64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// DiscreteValues shall specify the possible values of the discrete metric. This property shall have values when
@@ -122,7 +122,7 @@ type MetricDefinition struct {
 	// MaxReadingRange shall indicate the highest possible value for a related MetricValue. The value shall have the
 	// units specified in the property Units. The property is not meaningful when the MetricType property is
 	// 'Discrete'.
-	MaxReadingRange float64
+	MaxReadingRange *float64 `json:",omitempty"`
 	// MetricDataType shall specify the data-type of the metric.
 	MetricDataType MetricDataType
 	// MetricProperties shall list the URIs with wildcards and property identifiers that this metric defines. A set of
@@ -136,7 +136,7 @@ type MetricDefinition struct {
 	MetricType MetricType
 	// MinReadingRange shall contain the lowest possible value for the metric reading. The value shall have the units
 	// specified in the property Units. The property is not meaningful when the MetricType property is 'Discrete'.
-	MinReadingRange float64
+	MinReadingRange *float64 `json:",omitempty"`
 	// OEMCalculationAlgorithm shall contain the OEM-defined calculation performed to obtain the metric. This property
 	// shall be present if CalculationAlgorithm is 'OEM'.
 	OEMCalculationAlgorithm string
@@ -147,7 +147,7 @@ type MetricDefinition struct {
 	PhysicalContext PhysicalContext
 	// Precision shall specify the number of significant digits in the metric reading. The property is not meaningful
 	// when the MetricType property is 'Discrete'.
-	Precision int
+	Precision *int `json:",omitempty"`
 	// SensingInterval shall specify the time interval between when a metric is updated.
 	SensingInterval string
 	// TimestampAccuracy shall specify the expected + or - variability of the timestamp.

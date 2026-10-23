@@ -110,7 +110,7 @@ const (
 type NetDevFuncMaxBWAlloc struct {
 	// MaxBWAllocPercent shall be the maximum bandwidth percentage allocation
 	// for the associated network device function.
-	MaxBWAllocPercent int
+	MaxBWAllocPercent *int `json:",omitempty"`
 	// NetworkDeviceFunction shall be a reference of type NetworkDeviceFunction
 	// that represents the Network Device Function associated with this
 	// bandwidth setting of this Network Port.
@@ -123,7 +123,7 @@ type NetDevFuncMinBWAlloc struct {
 	// MinBWAllocPercent shall be the minimum bandwidth percentage allocation
 	// for the associated network device function. The sum total of all minimum
 	// percentages shall not exceed 100.
-	MinBWAllocPercent int
+	MinBWAllocPercent *int `json:",omitempty"`
 	// NetworkDeviceFunction shall be a reference of type NetworkDeviceFunction
 	// that represents the Network Device Function associated with this
 	// bandwidth setting of this Network Port.
@@ -162,7 +162,7 @@ type NetworkPort struct {
 	AssociatedNetworkAddresses []string
 	// CurrentLinkSpeedMbps shall be the current configured link speed of this
 	// port.
-	CurrentLinkSpeedMbps int
+	CurrentLinkSpeedMbps *int `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// EEEEnabled shall be a boolean indicating whether IEEE 802.3az Energy
@@ -183,7 +183,7 @@ type NetworkPort struct {
 	// partner.
 	LinkStatus NetworkPortLinkStatus
 	// MaxFrameSize shall be the maximum frame size supported by the port.
-	MaxFrameSize int
+	MaxFrameSize *int `json:",omitempty"`
 	// NetDevFuncMaxBWAlloc shall be an array of maximum bandwidth allocation
 	// percentages for the Network Device Functions associated with this port.
 	NetDevFuncMaxBWAlloc []NetDevFuncMaxBWAlloc
@@ -193,7 +193,7 @@ type NetworkPort struct {
 	NetDevFuncMinBWAlloc []NetDevFuncMinBWAlloc
 	// NumberDiscoveredRemotePorts shall be the number of ports not on this
 	// adapter that this port has discovered.
-	NumberDiscoveredRemotePorts int
+	NumberDiscoveredRemotePorts *int `json:",omitempty"`
 	// PhysicalPortNumber shall be the physical port number on the network
 	// adapter hardware that this Network Port corresponds to. This value should
 	// match a value visible on the hardware. When HostPortEnabled and
@@ -202,7 +202,7 @@ type NetworkPort struct {
 	PhysicalPortNumber string
 	// PortMaximumMTU shall be the largest maximum transmission unit (MTU) that
 	// can be configured for this network port.
-	PortMaximumMTU int
+	PortMaximumMTU *int `json:",omitempty"`
 	// SignalDetected shall be a boolean
 	// indicating whether the port has detected enough signal on enough lanes
 	// to establish link.

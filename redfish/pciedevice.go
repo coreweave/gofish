@@ -93,7 +93,7 @@ type CXLDevice struct {
 	// Port Congestion' mechanism.
 	EgressPortCongestionSupport bool
 	// MaxNumberLogicalDevices shall contain the maximum number of logical devices supported by this CXL device.
-	MaxNumberLogicalDevices int
+	MaxNumberLogicalDevices *int `json:",omitempty"`
 	// ThroughputReductionSupport shall indicate whether the CXL device supports the CXL Specification-defined
 	// 'Throughput Reduction' mechanism.
 	ThroughputReductionSupport bool
@@ -108,9 +108,9 @@ type CXLDynamicCapacity struct {
 	AddCapacityPoliciesSupported []CXLDynamicCapacityPolicies
 	// MaxDynamicCapacityRegions shall contain the maximum number of dynamic capacity memory regions available per host
 	// from this CXL device.
-	MaxDynamicCapacityRegions int
+	MaxDynamicCapacityRegions *int `json:",omitempty"`
 	// MaxHosts shall contain the maximum number of hosts supported by this CXL device.
-	MaxHosts int
+	MaxHosts *int `json:",omitempty"`
 	// MemoryBlockSizesSupported shall contain the set of memory block sizes supported by memory regions in this CXL
 	// device.
 	MemoryBlockSizesSupported []CXLRegionBlockSizes
@@ -122,7 +122,7 @@ type CXLDynamicCapacity struct {
 	SanitizationOnReleaseSupport []CXLRegionSanitization
 	// TotalDynamicCapacityMiB shall contain the total memory media capacity of the CXL device available for dynamic
 	// assignment in mebibytes (MiB).
-	TotalDynamicCapacityMiB int
+	TotalDynamicCapacityMiB *int `json:",omitempty"`
 }
 
 // CXLRegionBlockSizes shall contain the set of memory block sizes supported by memory region in the dynamic
@@ -131,14 +131,14 @@ type CXLRegionBlockSizes struct {
 	// BlockSizeMiB shall contain the set of memory block sizes supported by this memory region, with units in MiB.
 	BlockSizeMiB []string
 	// RegionNumber shall contain the memory region number.
-	RegionNumber int
+	RegionNumber *int `json:",omitempty"`
 }
 
 // CXLRegionSanitization shall indicate whether the sanitization on capacity release is configurable for the memory
 // region.
 type CXLRegionSanitization struct {
 	// RegionNumber shall contain the memory region number.
-	RegionNumber int
+	RegionNumber *int `json:",omitempty"`
 	// SanitizationOnReleaseSupported shall indicate whether the sanitization on capacity release is configurable for
 	// this memory region.
 	SanitizationOnReleaseSupported bool
@@ -163,32 +163,32 @@ const (
 // PCIeErrors shall contain properties that describe the PCIe errors associated with this device.
 type PCIeErrors struct {
 	// CorrectableErrorCount shall contain the total number of PCIe correctable errors for this device.
-	CorrectableErrorCount int
+	CorrectableErrorCount *int `json:",omitempty"`
 	// FatalErrorCount shall contain the total number of PCIe fatal errors for this device.
-	FatalErrorCount int
+	FatalErrorCount *int `json:",omitempty"`
 	// L0ToRecoveryCount shall contain the total number of times the PCIe link transitioned from L0 to the recovery
 	// state for this device.
-	L0ToRecoveryCount int
+	L0ToRecoveryCount *int `json:",omitempty"`
 	// NAKReceivedCount shall contain the total number of NAKs issued on the PCIe link by the receiver. A NAK is issued
 	// by the receiver when it detects that a TLP from this device was missed. This could be because this device did
 	// not transmit it, or because the receiver could not properly decode the packet.
-	NAKReceivedCount int
+	NAKReceivedCount *int `json:",omitempty"`
 	// NAKSentCount shall contain the total number of NAKs issued on the PCIe link by this device. A NAK is issued by
 	// the device when it detects that a TLP from the receiver was missed. This could be because the receiver did not
 	// transmit it, or because this device could not properly decode the packet.
-	NAKSentCount int
+	NAKSentCount *int `json:",omitempty"`
 	// NonFatalErrorCount shall contain the total number of PCIe non-fatal errors for this device.
-	NonFatalErrorCount int
+	NonFatalErrorCount *int `json:",omitempty"`
 	// ReplayCount shall contain the total number of replays issued on the PCIe link by this device. A replay is a
 	// retransmission of a TLP and occurs because the ACK timer is expired, which means that the receiver did not send
 	// the ACK or this device did not properly decode the ACK.
-	ReplayCount int
+	ReplayCount *int `json:",omitempty"`
 	// ReplayRolloverCount shall contain the total number of replay rollovers issued on the PCIe link by this device. A
 	// replay rollover occurs when consecutive replays failed to resolve the errors on the link, which means that this
 	// device forced the link into the recovery state.
-	ReplayRolloverCount int
+	ReplayRolloverCount *int `json:",omitempty"`
 	// UnsupportedRequestCount shall contain the total number of PCIe unsupported requests received by this device.
-	UnsupportedRequestCount int
+	UnsupportedRequestCount *int `json:",omitempty"`
 }
 
 // PCIeDevice shall represent a PCIe device in a Redfish implementation. It may also represent a location, such as

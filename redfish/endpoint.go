@@ -122,7 +122,7 @@ type Endpoint struct {
 	EndpointProtocol common.Protocol
 	// HostReservationMemoryBytes shall be the amount of memory in Bytes that
 	// the Host should allocate to connect to this endpoint.
-	HostReservationMemoryBytes int64
+	HostReservationMemoryBytes *int64 `json:",omitempty"`
 	// IPTransportDetails shall contain the details for each IP transport
 	// supported by this endpoint.
 	IPTransportDetails []IPTransportDetails

@@ -128,8 +128,10 @@ func TestEndpoint(t *testing.T) {
 		t.Errorf("Received endpoint protocol: %s", result.EndpointProtocol)
 	}
 
-	if result.HostReservationMemoryBytes != 8589934592 {
-		t.Errorf("Received host reservation memory bytes: %d", result.HostReservationMemoryBytes)
+	if result.HostReservationMemoryBytes == nil {
+		t.Error("Expected HostReservationMemoryBytes to be set")
+	} else if *result.HostReservationMemoryBytes != 8589934592 {
+		t.Errorf("Received host reservation memory bytes: %d", *result.HostReservationMemoryBytes)
 	}
 
 	if len(result.IPTransportDetails) != 1 {

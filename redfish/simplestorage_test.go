@@ -59,8 +59,10 @@ func TestSimpleStorage(t *testing.T) {
 		t.Errorf("Received invalid name: %s", result.Name)
 	}
 
-	if result.Devices[0].CapacityBytes != 549755813888 {
-		t.Errorf("Invalid device capacity: %d", result.Devices[0].CapacityBytes)
+	if result.Devices[0].CapacityBytes == nil {
+		t.Error("Expected Devices[0].CapacityBytes to be set")
+	} else if *result.Devices[0].CapacityBytes != 549755813888 {
+		t.Errorf("Invalid device capacity: %d", *result.Devices[0].CapacityBytes)
 	}
 
 	if result.UefiDevicePath != "ACPI(PnP)/PCI(1,0)/SAS(0x31000004CF13F6BD,0, SATA)" {

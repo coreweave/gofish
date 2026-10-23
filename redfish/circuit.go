@@ -317,20 +317,20 @@ type Circuit struct {
 	// The number of seconds to delay power on
 	// after a PowerControl action to cycle power.
 	// Zero seconds indicates no delay.
-	PowerCycleDelaySeconds float32
+	PowerCycleDelaySeconds *float32 `json:",omitempty"`
 	// Indicates if the circuit can be powered.
 	PowerEnabled bool
 	// The power load (percent) for this circuit.
 	PowerLoadPercent SensorExcerpt
 	// The number of seconds to delay power off after a PowerControl action.
 	// Zero seconds indicates no delay to power off.
-	PowerOffDelaySeconds float32
+	PowerOffDelaySeconds *float32 `json:",omitempty"`
 	// The number of seconds to delay power up after a power cycle or
 	// a PowerControl action. Zero seconds indicates no delay to power up.
-	PowerOnDelaySeconds float32
+	PowerOnDelaySeconds *float32 `json:",omitempty"`
 	// The number of seconds to delay power on after power has been restored.
 	// Zero seconds indicates no delay.
-	PowerRestoreDelaySeconds float32
+	PowerRestoreDelaySeconds *float32 `json:",omitempty"`
 	// The desired power state of the circuit
 	// when power is restored after a power loss.
 	PowerRestorePolicy PowerRestorePolicyTypes
@@ -341,7 +341,7 @@ type Circuit struct {
 	// The power (W) for this circuit.
 	PowerWatts SensorPowerExcerpt
 	// The rated maximum current allowed for this circuit.
-	RatedCurrentAmps float32
+	RatedCurrentAmps *float32 `json:",omitempty"`
 	// The status and health of the resource and its subordinate or dependent resources.
 	Status common.Status
 	// The current imbalance (percent) between phases.

@@ -61,12 +61,12 @@ type MeasurementBlock struct {
 	// DSP0274-defined Measurement field of the measurement block.
 	Measurement string
 	// MeasurementIndex shall contain the value of the DSP0274-defined Index field of the measurement block.
-	MeasurementIndex int
+	MeasurementIndex *int `json:",omitempty"`
 	// MeasurementSize shall contain the value of the DSP0274-defined MeasurementSize field of the measurement block.
-	MeasurementSize int
+	MeasurementSize *int `json:",omitempty"`
 	// MeasurementSpecification shall contain the value of the DSP0274-defined MeasurementSpecification field of the
 	// measurement block.
-	MeasurementSpecification int
+	MeasurementSpecification *int `json:",omitempty"`
 }
 
 // SoftwareInventory is a single software component that this Redfish Service manages.

@@ -58,19 +58,19 @@ type TransferConfiguration struct {
 	// when they are both qualified and in synchronization.
 	ClosedTransitionAllowed bool
 	// The time in seconds to wait for a closed transition to occur.
-	ClosedTransitionTimeoutSeconds int64
+	ClosedTransitionTimeoutSeconds *int64 `json:",omitempty"`
 	// The preferred source for the mains circuit to this equipment.
 	PreferredMainsID string `json:"PreferredMainsId"`
 	// The time in seconds to delay the automatic transfer
 	// from the alternate mains circuit back to the preferred mains circuit.
-	RetransferDelaySeconds int64
+	RetransferDelaySeconds *int64 `json:",omitempty"`
 	// Indicates if the automatic transfer is permitted from the alternate mains circuit
 	// back to the preferred mains circuit after the preferred mains circuit is qualified again
 	// and the Retransfer Delay time has expired.
 	RetransferEnabled bool
 	// The time in seconds to delay the automatic transfer from the preferred mains circuit
 	// to the alternate mains circuit when the preferred mains circuit is disqualified.
-	TransferDelaySeconds int64
+	TransferDelaySeconds *int64 `json:",omitempty"`
 	// Indicates if any transfer is inhibited.
 	TransferInhibit bool
 }
@@ -79,19 +79,19 @@ type TransferConfiguration struct {
 type TransferCriteria struct {
 	// The frequency in hertz over the nominal value
 	// that satisfies a criterion for transfer.
-	OverNominalFrequencyHz float32
+	OverNominalFrequencyHz *float32 `json:",omitempty"`
 	// The positive percentage of voltage RMS over the nominal value
 	// that satisfies a criterion for transfer.
-	OverVoltageRMSPercentage int
+	OverVoltageRMSPercentage *int `json:",omitempty"`
 	// The sensitivity to voltage waveform quality
 	// to satisfy the criterion for initiating a transfer.
 	TransferSensitivity TransferSensitivity
 	// The frequency in hertz under the nominal value
 	// that satisfies a criterion for transfer.
-	UnderNominalFrequencyHz float32
+	UnderNominalFrequencyHz *float32 `json:",omitempty"`
 	// The negative percentage of voltage RMS under the nominal value
 	// that satisfies a criterion for transfer.
-	UnderVoltageRMSPercentage int
+	UnderVoltageRMSPercentage *int `json:",omitempty"`
 }
 
 // PowerDistribution shall be used to represent

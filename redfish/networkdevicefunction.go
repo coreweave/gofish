@@ -107,7 +107,7 @@ type BootTargets struct {
 	// targets array. Lower numbers shall represent higher priority, with zero being the highest priority.
 	// The BootPriority shall be unique for all entries of the BootTargets
 	// array.
-	BootPriority int
+	BootPriority *int `json:",omitempty"`
 	// LUNID shall contain the logical unit number (LUN) ID from which to boot on the device to which the corresponding
 	// WWPN refers.
 	LUNID string
@@ -127,10 +127,10 @@ type Ethernet struct {
 	MACAddress string
 	// MTUSize The maximum transmission unit (MTU) configured for this network device function. This value serves as a
 	// default for the OS driver when booting. The value only takes effect on boot.
-	MTUSize int
+	MTUSize *int `json:",omitempty"`
 	// MTUSizeMaximum shall contain the largest maximum transmission unit (MTU) size supported for this network device
 	// function.
-	MTUSizeMaximum int
+	MTUSizeMaximum *int `json:",omitempty"`
 	// PermanentMACAddress shall contain the permanent MAC Address of this function. Typically, this value is
 	// programmed during manufacturing. This address is not assignable.
 	PermanentMACAddress string
@@ -183,11 +183,11 @@ type FibreChannel struct {
 	// this value shall be null. When the FCoE link is up this value shall
 	// be either the FCoELocalVLANId property or a VLAN discovered via the
 	// FIP protocol.
-	FCoEActiveVLANID int
+	FCoEActiveVLANID *int `json:",omitempty"`
 	// FCoELocalVLANID is used for FCoE traffic to this network device
 	// function during boot unless AllowFIPVLANDiscovery is true and a valid
 	// FCoE VLAN ID is found via the FIP VLAN Discovery Protocol.
-	FCoELocalVLANID int
+	FCoELocalVLANID *int `json:",omitempty"`
 	// FibreChannelID shall indicate the Fibre Channel Id assigned by the switch
 	// for this interface.
 	FibreChannelID string
@@ -252,18 +252,18 @@ type InfiniBandNetworkDeviceFunction struct {
 type Limit struct {
 	// BurstBytesPerSecond shall contain the maximum number of bytes per second in a burst allowed for this network
 	// device function.
-	BurstBytesPerSecond int
+	BurstBytesPerSecond *int `json:",omitempty"`
 	// BurstPacketsPerSecond shall contain the maximum number of packets per second in a burst allowed for this network
 	// device function.
-	BurstPacketsPerSecond int
+	BurstPacketsPerSecond *int `json:",omitempty"`
 	// Direction shall indicate the direction of the data to which this limit applies for this network device function.
 	Direction DataDirection
 	// SustainedBytesPerSecond shall contain the maximum number of sustained bytes per second allowed for this network
 	// device function.
-	SustainedBytesPerSecond int
+	SustainedBytesPerSecond *int `json:",omitempty"`
 	// SustainedPacketsPerSecond shall contain the maximum number of sustained packets per second allowed for this
 	// network device function.
-	SustainedPacketsPerSecond int
+	SustainedPacketsPerSecond *int `json:",omitempty"`
 }
 
 // NetworkDeviceFunction is A Network Device Function represents a
@@ -317,7 +317,7 @@ type NetworkDeviceFunction struct {
 	Limits []Limit
 	// MaxVirtualFunctions shall be the number of virtual functions (VFs) that
 	// are available for this Network Device Function.
-	MaxVirtualFunctions int
+	MaxVirtualFunctions *int `json:",omitempty"`
 	// Metrics shall contain a link to a resource of type NetworkDeviceFunctionMetrics that contains the metrics
 	// associated with this network function.
 	metrics string
@@ -609,7 +609,7 @@ type ISCSIBoot struct {
 	PrimaryDNS string
 	// PrimaryLUN shall be the logical unit
 	// number (LUN) for the primary iSCSI boot target.
-	PrimaryLUN int
+	PrimaryLUN *int `json:",omitempty"`
 	// PrimaryTargetIPAddress shall be the IP
 	// address (IPv6 or IPv4) for the primary iSCSI boot target.
 	PrimaryTargetIPAddress string
@@ -619,12 +619,12 @@ type ISCSIBoot struct {
 	PrimaryTargetName string
 	// PrimaryTargetTCPPort shall be the TCP
 	// port for the primary iSCSI boot target.
-	PrimaryTargetTCPPort int
+	PrimaryTargetTCPPort *int `json:",omitempty"`
 	// PrimaryVLANEnable is used to indicate if this VLAN is enabled for the
 	// primary iSCSI boot target.
 	PrimaryVLANEnable bool
 	// PrimaryVLANID is used if PrimaryVLANEnable is true.
-	PrimaryVLANID int
+	PrimaryVLANID *int `json:",omitempty"`
 	// RouterAdvertisementEnabled shall be a
 	// boolean indicating whether IPv6 router advertisement is enabled for
 	// the iSCSI boot target. This setting shall only apply to IPv6
@@ -635,7 +635,7 @@ type ISCSIBoot struct {
 	SecondaryDNS string
 	// SecondaryLUN shall be the logical unit
 	// number (LUN) for the secondary iSCSI boot target.
-	SecondaryLUN int
+	SecondaryLUN *int `json:",omitempty"`
 	// SecondaryTargetIPAddress shall be the IP
 	// address (IPv6 or IPv4) for the secondary iSCSI boot target.
 	SecondaryTargetIPAddress string
@@ -645,12 +645,12 @@ type ISCSIBoot struct {
 	SecondaryTargetName string
 	// SecondaryTargetTCPPort shall be the TCP
 	// port for the secondary iSCSI boot target.
-	SecondaryTargetTCPPort int
+	SecondaryTargetTCPPort *int `json:",omitempty"`
 	// SecondaryVLANEnable is used to indicate if this VLAN is enabled for
 	// the secondary iSCSI boot target.
 	SecondaryVLANEnable bool
 	// SecondaryVLANID is used if SecondaryVLANEnable is true.
-	SecondaryVLANID int
+	SecondaryVLANID *int `json:",omitempty"`
 	// TargetInfoViaDHCP shall be a boolean
 	// indicating whether the iSCSI boot target name, LUN, IP address, and
 	// netmask should be obtained from DHCP.

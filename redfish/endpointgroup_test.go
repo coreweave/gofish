@@ -65,7 +65,8 @@ func TestEndpointGroupUpdate(t *testing.T) {
 	result.SetClient(testClient)
 
 	result.GroupType = TargetGroupType
-	result.TargetEndpointGroupIdentifier = 3
+	identifier := 3
+	result.TargetEndpointGroupIdentifier = &identifier
 	err = result.Update()
 
 	if err != nil {

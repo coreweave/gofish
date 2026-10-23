@@ -128,7 +128,7 @@ type Cable struct {
 	// DownstreamName shall contain any identifier for a downstream resource.
 	DownstreamName string
 	// LengthMeters shall contain the length of the cable in meters.
-	LengthMeters float64
+	LengthMeters *float64 `json:",omitempty"`
 	// Location shall contain the location information of the associated assembly.
 	Location common.Location
 	// Manufacturer shall contain the name of the organization responsible for producing the cable. This organization

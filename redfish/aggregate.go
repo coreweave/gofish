@@ -23,7 +23,7 @@ type Aggregate struct {
 	// Elements shall contain an array of links to the elements of this aggregate.
 	elements []string
 	// ElementsCount shall contain the number of entries in the Elements array.
-	ElementsCount int
+	ElementsCount *int `json:",omitempty"`
 	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`

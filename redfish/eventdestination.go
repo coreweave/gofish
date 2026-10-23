@@ -250,7 +250,7 @@ type EventDestination struct {
 	// HeartbeatIntervalMinutes shall indicate the interval for sending periodic heartbeat events to the subscriber.
 	// The value shall be the interval, in minutes, between each periodic event. This property shall not be present if
 	// the SendHeartbeat property is not present.
-	HeartbeatIntervalMinutes int
+	HeartbeatIntervalMinutes *int `json:",omitempty"`
 	// HTTPHeaders shall contain an object consisting of the names and values of
 	// of HTTP header to be included with every event POST to the Event
 	// Destination. This property shall be null or an empty array on a GET. An

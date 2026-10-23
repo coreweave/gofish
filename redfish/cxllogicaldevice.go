@@ -195,7 +195,7 @@ func ListReferencedCXLLogicalDevicesWithContext(ctx context.Context, c common.Cl
 // QoS shall contain the quality of service properties of this CXL logical device.
 type QoS struct {
 	// AllocatedBandwidth shall contain the bandwidth allocated for this CXL logical device in multiples of 256.
-	AllocatedBandwidth int
+	AllocatedBandwidth *int `json:",omitempty"`
 	// LimitPercent shall contain the bandwidth limit, '0' to '100', for this CXL logical device as a percentage.
-	LimitPercent int
+	LimitPercent *int `json:",omitempty"`
 }

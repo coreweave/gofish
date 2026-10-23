@@ -80,10 +80,10 @@ type CompositionStatus struct {
 	// block can participate simultaneously. Services can have additional constraints that prevent this value from
 	// being achieved, such as due to system topology and current composed resource utilization. If SharingCapable is
 	// 'false', this value shall be set to '1'. The service shall support this property if SharingCapable supported.
-	MaxCompositions int
+	MaxCompositions *int `json:",omitempty"`
 	// NumberOfCompositions shall contain the number of compositions in which this resource block is currently
 	// participating.
-	NumberOfCompositions int
+	NumberOfCompositions *int `json:",omitempty"`
 	// Reserved shall indicate whether any client has reserved the resource block. A client sets this property after
 	// the resource block is identified as composed. It shall provide a way for multiple clients to negotiate the
 	// ownership of the resource block.
@@ -303,44 +303,44 @@ func ListReferencedResourceBlocksWithContext(ctx context.Context, c common.Clien
 type ResourceBlockLimits struct {
 	// MaxCompute shall contain an integer that specifies the maximum number of resource blocks of type 'Compute'
 	// allowed for the composition request.
-	MaxCompute int
+	MaxCompute *int `json:",omitempty"`
 	// MaxComputerSystem shall contain an integer that specifies the maximum number of resource blocks of type
 	// 'ComputerSystem' allowed for the composition request.
-	MaxComputerSystem int
+	MaxComputerSystem *int `json:",omitempty"`
 	// MaxExpansion shall contain an integer that specifies the maximum number of resource blocks of type 'Expansion'
 	// allowed for the composition request.
-	MaxExpansion int
+	MaxExpansion *int `json:",omitempty"`
 	// MaxMemory shall contain an integer that specifies the maximum number of resource blocks of type 'Memory' allowed
 	// for the composition request.
-	MaxMemory int
+	MaxMemory *int `json:",omitempty"`
 	// MaxNetwork shall contain an integer that specifies the maximum number of resource blocks of type 'Network'
 	// allowed for the composition request.
-	MaxNetwork int
+	MaxNetwork *int `json:",omitempty"`
 	// MaxProcessor shall contain an integer that specifies the maximum number of resource blocks of type 'Processor'
 	// allowed for the composition request.
-	MaxProcessor int
+	MaxProcessor *int `json:",omitempty"`
 	// MaxStorage shall contain an integer that specifies the maximum number of resource blocks of type 'Storage'
 	// allowed for the composition request.
-	MaxStorage int
+	MaxStorage *int `json:",omitempty"`
 	// MinCompute shall contain an integer that specifies the minimum number of resource blocks of type 'Compute'
 	// required for the composition request.
-	MinCompute int
+	MinCompute *int `json:",omitempty"`
 	// MinComputerSystem shall contain an integer that specifies the minimum number of resource blocks of type
 	// 'ComputerSystem' required for the composition request.
-	MinComputerSystem int
+	MinComputerSystem *int `json:",omitempty"`
 	// MinExpansion shall contain an integer that specifies the minimum number of resource blocks of type 'Expansion'
 	// required for the composition request.
-	MinExpansion int
+	MinExpansion *int `json:",omitempty"`
 	// MinMemory shall contain an integer that specifies the minimum number of resource blocks of type 'Memory'
 	// required for the composition request.
-	MinMemory int
+	MinMemory *int `json:",omitempty"`
 	// MinNetwork shall contain an integer that specifies the minimum number of resource blocks of type 'Network'
 	// required for the composition request.
-	MinNetwork int
+	MinNetwork *int `json:",omitempty"`
 	// MinProcessor shall contain an integer that specifies the minimum number of resource blocks of type 'Processor'
 	// required for the composition request.
-	MinProcessor int
+	MinProcessor *int `json:",omitempty"`
 	// MinStorage shall contain an integer that specifies the minimum number of resource blocks of type 'Storage'
 	// required for the composition request.
-	MinStorage int
+	MinStorage *int `json:",omitempty"`
 }

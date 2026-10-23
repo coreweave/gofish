@@ -225,7 +225,7 @@ type MemoryCXL struct {
 type MemoryHealthData struct {
 	// PredictedMediaLifeLeftPercent is the current health of the memory device as a percentage.
 	// This property has been deprecated in favor of PredictedMediaLifeLeftPercent in the MemoryMetrics resource.
-	PredictedMediaLifeLeftPercent int
+	PredictedMediaLifeLeftPercent *int `json:",omitempty"`
 }
 
 // Memory is used to represent the Memory in a Redfish implementation.
@@ -238,10 +238,10 @@ type Memory struct {
 	ODataType string `json:"@odata.type"`
 	// AllocationAlignmentMiB shall be the alignment boundary on which memory
 	// regions are allocated, measured in MiB.
-	AllocationAlignmentMiB int
+	AllocationAlignmentMiB *int `json:",omitempty"`
 	// AllocationIncrementMiB shall be the allocation increment for regions,
 	// measured in MiB.
-	AllocationIncrementMiB int
+	AllocationIncrementMiB *int `json:",omitempty"`
 	// AllowedSpeedsMHz shall be the speed supported by this Memory (in MHz).
 	AllowedSpeedsMHz []int
 	// Assembly shall be a link to a resource of type Assembly.
@@ -249,13 +249,13 @@ type Memory struct {
 	// BaseModuleType shall be the base module type of Memory.
 	BaseModuleType BaseModuleType
 	// BusWidthBits shall be the bus width in bits.
-	BusWidthBits int
+	BusWidthBits *int `json:",omitempty"`
 	// CXL shall contain CXL-specific properties for this memory device.
 	CXL MemoryCXL
 	// CacheSizeMiB shall be the total size of the cache portion memory in MiB.
-	CacheSizeMiB int
+	CacheSizeMiB *int `json:",omitempty"`
 	// CapacityMiB shall be the Memory capacity in MiB.
-	CapacityMiB int
+	CapacityMiB *int `json:",omitempty"`
 	// Certificates shall contain a link to a resource collection of type CertificateCollection that contains
 	// certificates for device identity and attestation.
 	certificates []string
@@ -265,7 +265,7 @@ type Memory struct {
 	// may be altered.
 	ConfigurationLocked bool
 	// DataWidthBits shall be the data width in bits.
-	DataWidthBits int
+	DataWidthBits *int `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// DeviceLocator shall be location of the Memory in the platform, typically
@@ -298,7 +298,7 @@ type Memory struct {
 	// Log shall contain a link to a resource of type LogService.
 	log string
 	// LogicalSizeMiB shall be the total size of the logical memory in MiB.
-	LogicalSizeMiB int
+	LogicalSizeMiB *int `json:",omitempty"`
 	// Manufacturer shall contain a string which identifies the manufacturer of the Memory.
 	Manufacturer string
 	// MaxTDPMilliWatts shall be the maximum power budgets supported by the
@@ -335,7 +335,7 @@ type Memory struct {
 	// NonVolatileSizeLimitMiB shall contain the total non-volatile memory capacity in mebibytes (MiB).
 	NonVolatileSizeLimitMiB int
 	// NonVolatileSizeMiB shall contain the total size of the non-volatile portion memory in MiB.
-	NonVolatileSizeMiB int
+	NonVolatileSizeMiB *int `json:",omitempty"`
 	// OperatingMemoryModes shall be the memory
 	// modes supported by the Memory.
 	OperatingMemoryModes []OperatingMemoryModes
@@ -348,18 +348,18 @@ type Memory struct {
 	// transfers/second). In any case, the reported value shall match the
 	// conventionally reported values for the technology utilized by the
 	// memory device.
-	OperatingSpeedMhz int
+	OperatingSpeedMhz *int `json:",omitempty"`
 	// PartNumber shall indicate the part number as provided by the manufacturer
 	// of this Memory.
 	PartNumber string
 	// PersistentRegionNumberLimit shall be the total number of persistent
 	// regions this Memory can support.
-	PersistentRegionNumberLimit int
+	PersistentRegionNumberLimit *int `json:",omitempty"`
 	// PersistentRegionSizeLimitMiB shall be the total size of persistent regions in MiB.
-	PersistentRegionSizeLimitMiB int
+	PersistentRegionSizeLimitMiB *int `json:",omitempty"`
 	// PersistentRegionSizeMaxMiB shall be the maximum size of a single persistent
 	// regions in MiB.
-	PersistentRegionSizeMaxMiB int
+	PersistentRegionSizeMaxMiB *int `json:",omitempty"`
 	// PoisonListMaxMediaErrorRecords shall contain the maximum number of media error records this device can track in
 	// its poison list.
 	PoisonListMaxMediaErrorRecords int
@@ -367,7 +367,7 @@ type Memory struct {
 	// management policy for the current resource.
 	PowerManagementPolicy PowerManagementPolicy
 	// RankCount is used for spare or interleave.
-	RankCount int
+	RankCount *int `json:",omitempty"`
 	// Regions shall be the memory region information within the Memory.
 	Regions []RegionSet
 	// SecurityCapabilities shall contain properties which describe the security
@@ -382,7 +382,7 @@ type Memory struct {
 	SerialNumber string
 	// SpareDeviceCount is used spare devices available in the Memory. If
 	// memory devices fails, the spare device could be used.
-	SpareDeviceCount int
+	SpareDeviceCount *int `json:",omitempty"`
 	// SparePartNumber shall contain the spare part number of the memory.
 	SparePartNumber string
 	// Status shall contain any status or health properties
@@ -390,16 +390,16 @@ type Memory struct {
 	Status common.Status
 	// VolatileRegionNumberLimit shall be the total number of volatile regions
 	// this Memory can support.
-	VolatileRegionNumberLimit int
+	VolatileRegionNumberLimit *int `json:",omitempty"`
 	// VolatileRegionSizeLimitMiB shall be the total size of volatile regions in MiB.
-	VolatileRegionSizeLimitMiB int
+	VolatileRegionSizeLimitMiB *int `json:",omitempty"`
 	// VolatileRegionSizeMaxMiB shall be the maximum size of a single volatile
 	// regions in MiB.
-	VolatileRegionSizeMaxMiB int
+	VolatileRegionSizeMaxMiB *int `json:",omitempty"`
 	// VolatileSizeLimitMiB shall contain the total volatile memory capacity in mebibytes (MiB).
 	VolatileSizeLimitMiB int
 	// VolatileSizeMiB shall be the total size of the volatile portion memory in MiB.
-	VolatileSizeMiB int
+	VolatileSizeMiB *int `json:",omitempty"`
 	// rawData holds the original serialized JSON so we can compare updates.
 	rawData []byte
 
@@ -931,25 +931,25 @@ type memoryParams struct {
 // information to sockets and memory controllers.
 type MemoryLocation struct {
 	// Channel is Channel number in which Memory is connected.
-	Channel int
+	Channel *int `json:",omitempty"`
 	// MemoryController is Memory controller number in which Memory is
 	// connected.
-	MemoryController int
+	MemoryController *int `json:",omitempty"`
 	// Slot is Slot number in which Memory is connected.
-	Slot int
+	Slot *int `json:",omitempty"`
 	// Socket is Socket number in which Memory is connected.
-	Socket int
+	Socket *int `json:",omitempty"`
 }
 
 // PowerManagementPolicy shall contain properties which describe the power
 // management policy for the current resource.
 type PowerManagementPolicy struct {
 	// AveragePowerBudgetMilliWatts is Average power budget in milli watts.
-	AveragePowerBudgetMilliWatts int
+	AveragePowerBudgetMilliWatts *int `json:",omitempty"`
 	// MaxTDPMilliWatts is Maximum TDP in milli watts.
-	MaxTDPMilliWatts int
+	MaxTDPMilliWatts *int `json:",omitempty"`
 	// PeakPowerBudgetMilliWatts is Peak power budget in milli watts.
-	PeakPowerBudgetMilliWatts int
+	PeakPowerBudgetMilliWatts *int `json:",omitempty"`
 	// PolicyEnabled is Power management policy enabled status.
 	PolicyEnabled bool
 }
@@ -963,7 +963,7 @@ type RegionSet struct {
 	MemoryClassification MemoryClassification
 	// OffsetMiB is Offset with in the Memory that corresponds to the
 	// starting of this memory region in MiB.
-	OffsetMiB int
+	OffsetMiB *int `json:",omitempty"`
 	// PassphraseEnabled shall be a boolean
 	// indicating if the passphrase is enabled for this region.
 	PassphraseEnabled bool
@@ -971,7 +971,7 @@ type RegionSet struct {
 	// Memory.
 	RegionID string `json:"RegionId"`
 	// SizeMiB is Size of this memory region in MiB.
-	SizeMiB int
+	SizeMiB *int `json:",omitempty"`
 }
 
 // SecurityCapabilities shall contain properties which describe the security
@@ -985,13 +985,13 @@ type SecurityCapabilities struct {
 	DataLockCapable bool
 	// MaxPassphraseCount is Maximum number of passphrases supported for this
 	// Memory.
-	MaxPassphraseCount int
+	MaxPassphraseCount *int `json:",omitempty"`
 	// PassphraseCapable is Memory passphrase set capability.
 	PassphraseCapable bool
 	// PassphraseLockLimit shall be the maximum number of incorrect passphrase
 	// access attempts allowed before access to data is locked. A value of zero
 	// shall indicate that there is no limit to the number of attempts.
-	PassphraseLockLimit int
+	PassphraseLockLimit *int `json:",omitempty"`
 }
 
 // SecurityStateInfo shall contain the security states of a memory device.

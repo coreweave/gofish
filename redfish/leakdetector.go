@@ -60,7 +60,7 @@ type LeakDetector struct {
 	// SKU shall contain the stock-keeping unit number for this leak detector.
 	SKU string
 	// SensingFrequency shall contain the time interval between readings of the physical leak detector.
-	SensingFrequency float64
+	SensingFrequency *float64 `json:",omitempty"`
 	// SerialNumber shall contain a manufacturer-allocated number that identifies the leak detector.
 	SerialNumber string
 	// SparePartNumber shall contain the spare part number of the leak detector.

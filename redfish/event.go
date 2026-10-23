@@ -93,7 +93,7 @@ func ListReferencedEventsWithContext(ctx context.Context, c common.Client, link 
 type EventRecord struct {
 	// AdditionalDataSizeBytes shall contain the size of the additional data retrieved from the URI specified by the
 	// AdditionalDataURI property for this event.
-	AdditionalDataSizeBytes int
+	AdditionalDataSizeBytes *int `json:",omitempty"`
 	// AdditionalDataURI shall contain the URI at which to access the additional data for the event, using the Redfish
 	// protocol and authentication methods. If both DiagnosticData and AdditionalDataURI are present, DiagnosticData
 	// shall contain the Base64-encoding of the data retrieved from the URI specified by the AdditionalDataURI

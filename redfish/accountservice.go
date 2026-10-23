@@ -302,11 +302,11 @@ type AccountService struct {
 	// value is `0`, no lockout shall occur.  If
 	// AccountLockoutCounterResetEnabled value is `false`, this property
 	// shall be ignored.
-	AccountLockoutDuration int
+	AccountLockoutDuration *int `json:",omitempty"`
 	// AccountLockoutThreshold shall contain the threshold
 	// of failed login attempts before a user account is locked.  If `0`, the
 	// account shall never be locked.
-	AccountLockoutThreshold int
+	AccountLockoutThreshold *int `json:",omitempty"`
 	// accounts shall contain a link to a Resource Collection of type
 	// ManagerAccountCollection.
 	accounts string
@@ -359,7 +359,7 @@ type AccountService struct {
 	// outboundConnections shall contain a link to a collection of type OutboundConnection.
 	outboundConnections string
 	// PasswordExpirationDays is the number of days before account passwords in this account service will expire.
-	PasswordExpirationDays int
+	PasswordExpirationDays *int `json:",omitempty"`
 	// PrivilegeMap shall contain a link to a resource of type PrivilegeMapping that contains the privileges that are
 	// required for a user context to complete a requested operation on a URI associated with this service.
 	privilegeMap string

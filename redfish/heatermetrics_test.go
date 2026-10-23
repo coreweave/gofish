@@ -50,12 +50,16 @@ func TestHeaterMetrics(t *testing.T) {
 	assertEquals(t, "/redfish/v1/Chassis/1U/ThermalSubsystem/Heaters/CPU1Heater/Metrics/HeaterMetrics.ResetMetrics", result.resetMetricsTarget)
 	assertEquals(t, "Heater Average Temperature", result.TemperatureReadingsCelsius[0].DeviceName)
 
-	if result.PrePowerOnHeatingTimeSeconds != 600 {
-		t.Errorf("Unexpected PrePowerOnHeatingTimeSeconds: %d", result.PrePowerOnHeatingTimeSeconds)
+	if result.PrePowerOnHeatingTimeSeconds == nil {
+		t.Error("Expected PrePowerOnHeatingTimeSeconds to be set")
+	} else if *result.PrePowerOnHeatingTimeSeconds != 600 {
+		t.Errorf("Unexpected PrePowerOnHeatingTimeSeconds: %d", *result.PrePowerOnHeatingTimeSeconds)
 	}
 
-	if result.RuntimeHeatingTimeSeconds != 3600 {
-		t.Errorf("Unexpected RuntimeHeatingTimeSeconds: %d", result.RuntimeHeatingTimeSeconds)
+	if result.RuntimeHeatingTimeSeconds == nil {
+		t.Error("Expected RuntimeHeatingTimeSeconds to be set")
+	} else if *result.RuntimeHeatingTimeSeconds != 3600 {
+		t.Errorf("Unexpected RuntimeHeatingTimeSeconds: %d", *result.RuntimeHeatingTimeSeconds)
 	}
 
 	if *result.PowerWatts.Reading != 200.3 {

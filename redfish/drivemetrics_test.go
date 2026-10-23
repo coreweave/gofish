@@ -79,28 +79,40 @@ func TestDriveMetrics(t *testing.T) {
 	assertEquals(t, "Metrics", result.ID)
 	assertEquals(t, "Drive Metrics", result.Name)
 
-	if result.CorrectableIOReadErrorCount != 184 {
-		t.Errorf("Unexpected CorrectableIOReadErrorCount, %d", result.CorrectableIOReadErrorCount)
+	if result.CorrectableIOReadErrorCount == nil {
+		t.Error("Expected CorrectableIOReadErrorCount to be set")
+	} else if *result.CorrectableIOReadErrorCount != 184 {
+		t.Errorf("Unexpected CorrectableIOReadErrorCount, %d", *result.CorrectableIOReadErrorCount)
 	}
 
-	if result.UncorrectableIOReadErrorCount != 0 {
-		t.Errorf("Unexpected UncorrectableIOReadErrorCount, %d", result.UncorrectableIOReadErrorCount)
+	if result.UncorrectableIOReadErrorCount == nil {
+		t.Error("Expected UncorrectableIOReadErrorCount to be set")
+	} else if *result.UncorrectableIOReadErrorCount != 0 {
+		t.Errorf("Unexpected UncorrectableIOReadErrorCount, %d", *result.UncorrectableIOReadErrorCount)
 	}
 
-	if result.CorrectableIOWriteErrorCount != 18 {
-		t.Errorf("Unexpected CorrectableIOWriteErrorCount, %d", result.CorrectableIOWriteErrorCount)
+	if result.CorrectableIOWriteErrorCount == nil {
+		t.Error("Expected CorrectableIOWriteErrorCount to be set")
+	} else if *result.CorrectableIOWriteErrorCount != 18 {
+		t.Errorf("Unexpected CorrectableIOWriteErrorCount, %d", *result.CorrectableIOWriteErrorCount)
 	}
 
-	if result.UncorrectableIOWriteErrorCount != 0 {
-		t.Errorf("Unexpected UncorrectableIOWriteErrorCount, %d", result.UncorrectableIOWriteErrorCount)
+	if result.UncorrectableIOWriteErrorCount == nil {
+		t.Error("Expected UncorrectableIOWriteErrorCount to be set")
+	} else if *result.UncorrectableIOWriteErrorCount != 0 {
+		t.Errorf("Unexpected UncorrectableIOWriteErrorCount, %d", *result.UncorrectableIOWriteErrorCount)
 	}
 
-	if result.BadBlockCount != 123098 {
-		t.Errorf("Unexpected BadBlockCount, %d", result.BadBlockCount)
+	if result.BadBlockCount == nil {
+		t.Error("Expected BadBlockCount to be set")
+	} else if *result.BadBlockCount != 123098 {
+		t.Errorf("Unexpected BadBlockCount, %d", *result.BadBlockCount)
 	}
 
-	if result.PowerOnHours != 3 {
-		t.Errorf("Unexpected PowerOnHours, %.2f", result.PowerOnHours)
+	if result.PowerOnHours == nil {
+		t.Error("Expected PowerOnHours to be set")
+	} else if *result.PowerOnHours != 3 {
+		t.Errorf("Unexpected PowerOnHours, %.2f", *result.PowerOnHours)
 	}
 
 	if result.NVMeSMART == nil {

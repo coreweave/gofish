@@ -36,13 +36,13 @@ type Battery struct {
 	// Assembly shall contain a link to a resource of type Assembly.
 	assembly string
 	// CapacityActualAmpHours shall contain the actual maximum capacity of this battery in amp-hour units.
-	CapacityActualAmpHours float64
+	CapacityActualAmpHours *float64 `json:",omitempty"`
 	// CapacityActualWattHours shall contain the actual maximum capacity of this battery in watt-hour units.
-	CapacityActualWattHours float64
+	CapacityActualWattHours *float64 `json:",omitempty"`
 	// CapacityRatedAmpHours shall contain the rated maximum capacity of this battery in amp-hour units.
-	CapacityRatedAmpHours float64
+	CapacityRatedAmpHours *float64 `json:",omitempty"`
 	// CapacityRatedWattHours shall contain the rated maximum capacity of this battery in watt-hour units.
-	CapacityRatedWattHours float64
+	CapacityRatedWattHours *float64 `json:",omitempty"`
 	// ChargeState shall contain the charge state of this battery.
 	ChargeState ChargeState
 	// Description provides a description of this resource.
@@ -64,11 +64,11 @@ type Battery struct {
 	// may be the entity from whom the battery is purchased, but this is not necessarily true.
 	Manufacturer string
 	// MaxChargeRateAmps shall contain the maximum charge rate of this battery in amp units.
-	MaxChargeRateAmps float64
+	MaxChargeRateAmps *float64 `json:",omitempty"`
 	// MaxChargeVoltage shall contain the maximum charge voltage of this battery.
-	MaxChargeVoltage float64
+	MaxChargeVoltage *float64 `json:",omitempty"`
 	// MaxDischargeRateAmps shall contain the maximum discharge rate of this battery in amp units.
-	MaxDischargeRateAmps float64
+	MaxDischargeRateAmps *float64 `json:",omitempty"`
 	// Metrics shall contain a link to a resource of type BatteryMetrics.
 	metrics string
 	// Model shall contain the model information as defined by the manufacturer for this battery.

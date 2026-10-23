@@ -150,7 +150,7 @@ type OperatingSystem struct {
 	// Type shall contain the type for this operating system.
 	Type OperatingSystemTypes
 	// UptimeSeconds shall contain the wall-clock time this operating system has been running in seconds.
-	UptimeSeconds int
+	UptimeSeconds *int `json:",omitempty"`
 	// VirtualMachineEngines shall contain the virtual machine engines running in this operating system.
 	VirtualMachineEngines []VirtualMachineEngine
 

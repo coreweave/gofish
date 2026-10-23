@@ -52,12 +52,16 @@ func TestLogEntry(t *testing.T) {
 		t.Errorf("Received entry code: %s", result.EntryCode)
 	}
 
-	if result.EventGroupID != 21 {
-		t.Errorf("Expected group ID 21, got %d", result.EventGroupID)
+	if result.EventGroupID == nil {
+		t.Error("Expected EventGroupID to be set")
+	} else if *result.EventGroupID != 21 {
+		t.Errorf("Expected group ID 21, got %d", *result.EventGroupID)
 	}
 
-	if result.SensorNumber != 1 {
-		t.Errorf("Received sensor number %d", result.SensorNumber)
+	if result.SensorNumber == nil {
+		t.Error("Expected SensorNumber to be set")
+	} else if *result.SensorNumber != 1 {
+		t.Errorf("Received sensor number %d", *result.SensorNumber)
 	}
 
 	if result.SensorType != ProcessorSensorType {

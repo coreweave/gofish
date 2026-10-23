@@ -104,7 +104,7 @@ type PCIeFunction struct {
 	DeviceID string
 	// FunctionID shall the PCIe device function number within a given PCIe
 	// device.
-	FunctionID int
+	FunctionID *int `json:",omitempty"`
 	// FunctionProtocol shall contain the protocol supported by this PCIe function.
 	FunctionProtocol FunctionProtocol
 	// FunctionType shall be the function type of the PCIe device function such

@@ -119,10 +119,10 @@ type StorageControllerMetrics struct {
 	ODataType string `json:"@odata.type"`
 	// CorrectableECCErrorCount shall contain the number of correctable errors for the lifetime of memory of the
 	// storage controller.
-	CorrectableECCErrorCount int
+	CorrectableECCErrorCount *int `json:",omitempty"`
 	// CorrectableParityErrorCount shall contain the number of correctable errors for the lifetime of memory of the
 	// storage controller.
-	CorrectableParityErrorCount int
+	CorrectableParityErrorCount *int `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// NVMeSMART shall contain the NVMe SMART metrics for this storage controller as defined by the NVMe SMART/Health
@@ -130,13 +130,13 @@ type StorageControllerMetrics struct {
 	NVMeSMART *NVMeSMARTMetrics
 	// StateChangeCount shall contain the number of times the State property within the Status property of the parent
 	// StorageController resource changed.
-	StateChangeCount int
+	StateChangeCount *int `json:",omitempty"`
 	// UncorrectableECCErrorCount shall contain the number of uncorrectable errors for the lifetime of memory of the
 	// storage controller.
-	UncorrectableECCErrorCount int
+	UncorrectableECCErrorCount *int `json:",omitempty"`
 	// UncorrectableParityErrorCount shall contain the number of uncorrectable errors for the lifetime of memory of the
 	// storage controller.
-	UncorrectableParityErrorCount int
+	UncorrectableParityErrorCount *int `json:",omitempty"`
 }
 
 // GetStorageControllerMetrics will get a StorageControllerMetrics instance from the service.

@@ -140,9 +140,9 @@ func (container *Container) ContainerImageWithContext(ctx context.Context, query
 // Limits shall contain the resource limits allocated to a container.
 type Limits struct {
 	// CPUCount shall contain the number of processors available to this container.
-	CPUCount float32
+	CPUCount *float32 `json:",omitempty"`
 	// MemoryBytes shall contain the amount of memory available to this container in bytes.
-	MemoryBytes int
+	MemoryBytes *int `json:",omitempty"`
 }
 
 // MountPoint shall contain a file system mount point configured for a container.

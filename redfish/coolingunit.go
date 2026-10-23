@@ -42,7 +42,7 @@ type CoolingUnit struct {
 	// this equipment. The values of the RedundancyGroup array shall reference resources of type CoolantConnector.
 	coolantConnectorRedundancy []string
 	// CoolingCapacityWatts shall contain the manufacturer-provided cooling capacity, in watt units, of this equipment.
-	CoolingCapacityWatts int
+	CoolingCapacityWatts *int `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// EnvironmentMetrics shall contain a link to a resource of type EnvironmentMetrics that specifies the environment

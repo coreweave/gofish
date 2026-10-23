@@ -61,35 +61,35 @@ type FibreChannelPortMetrics struct {
 type GenZPortMetrics struct {
 	// AccessKeyViolations shall contain the total number of Access Key Violations detected for packets received or
 	// transmitted on this interface.
-	AccessKeyViolations int
+	AccessKeyViolations *int `json:",omitempty"`
 	// EndToEndCRCErrors shall contain total number of ECRC transient errors detected in received link-local and end-
 	// to-end packets.
-	EndToEndCRCErrors int
+	EndToEndCRCErrors *int `json:",omitempty"`
 	// LLRRecovery shall contain the total number of times Link-level Reliability (LLR) recovery has been initiated by
 	// this interface. This is not to be confused with the number of packets retransmitted due to initiating LLR
 	// recovery.
-	LLRRecovery int
+	LLRRecovery *int `json:",omitempty"`
 	// LinkNTE shall contain the total number of link-local non-transient errors detected on this interface.
-	LinkNTE int
+	LinkNTE *int `json:",omitempty"`
 	// MarkedECN shall contain the number of packets that the component set the Congestion ECN bit prior to
 	// transmission through this interface.
-	MarkedECN int
+	MarkedECN *int `json:",omitempty"`
 	// NonCRCTransientErrors shall contain the total number of transient errors detected that are unrelated to CRC
 	// validation, which covers link-local and end-to-end packets, such as malformed Link Idle packets or PLA signal
 	// errors.
-	NonCRCTransientErrors int
+	NonCRCTransientErrors *int `json:",omitempty"`
 	// PacketCRCErrors shall contain the total number of PCRC transient errors detected in received link-local and end-
 	// to-end packets.
-	PacketCRCErrors int
+	PacketCRCErrors *int `json:",omitempty"`
 	// PacketDeadlineDiscards shall contain the number of packets discarded by this interface due to the Congestion
 	// Deadline subfield reaching zero prior to packet transmission.
-	PacketDeadlineDiscards int
+	PacketDeadlineDiscards *int `json:",omitempty"`
 	// RXStompedECRC shall contain the total number of packets that this interface received with a stomped ECRC field.
-	RXStompedECRC int
+	RXStompedECRC *int `json:",omitempty"`
 	// ReceivedECN shall contain the number of packets received on this interface with the Congestion ECN bit set.
-	ReceivedECN int
+	ReceivedECN *int `json:",omitempty"`
 	// TXStompedECRC shall contain the total number of packets that this interfaced stomped the ECRC field.
-	TXStompedECRC int
+	TXStompedECRC *int `json:",omitempty"`
 }
 
 // NetworkingPortMetrics shall describe the metrics for network ports, including Ethernet, Fibre Channel, and InfiniBand, that
@@ -202,17 +202,17 @@ type PortMetrics struct {
 	PCIeErrors PCIeErrors
 	// RXBytes shall contain the total number of bytes received on a port since reset, including host and remote
 	// management passthrough traffic, and inclusive of all protocol overhead.
-	RXBytes int
+	RXBytes *int `json:",omitempty"`
 	// RXErrors shall contain the total number of received errors on a port since reset.
-	RXErrors int
+	RXErrors *int `json:",omitempty"`
 	// SAS shall contain an array of physical-related metrics for Serial Attached SCSI (SAS). Each member in the array
 	// shall represent a single phy.
 	SAS []SASPortMetrics
 	// TXBytes shall contain the total number of bytes transmitted on a port since reset, including host and remote
 	// management passthrough traffic, and inclusive of all protocol overhead.
-	TXBytes int
+	TXBytes *int `json:",omitempty"`
 	// TXErrors shall contain the total number of transmission errors on a port since reset.
-	TXErrors int
+	TXErrors *int `json:",omitempty"`
 	// Transceivers shall contain an array of transceiver-related metrics for this port. Each member in the array shall
 	// represent a single transceiver.
 	Transceivers []TransceiverPortMetrics

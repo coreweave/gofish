@@ -433,8 +433,10 @@ func TestMaxSpeedMHzString(t *testing.T) {
 		t.Errorf("Expected 2 ReconfigurationSlots, got %d", len(result.FPGA.ReconfigurationSlots))
 	}
 
-	if result.MaxSpeedMHz != 4000 {
-		t.Errorf("Expected MaxSpeedMhz to be 4000 but got %f", result.MaxSpeedMHz)
+	if result.MaxSpeedMHz == nil {
+		t.Error("Expected MaxSpeedMHz to be set")
+	} else if *result.MaxSpeedMHz != 4000 {
+		t.Errorf("Expected MaxSpeedMhz to be 4000 but got %f", *result.MaxSpeedMHz)
 	}
 }
 
@@ -448,7 +450,7 @@ func TestNonconformingProcessor(t *testing.T) {
 		t.Errorf("Error decoding JSON: %s", err)
 	}
 
-	if result.MaxSpeedMHz != 0 {
-		t.Errorf("Expected MaxSpeedMhz to be 0 but got %f", result.MaxSpeedMHz)
+	if result.MaxSpeedMHz != nil {
+		t.Errorf("Expected MaxSpeedMHz to be nil but got %f", *result.MaxSpeedMHz)
 	}
 }
