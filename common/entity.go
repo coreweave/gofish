@@ -511,17 +511,33 @@ func GetObject[T any, PT GenericSchemaObjectPointer[T]](c Client, uri string, op
 	return GetObjectWithContext[T, PT](ContextOf(c), c, uri, opts...)
 }
 
-// GetObjectWithContext retrieves a single API object from the service.
+// GetObjectWithContext retrieves a single API object from the service. On an error status it also returns the
+// object when the body still holds one, since some services return a full resource with a 500.
 func GetObjectWithContext[T any, PT GenericSchemaObjectPointer[T]](ctx context.Context, c Client, uri string, opts ...QueryGroupOption) (*T, error) {
 	uri = BuildQuery(c, uri, false, opts...)
 
 	resp, err := c.GetWithContext(ctx, uri)
 	defer DeferredCleanupHTTPResponse(resp)
 	if err != nil {
-		return nil, err
+		return decodeErrorBody[T, PT](c, err), err
 	}
 
 	return DecodeGenericEntity[T, PT](c, resp)
+}
+
+// decodeErrorBody decodes the object in an error response's body, or returns nil if the body has none.
+func decodeErrorBody[T any, PT GenericSchemaObjectPointer[T]](c Client, err error) *T {
+	var rfErr *Error
+	if !errors.As(err, &rfErr) {
+		return nil
+	}
+
+	entity := PT(new(T))
+	if json.Unmarshal(rfErr.RawData, entity) != nil || entity.GetODataID() == "" {
+		return nil
+	}
+	entity.SetClient(c)
+	return entity
 }
 
 // DecodeGenericEntity attempts to decode an HTTP response into an Entity struct
