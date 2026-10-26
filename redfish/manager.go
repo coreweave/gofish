@@ -706,6 +706,11 @@ func (manager *Manager) NetworkProtocolWithContext(ctx context.Context, queryOpt
 	return GetNetworkProtocolWithContext(ctx, manager.GetClient(), manager.NetworkProtocolLink.String(), queryOpts...)
 }
 
+// NetworkProtocolURI returns the URI of this manager's network protocol resource.
+func (manager *Manager) NetworkProtocolURI() string {
+	return manager.NetworkProtocolLink.String()
+}
+
 // RemoteAccountService gets the account service resource for the remote manager that this resource represents.
 // This property shall only be present when providing aggregation of a remote manager.
 func (manager *Manager) RemoteAccountService(queryOpts ...common.QueryGroupOption) (*AccountService, error) {
