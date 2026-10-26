@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -113,12 +114,17 @@ func (commonauthinfo *CommonAuthInfo) UnmarshalJSON(b []byte) error {
 }
 
 // ComponentCertificate gets the identity of the component.
-func (commonauthinfo *CommonAuthInfo) ComponentCertificate(c common.Client) (*Certificate, error) {
+func (commonauthinfo *CommonAuthInfo) ComponentCertificate(c common.Client, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
+	return commonauthinfo.ComponentCertificateWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// ComponentCertificateWithContext gets the identity of the component.
+func (commonauthinfo *CommonAuthInfo) ComponentCertificateWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
 	if commonauthinfo.componentCertificate == "" {
 		return nil, nil
 	}
 
-	return GetCertificate(c, commonauthinfo.componentCertificate)
+	return GetCertificateWithContext(ctx, c, commonauthinfo.componentCertificate, queryOpts...)
 }
 
 // CommunicationInfo shall contain information about communication between two components.
@@ -227,22 +233,38 @@ func (componentintegrity *ComponentIntegrity) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (componentintegrity *ComponentIntegrity) Update() error {
+	return componentintegrity.UpdateWithContext(common.ContextOf(componentintegrity.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (componentintegrity *ComponentIntegrity) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"ComponentIntegrityEnabled",
 	}
 
-	return componentintegrity.UpdateFromRawData(componentintegrity, componentintegrity.rawData, readWriteFields)
+	return componentintegrity.UpdateFromRawDataWithContext(ctx, componentintegrity, componentintegrity.rawData, readWriteFields)
 }
 
 // GetComponentIntegrity will get a ComponentIntegrity instance from the service.
-func GetComponentIntegrity(c common.Client, uri string) (*ComponentIntegrity, error) {
-	return common.GetObject[ComponentIntegrity](c, uri)
+func GetComponentIntegrity(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ComponentIntegrity, error) {
+	return GetComponentIntegrityWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetComponentIntegrityWithContext will get a ComponentIntegrity instance from the service.
+func GetComponentIntegrityWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ComponentIntegrity, error) {
+	return common.GetObjectWithContext[ComponentIntegrity](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedComponentIntegritys gets the collection of ComponentIntegrity from
 // a provided reference.
-func ListReferencedComponentIntegritys(c common.Client, link string) ([]*ComponentIntegrity, error) {
-	return common.GetCollectionObjects[ComponentIntegrity](c, link)
+func ListReferencedComponentIntegritys(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*ComponentIntegrity, error) {
+	return ListReferencedComponentIntegritysWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedComponentIntegritysWithContext gets the collection of ComponentIntegrity from
+// a provided reference.
+func ListReferencedComponentIntegritysWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*ComponentIntegrity, error) {
+	return common.GetCollectionObjectsWithContext[ComponentIntegrity](ctx, c, link, queryOpts...)
 }
 
 // SPDMGetSignedMeasurementsRequest contains the parameters for the SPDMGetSignedMeasurements action.
@@ -311,12 +333,17 @@ func (spdmgetsignedmeasurementsresponse *SPDMGetSignedMeasurementsResponse) Unma
 }
 
 // Certificate gets the certificate corresponding to the SPDM slot identifier that can be used to validate the signature.
-func (spdmgetsignedmeasurementsresponse *SPDMGetSignedMeasurementsResponse) Certificate() (*Certificate, error) {
+func (spdmgetsignedmeasurementsresponse *SPDMGetSignedMeasurementsResponse) Certificate(queryOpts ...common.QueryGroupOption) (*Certificate, error) {
+	return spdmgetsignedmeasurementsresponse.CertificateWithContext(common.ContextOf(spdmgetsignedmeasurementsresponse.client), queryOpts...)
+}
+
+// CertificateWithContext gets the certificate corresponding to the SPDM slot identifier that can be used to validate the signature.
+func (spdmgetsignedmeasurementsresponse *SPDMGetSignedMeasurementsResponse) CertificateWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
 	if spdmgetsignedmeasurementsresponse.certificate == "" {
 		return nil, nil
 	}
 
-	return GetCertificate(spdmgetsignedmeasurementsresponse.client, spdmgetsignedmeasurementsresponse.certificate)
+	return GetCertificateWithContext(ctx, spdmgetsignedmeasurementsresponse.client, spdmgetsignedmeasurementsresponse.certificate, queryOpts...)
 }
 
 func (spdmgetsignedmeasurementsresponse *SPDMGetSignedMeasurementsResponse) SetClient(c common.Client) {
@@ -345,7 +372,12 @@ func (spdmgetsignedmeasurementsresponse *SPDMGetSignedMeasurementsResponse) SetE
 
 // SPDMGetSignedMeasurements generates an SPDM cryptographic signed statement over the given nonce and measurements of the SPDM Responder.
 func (componentintegrity *ComponentIntegrity) SPDMGetSignedMeasurements(request *SPDMGetSignedMeasurementsRequest) (*SPDMGetSignedMeasurementsResponse, *TaskMonitorInfo, error) {
-	resp, taskInfo, err := PostWithTask(componentintegrity.GetClient(), componentintegrity.SPDMGetSignedMeasurementsTarget, request,
+	return componentintegrity.SPDMGetSignedMeasurementsWithContext(common.ContextOf(componentintegrity.GetClient()), request)
+}
+
+// SPDMGetSignedMeasurementsWithContext generates an SPDM cryptographic signed statement over the given nonce and measurements of the SPDM Responder.
+func (componentintegrity *ComponentIntegrity) SPDMGetSignedMeasurementsWithContext(ctx context.Context, request *SPDMGetSignedMeasurementsRequest) (*SPDMGetSignedMeasurementsResponse, *TaskMonitorInfo, error) {
+	resp, taskInfo, err := PostWithTaskWithContext(ctx, componentintegrity.GetClient(), componentintegrity.SPDMGetSignedMeasurementsTarget, request,
 		componentintegrity.Headers(), false)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil || taskInfo != nil {
@@ -358,7 +390,12 @@ func (componentintegrity *ComponentIntegrity) SPDMGetSignedMeasurements(request 
 
 // TPMGetSignedMeasurements generates a TPM cryptographic signed statement over the given nonce and PCRs of the TPM for TPM 2.0 devices.
 func (componentintegrity *ComponentIntegrity) TPMGetSignedMeasurements(request *TPMGetSignedMeasurementsRequest) (*TPMGetSignedMeasurementsResponse, *TaskMonitorInfo, error) {
-	resp, taskInfo, err := PostWithTask(componentintegrity.GetClient(),
+	return componentintegrity.TPMGetSignedMeasurementsWithContext(common.ContextOf(componentintegrity.GetClient()), request)
+}
+
+// TPMGetSignedMeasurementsWithContext generates a TPM cryptographic signed statement over the given nonce and PCRs of the TPM for TPM 2.0 devices.
+func (componentintegrity *ComponentIntegrity) TPMGetSignedMeasurementsWithContext(ctx context.Context, request *TPMGetSignedMeasurementsRequest) (*TPMGetSignedMeasurementsResponse, *TaskMonitorInfo, error) {
+	resp, taskInfo, err := PostWithTaskWithContext(ctx, componentintegrity.GetClient(),
 		componentintegrity.TPMGetSignedMeasurementsTarget, request, componentintegrity.Headers(), false)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil || taskInfo != nil {
@@ -469,12 +506,17 @@ func (spdmrequesterauth *SPDMrequesterAuth) UnmarshalJSON(b []byte) error {
 }
 
 // ProvidedCertificate gets the identity of the SPDM Requester provided in mutual authentication.
-func (spdmrequesterauth *SPDMrequesterAuth) ProvidedCertificate(c common.Client) (*Certificate, error) {
+func (spdmrequesterauth *SPDMrequesterAuth) ProvidedCertificate(c common.Client, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
+	return spdmrequesterauth.ProvidedCertificateWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// ProvidedCertificateWithContext gets the identity of the SPDM Requester provided in mutual authentication.
+func (spdmrequesterauth *SPDMrequesterAuth) ProvidedCertificateWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
 	if spdmrequesterauth.providedCertificate == "" {
 		return nil, nil
 	}
 
-	return GetCertificate(c, spdmrequesterauth.providedCertificate)
+	return GetCertificateWithContext(ctx, c, spdmrequesterauth.providedCertificate, queryOpts...)
 }
 
 // SPDMresponderAuth shall contain common identity-related authentication information.
@@ -509,12 +551,17 @@ func (spdmresponderauth *SPDMresponderAuth) UnmarshalJSON(b []byte) error {
 }
 
 // ComponentCertificate gets the identity of the component referenced by the TargetComponentURI property.
-func (spdmresponderauth *SPDMresponderAuth) ComponentCertificate(c common.Client) (*Certificate, error) {
+func (spdmresponderauth *SPDMresponderAuth) ComponentCertificate(c common.Client, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
+	return spdmresponderauth.ComponentCertificateWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// ComponentCertificateWithContext gets the identity of the component referenced by the TargetComponentURI property.
+func (spdmresponderauth *SPDMresponderAuth) ComponentCertificateWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
 	if spdmresponderauth.componentCertificate == "" {
 		return nil, nil
 	}
 
-	return GetCertificate(c, spdmresponderauth.componentCertificate)
+	return GetCertificateWithContext(ctx, c, spdmresponderauth.componentCertificate, queryOpts...)
 }
 
 // SPDMsingleMeasurement shall contain a single SPDM measurement for an SPDM Responder.
@@ -533,7 +580,7 @@ type SPDMsingleMeasurement struct {
 	// 'DMTF'.
 	MeasurementHashAlgorithm string
 	// MeasurementIndex shall contain the index of the measurement.
-	MeasurementIndex int
+	MeasurementIndex *int `json:",omitempty"`
 	// MeasurementType shall contain the type or characteristics of the data that this measurement represents. This
 	// property shall not be present if MeasurementSpecification does not contain 'DMTF'.
 	MeasurementType DMTFmeasurementTypes
@@ -551,7 +598,7 @@ type SPDMsingleMeasurement struct {
 type SingleSessionInfo struct {
 	// SessionID shall contain the unique identifier for the active session or communication channel between two
 	// components.
-	SessionID int `json:"SessionId"`
+	SessionID *int `json:"SessionId,omitempty"`
 	// SessionType shall contain the type of session or communication channel between two components.
 	SessionType SecureSessionType
 }
@@ -641,12 +688,17 @@ func (tpmauth *TPMauth) UnmarshalJSON(b []byte) error {
 }
 
 // ComponentCertificate gets the identity of the component referenced by the TargetComponentURI property.
-func (tpmauth *TPMauth) ComponentCertificate(c common.Client) (*Certificate, error) {
+func (tpmauth *TPMauth) ComponentCertificate(c common.Client, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
+	return tpmauth.ComponentCertificateWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// ComponentCertificateWithContext gets the identity of the component referenced by the TargetComponentURI property.
+func (tpmauth *TPMauth) ComponentCertificateWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
 	if tpmauth.componentCertificate == "" {
 		return nil, nil
 	}
 
-	return GetCertificate(c, tpmauth.componentCertificate)
+	return GetCertificateWithContext(ctx, c, tpmauth.componentCertificate, queryOpts...)
 }
 
 // TPMcommunication shall contain information about communication between two components.
@@ -667,7 +719,7 @@ type TPMinfo struct {
 	MeasurementSet TPMmeasurementSet
 	// NonceSizeBytesMaximum shall contain the maximum number of bytes that can be specified in the Nonce parameter of
 	// the TPMGetSignedMeasurements action.
-	NonceSizeBytesMaximum int
+	NonceSizeBytesMaximum *int `json:",omitempty"`
 }
 
 // TPMmeasurementSet shall contain Trusted Computing Group TPM measurement information.
@@ -688,5 +740,5 @@ type TPMsingleMeasurement struct {
 	// the 'Trusted Computing Group Algorithm Registry'.
 	MeasurementHashAlgorithm string
 	// PCR shall contain the Platform Configuration Register (PCR) bank of the measurement.
-	PCR int
+	PCR *int `json:",omitempty"`
 }

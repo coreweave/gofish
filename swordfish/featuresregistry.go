@@ -5,6 +5,7 @@
 package swordfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -38,14 +39,25 @@ type FeaturesRegistry struct {
 }
 
 // GetFeaturesRegistry will get a FeaturesRegistry instance from the service.
-func GetFeaturesRegistry(c common.Client, uri string) (*FeaturesRegistry, error) {
-	return common.GetObject[FeaturesRegistry](c, uri)
+func GetFeaturesRegistry(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*FeaturesRegistry, error) {
+	return GetFeaturesRegistryWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetFeaturesRegistryWithContext will get a FeaturesRegistry instance from the service.
+func GetFeaturesRegistryWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*FeaturesRegistry, error) {
+	return common.GetObjectWithContext[FeaturesRegistry](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedFeaturesRegistrys gets the collection of FeaturesRegistry from
 // a provided reference.
-func ListReferencedFeaturesRegistrys(c common.Client, link string) ([]*FeaturesRegistry, error) {
-	return common.GetCollectionObjects[FeaturesRegistry](c, link)
+func ListReferencedFeaturesRegistrys(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*FeaturesRegistry, error) {
+	return ListReferencedFeaturesRegistrysWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedFeaturesRegistrysWithContext gets the collection of FeaturesRegistry from
+// a provided reference.
+func ListReferencedFeaturesRegistrysWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*FeaturesRegistry, error) {
+	return common.GetCollectionObjectsWithContext[FeaturesRegistry](ctx, c, link, queryOpts...)
 }
 
 // FeaturesRegistryProperty shall represent the suffix to be used in the Feature and shall be unique within this

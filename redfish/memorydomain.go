@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -37,14 +38,14 @@ type MemoryDomain struct {
 	InterleavableMemorySets []MemorySet
 	// MemoryChunkIncrementMiB shall contain the incremental size, from MemoryChunkIncrementMiB, allowed for a memory
 	// chunk within this domain in mebibytes (MiB).
-	MemoryChunkIncrementMiB int
+	MemoryChunkIncrementMiB *int `json:",omitempty"`
 	// memoryChunks shall be a link to a collection of type MemoryChunkCollection.
 	memoryChunks string
 	// MemorySizeMiB shall contain the total size of the memory domain in mebibytes (MiB).
-	MemorySizeMiB int
+	MemorySizeMiB *int `json:",omitempty"`
 	// MinMemoryChunkSizeMiB shall contain the minimum size allowed for a memory chunk within this domain in mebibytes
 	// (MiB).
-	MinMemoryChunkSizeMiB int
+	MinMemoryChunkSizeMiB *int `json:",omitempty"`
 	// Status shall contain any status or health properties of the resource.
 	Status common.Status
 
@@ -113,35 +114,68 @@ func (memorydomain *MemoryDomain) UnmarshalJSON(b []byte) error {
 
 // CXLLogicalDevices gets the CXLLogicalDevice that represent the CXL logical devices
 // that are associated with this memory domain.
-func (memorydomain *MemoryDomain) CXLLogicalDevices() ([]*CXLLogicalDevice, error) {
-	return common.GetObjects[CXLLogicalDevice](memorydomain.GetClient(), memorydomain.cxlLogicalDevices)
+func (memorydomain *MemoryDomain) CXLLogicalDevices(queryOpts ...common.QueryGroupOption) ([]*CXLLogicalDevice, error) {
+	return memorydomain.CXLLogicalDevicesWithContext(common.ContextOf(memorydomain.GetClient()), queryOpts...)
+}
+
+// CXLLogicalDevicesWithContext gets the CXLLogicalDevice that represent the CXL logical devices
+// that are associated with this memory domain.
+func (memorydomain *MemoryDomain) CXLLogicalDevicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*CXLLogicalDevice, error) {
+	return common.GetObjectsWithContext[CXLLogicalDevice](ctx, memorydomain.GetClient(), memorydomain.cxlLogicalDevices, queryOpts...)
 }
 
 // FabricAdapters gets the fabric adapters that present this memory domain to a fabric.
-func (memorydomain *MemoryDomain) FabricAdapters() ([]*FabricAdapter, error) {
-	return common.GetObjects[FabricAdapter](memorydomain.GetClient(), memorydomain.fabricAdapters)
+func (memorydomain *MemoryDomain) FabricAdapters(queryOpts ...common.QueryGroupOption) ([]*FabricAdapter, error) {
+	return memorydomain.FabricAdaptersWithContext(common.ContextOf(memorydomain.GetClient()), queryOpts...)
+}
+
+// FabricAdaptersWithContext gets the fabric adapters that present this memory domain to a fabric.
+func (memorydomain *MemoryDomain) FabricAdaptersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*FabricAdapter, error) {
+	return common.GetObjectsWithContext[FabricAdapter](ctx, memorydomain.GetClient(), memorydomain.fabricAdapters, queryOpts...)
 }
 
 // MediaControllers gets the media controllers for this memory domain.
 // This property has been deprecated in favor of the FabricAdapters property.
-func (memorydomain *MemoryDomain) MediaControllers() ([]*MediaController, error) {
-	return common.GetObjects[MediaController](memorydomain.GetClient(), memorydomain.mediaControllers)
+func (memorydomain *MemoryDomain) MediaControllers(queryOpts ...common.QueryGroupOption) ([]*MediaController, error) {
+	return memorydomain.MediaControllersWithContext(common.ContextOf(memorydomain.GetClient()), queryOpts...)
+}
+
+// MediaControllersWithContext gets the media controllers for this memory domain.
+// This property has been deprecated in favor of the FabricAdapters property.
+func (memorydomain *MemoryDomain) MediaControllersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*MediaController, error) {
+	return common.GetObjectsWithContext[MediaController](ctx, memorydomain.GetClient(), memorydomain.mediaControllers, queryOpts...)
 }
 
 // PCIeFunctions gets the PCIe functions representing this memory domain.
-func (memorydomain *MemoryDomain) PCIeFunctions() ([]*PCIeFunction, error) {
-	return common.GetObjects[PCIeFunction](memorydomain.GetClient(), memorydomain.pcieFunctions)
+func (memorydomain *MemoryDomain) PCIeFunctions(queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
+	return memorydomain.PCIeFunctionsWithContext(common.ContextOf(memorydomain.GetClient()), queryOpts...)
+}
+
+// PCIeFunctionsWithContext gets the PCIe functions representing this memory domain.
+func (memorydomain *MemoryDomain) PCIeFunctionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
+	return common.GetObjectsWithContext[PCIeFunction](ctx, memorydomain.GetClient(), memorydomain.pcieFunctions, queryOpts...)
 }
 
 // GetMemoryDomain will get a MemoryDomain instance from the service.
-func GetMemoryDomain(c common.Client, uri string) (*MemoryDomain, error) {
-	return common.GetObject[MemoryDomain](c, uri)
+func GetMemoryDomain(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*MemoryDomain, error) {
+	return GetMemoryDomainWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetMemoryDomainWithContext will get a MemoryDomain instance from the service.
+func GetMemoryDomainWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*MemoryDomain, error) {
+	return common.GetObjectWithContext[MemoryDomain](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedMemoryDomains gets the collection of MemoryDomain from
 // a provided reference.
-func ListReferencedMemoryDomains(c common.Client, link string) ([]*MemoryDomain, error) {
-	return common.GetCollectionObjects[MemoryDomain](c, link)
+func ListReferencedMemoryDomains(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*MemoryDomain, error) {
+	return ListReferencedMemoryDomainsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedMemoryDomainsWithContext gets the collection of MemoryDomain from
+// a provided reference.
+func ListReferencedMemoryDomainsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*MemoryDomain, error) {
+	return common.GetCollectionObjectsWithContext[MemoryDomain](ctx, c, link, queryOpts...)
 }
 
 // MemorySet shall represent the interleave sets for a memory chunk.
@@ -173,6 +207,11 @@ func (memoryset *MemorySet) UnmarshalJSON(b []byte) error {
 }
 
 // MemorySet gets the Memory objects that are part of this set.
-func (memoryset *MemorySet) MemorySet(c common.Client) ([]*Memory, error) {
-	return common.GetObjects[Memory](c, memoryset.memorySet)
+func (memoryset *MemorySet) MemorySet(c common.Client, queryOpts ...common.QueryGroupOption) ([]*Memory, error) {
+	return memoryset.MemorySetWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// MemorySetWithContext gets the Memory objects that are part of this set.
+func (memoryset *MemorySet) MemorySetWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) ([]*Memory, error) {
+	return common.GetObjectsWithContext[Memory](ctx, c, memoryset.memorySet, queryOpts...)
 }

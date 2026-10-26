@@ -5,6 +5,7 @@
 package ami
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -47,6 +48,11 @@ func FromEventService(eventService *redfish.EventService) (*EventService, error)
 }
 
 // Certificates will get the Certificates for this EventService.
-func (es *EventService) Certificates() ([]*redfish.Certificate, error) {
-	return redfish.ListReferencedCertificates(es.GetClient(), es.certificates)
+func (es *EventService) Certificates(queryOpts ...common.QueryGroupOption) ([]*redfish.Certificate, error) {
+	return es.CertificatesWithContext(common.ContextOf(es.GetClient()), queryOpts...)
+}
+
+// CertificatesWithContext will get the Certificates for this EventService.
+func (es *EventService) CertificatesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*redfish.Certificate, error) {
+	return redfish.ListReferencedCertificatesWithContext(ctx, es.GetClient(), es.certificates, queryOpts...)
 }

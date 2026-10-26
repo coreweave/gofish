@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -38,9 +39,9 @@ const (
 // The efficiency ratings of this power supply.
 type EfficiencyRating struct {
 	// The rated efficiency of this power supply at the specified load.
-	EfficiencyPercent float32
+	EfficiencyPercent *float32 `json:",omitempty"`
 	// The electrical load for this rating.
-	LoadPercent float32
+	LoadPercent *float32 `json:",omitempty"`
 }
 
 // The input ranges that the power supply can use.
@@ -54,7 +55,7 @@ type PowerSupplyInputRange struct {
 // The input ranges that the power supply can use.
 type OutputRail struct {
 	// The nominal voltage of this output power rail.
-	NominalVoltage float32
+	NominalVoltage *float32 `json:",omitempty"`
 	// The area or device to which this power rail applies.
 	PhysicalContext common.PhysicalContext
 }
@@ -96,7 +97,7 @@ type PowerSupplyUnit struct {
 	// The location of the power supply.
 	Location common.Location
 	// An indicator allowing an operator to physically locate this resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// The manufacturer of this power supply.
 	Manufacturer string
 	// The link to the power supply metrics resource associated with this power supply.
@@ -116,7 +117,7 @@ type PowerSupplyUnit struct {
 	// The type of plug according to NEMA, IEC, or regional standards.
 	PlugType PlugType
 	// The maximum capacity of this power supply.
-	PowerCapacityWatts float32
+	PowerCapacityWatts *float32 `json:",omitempty"`
 	// The power supply type (AC or DC).
 	PowerSupplyType PowerSupplyUnitType
 	// The production or manufacturing date of this power supply.
@@ -208,29 +209,51 @@ func (powerSupplyUnit *PowerSupplyUnit) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (powerSupplyUnit *PowerSupplyUnit) Update() error {
+	return powerSupplyUnit.UpdateWithContext(common.ContextOf(powerSupplyUnit.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (powerSupplyUnit *PowerSupplyUnit) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"ElectricalSourceManagerURIs",
 		"ElectricalSourceNames",
 		"LocationIndicatorActive",
 	}
 
-	return powerSupplyUnit.UpdateFromRawData(powerSupplyUnit, powerSupplyUnit.RawData, readWriteFields)
+	return powerSupplyUnit.UpdateFromRawDataWithContext(ctx, powerSupplyUnit, powerSupplyUnit.RawData, readWriteFields)
 }
 
 // GetPowerSupplyUnit will get a PowerSupplyUnit instance from the Redfish service.
-func GetPowerSupplyUnit(c common.Client, uri string) (*PowerSupplyUnit, error) {
-	return common.GetObject[PowerSupplyUnit](c, uri)
+func GetPowerSupplyUnit(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PowerSupplyUnit, error) {
+	return GetPowerSupplyUnitWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetPowerSupplyUnitWithContext will get a PowerSupplyUnit instance from the Redfish service.
+func GetPowerSupplyUnitWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PowerSupplyUnit, error) {
+	return common.GetObjectWithContext[PowerSupplyUnit](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedPowerSupplyUnits gets the collection of PowerSupplies from
 // a provided reference.
-func ListReferencedPowerSupplyUnits(c common.Client, link string) ([]*PowerSupplyUnit, error) {
-	return common.GetCollectionObjects[PowerSupplyUnit](c, link)
+func ListReferencedPowerSupplyUnits(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PowerSupplyUnit, error) {
+	return ListReferencedPowerSupplyUnitsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedPowerSupplyUnitsWithContext gets the collection of PowerSupplies from
+// a provided reference.
+func ListReferencedPowerSupplyUnitsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PowerSupplyUnit, error) {
+	return common.GetCollectionObjectsWithContext[PowerSupplyUnit](ctx, c, link, queryOpts...)
 }
 
 // This action shall reset a power supply. A GracefulRestart ResetType shall reset the power supply
 // but shall not affect the power output. A ForceRestart ResetType can affect the power supply output.
 func (powerSupplyUnit *PowerSupplyUnit) Reset(resetType ResetType) error {
+	return powerSupplyUnit.ResetWithContext(common.ContextOf(powerSupplyUnit.GetClient()), resetType)
+}
+
+// This action shall reset a power supply. A GracefulRestart ResetType shall reset the power supply
+// but shall not affect the power output. A ForceRestart ResetType can affect the power supply output.
+func (powerSupplyUnit *PowerSupplyUnit) ResetWithContext(ctx context.Context, resetType ResetType) error {
 	if powerSupplyUnit.resetTarget == "" {
 		return errors.New("Reset is not supported")
 	}
@@ -239,40 +262,66 @@ func (powerSupplyUnit *PowerSupplyUnit) Reset(resetType ResetType) error {
 		ResetType ResetType
 	}{ResetType: resetType}
 
-	return powerSupplyUnit.Post(powerSupplyUnit.resetTarget, t)
+	return powerSupplyUnit.PostWithContext(ctx, powerSupplyUnit.resetTarget, t)
 }
 
 // Assembly gets the containing assembly for this power supply.
-func (powerSupplyUnit *PowerSupplyUnit) Assembly() (*Assembly, error) {
+func (powerSupplyUnit *PowerSupplyUnit) Assembly(queryOpts ...common.QueryGroupOption) (*Assembly, error) {
+	return powerSupplyUnit.AssemblyWithContext(common.ContextOf(powerSupplyUnit.GetClient()), queryOpts...)
+}
+
+// AssemblyWithContext gets the containing assembly for this power supply.
+func (powerSupplyUnit *PowerSupplyUnit) AssemblyWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Assembly, error) {
 	if powerSupplyUnit.assembly == "" {
 		return nil, nil
 	}
-	return GetAssembly(powerSupplyUnit.GetClient(), powerSupplyUnit.assembly)
+	return GetAssemblyWithContext(ctx, powerSupplyUnit.GetClient(), powerSupplyUnit.assembly, queryOpts...)
 }
 
 // Metrics gets the metrics associated with this power supply.
-func (powerSupplyUnit *PowerSupplyUnit) Metrics() (*PowerSupplyUnitMetrics, error) {
+func (powerSupplyUnit *PowerSupplyUnit) Metrics(queryOpts ...common.QueryGroupOption) (*PowerSupplyUnitMetrics, error) {
+	return powerSupplyUnit.MetricsWithContext(common.ContextOf(powerSupplyUnit.GetClient()), queryOpts...)
+}
+
+// MetricsWithContext gets the metrics associated with this power supply.
+func (powerSupplyUnit *PowerSupplyUnit) MetricsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*PowerSupplyUnitMetrics, error) {
 	if powerSupplyUnit.metrics == "" {
 		return nil, nil
 	}
-	return GetPowerSupplyUnitMetrics(powerSupplyUnit.GetClient(), powerSupplyUnit.metrics)
+	return GetPowerSupplyUnitMetricsWithContext(ctx, powerSupplyUnit.GetClient(), powerSupplyUnit.metrics, queryOpts...)
 }
 
 // Outlet get the outlet connected to this power supply.
 // Deprecated (v1.4)
-func (powerSupplyUnit *PowerSupplyUnit) Outlet() (*Outlet, error) {
+func (powerSupplyUnit *PowerSupplyUnit) Outlet(queryOpts ...common.QueryGroupOption) (*Outlet, error) {
+	return powerSupplyUnit.OutletWithContext(common.ContextOf(powerSupplyUnit.GetClient()), queryOpts...)
+}
+
+// OutletWithContext get the outlet connected to this power supply.
+// Deprecated (v1.4)
+func (powerSupplyUnit *PowerSupplyUnit) OutletWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Outlet, error) {
 	if powerSupplyUnit.metrics == "" {
 		return nil, nil
 	}
-	return GetOutlet(powerSupplyUnit.GetClient(), powerSupplyUnit.outlet)
+	return GetOutletWithContext(ctx, powerSupplyUnit.GetClient(), powerSupplyUnit.outlet, queryOpts...)
 }
 
 // PowerOutlets gets the outlets that supply power to this power supply.
-func (powerSupplyUnit *PowerSupplyUnit) PowerOutlets() ([]*Outlet, error) {
-	return common.GetObjects[Outlet](powerSupplyUnit.GetClient(), powerSupplyUnit.powerOutlets)
+func (powerSupplyUnit *PowerSupplyUnit) PowerOutlets(queryOpts ...common.QueryGroupOption) ([]*Outlet, error) {
+	return powerSupplyUnit.PowerOutletsWithContext(common.ContextOf(powerSupplyUnit.GetClient()), queryOpts...)
+}
+
+// PowerOutletsWithContext gets the outlets that supply power to this power supply.
+func (powerSupplyUnit *PowerSupplyUnit) PowerOutletsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Outlet, error) {
+	return common.GetObjectsWithContext[Outlet](ctx, powerSupplyUnit.GetClient(), powerSupplyUnit.powerOutlets, queryOpts...)
 }
 
 // PoweringChassis gets the collection of the chassis directly powered by this power supply.
-func (powerSupplyUnit *PowerSupplyUnit) PoweringChassis() ([]*Chassis, error) {
-	return common.GetObjects[Chassis](powerSupplyUnit.GetClient(), powerSupplyUnit.poweringChassis)
+func (powerSupplyUnit *PowerSupplyUnit) PoweringChassis(queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return powerSupplyUnit.PoweringChassisWithContext(common.ContextOf(powerSupplyUnit.GetClient()), queryOpts...)
+}
+
+// PoweringChassisWithContext gets the collection of the chassis directly powered by this power supply.
+func (powerSupplyUnit *PowerSupplyUnit) PoweringChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return common.GetObjectsWithContext[Chassis](ctx, powerSupplyUnit.GetClient(), powerSupplyUnit.poweringChassis, queryOpts...)
 }

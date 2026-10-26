@@ -117,8 +117,8 @@ func TestPCIeDevice(t *testing.T) {
 		t.Errorf("Invalid device type: %s", result.DeviceType)
 	}
 
-	if result.PCIeInterface.MaxLanes != 32 {
-		t.Errorf("Invalid max lanes: %d", result.PCIeInterface.MaxLanes)
+	if result.PCIeInterface.MaxLanes == nil || *result.PCIeInterface.MaxLanes != 32 {
+		t.Errorf("Invalid max lanes: %v", result.PCIeInterface.MaxLanes)
 	}
 
 	if result.PCIeInterface.PCIeType != Gen4PCIeTypes {
@@ -147,8 +147,8 @@ func TestOldPCIeDevice(t *testing.T) {
 		t.Errorf("Invalid device type: %s", result.DeviceType)
 	}
 
-	if result.PCIeInterface.MaxLanes != 32 {
-		t.Errorf("Invalid max lanes: %d", result.PCIeInterface.MaxLanes)
+	if result.PCIeInterface.MaxLanes == nil || *result.PCIeInterface.MaxLanes != 32 {
+		t.Errorf("Invalid max lanes: %v", result.PCIeInterface.MaxLanes)
 	}
 
 	if result.PCIeInterface.PCIeType != Gen4PCIeTypes {

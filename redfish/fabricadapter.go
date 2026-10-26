@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -39,7 +40,7 @@ type FabricAdapter struct {
 	Location common.Location
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// Manufacturer shall contain a value that represents the manufacturer of the fabric adapter.
 	Manufacturer string
 	// Model shall contain the information about how the manufacturer refers to this fabric adapter.
@@ -137,52 +138,93 @@ func (fabricadapter *FabricAdapter) UnmarshalJSON(b []byte) error {
 }
 
 // Ports gets any ports associated with this interface.
-func (fabricadapter *FabricAdapter) Ports() ([]*Port, error) {
+func (fabricadapter *FabricAdapter) Ports(queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return fabricadapter.PortsWithContext(common.ContextOf(fabricadapter.GetClient()), queryOpts...)
+}
+
+// PortsWithContext gets any ports associated with this interface.
+func (fabricadapter *FabricAdapter) PortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
 	if fabricadapter.ports == "" {
 		return []*Port{}, nil
 	}
-	return ListReferencedPorts(fabricadapter.GetClient(), fabricadapter.ports)
+	return ListReferencedPortsWithContext(ctx, fabricadapter.GetClient(), fabricadapter.ports, queryOpts...)
 }
 
 // Endpoints gets the endpoints connected to this interface.
-func (fabricadapter *FabricAdapter) Endpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](fabricadapter.GetClient(), fabricadapter.endpoints)
+func (fabricadapter *FabricAdapter) Endpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return fabricadapter.EndpointsWithContext(common.ContextOf(fabricadapter.GetClient()), queryOpts...)
+}
+
+// EndpointsWithContext gets the endpoints connected to this interface.
+func (fabricadapter *FabricAdapter) EndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, fabricadapter.GetClient(), fabricadapter.endpoints, queryOpts...)
 }
 
 // MemoryDomains gets the MemoryDomains associated to this interface.
-func (fabricadapter *FabricAdapter) MemoryDomains() ([]*MemoryDomain, error) {
-	return common.GetObjects[MemoryDomain](fabricadapter.GetClient(), fabricadapter.memoryDomains)
+func (fabricadapter *FabricAdapter) MemoryDomains(queryOpts ...common.QueryGroupOption) ([]*MemoryDomain, error) {
+	return fabricadapter.MemoryDomainsWithContext(common.ContextOf(fabricadapter.GetClient()), queryOpts...)
+}
+
+// MemoryDomainsWithContext gets the MemoryDomains associated to this interface.
+func (fabricadapter *FabricAdapter) MemoryDomainsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*MemoryDomain, error) {
+	return common.GetObjectsWithContext[MemoryDomain](ctx, fabricadapter.GetClient(), fabricadapter.memoryDomains, queryOpts...)
 }
 
 // PCIeDevices gets the PCIe devices associated to this interface.
-func (fabricadapter *FabricAdapter) PCIeDevices() ([]*PCIeDevice, error) {
-	return common.GetObjects[PCIeDevice](fabricadapter.GetClient(), fabricadapter.pcieDevices)
+func (fabricadapter *FabricAdapter) PCIeDevices(queryOpts ...common.QueryGroupOption) ([]*PCIeDevice, error) {
+	return fabricadapter.PCIeDevicesWithContext(common.ContextOf(fabricadapter.GetClient()), queryOpts...)
+}
+
+// PCIeDevicesWithContext gets the PCIe devices associated to this interface.
+func (fabricadapter *FabricAdapter) PCIeDevicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PCIeDevice, error) {
+	return common.GetObjectsWithContext[PCIeDevice](ctx, fabricadapter.GetClient(), fabricadapter.pcieDevices, queryOpts...)
 }
 
 // Processors gets the processors associated to this interface.
-func (fabricadapter *FabricAdapter) Processors() ([]*Processor, error) {
-	return common.GetObjects[Processor](fabricadapter.GetClient(), fabricadapter.processors)
+func (fabricadapter *FabricAdapter) Processors(queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return fabricadapter.ProcessorsWithContext(common.ContextOf(fabricadapter.GetClient()), queryOpts...)
+}
+
+// ProcessorsWithContext gets the processors associated to this interface.
+func (fabricadapter *FabricAdapter) ProcessorsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return common.GetObjectsWithContext[Processor](ctx, fabricadapter.GetClient(), fabricadapter.processors, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (fabricadapter *FabricAdapter) Update() error {
+	return fabricadapter.UpdateWithContext(common.ContextOf(fabricadapter.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (fabricadapter *FabricAdapter) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"FabricType",
 		"LocationIndicatorActive",
 	}
 
-	return fabricadapter.UpdateFromRawData(fabricadapter, fabricadapter.rawData, readWriteFields)
+	return fabricadapter.UpdateFromRawDataWithContext(ctx, fabricadapter, fabricadapter.rawData, readWriteFields)
 }
 
 // GetFabricAdapter will get a FabricAdapter instance from the service.
-func GetFabricAdapter(c common.Client, uri string) (*FabricAdapter, error) {
-	return common.GetObject[FabricAdapter](c, uri)
+func GetFabricAdapter(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*FabricAdapter, error) {
+	return GetFabricAdapterWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetFabricAdapterWithContext will get a FabricAdapter instance from the service.
+func GetFabricAdapterWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*FabricAdapter, error) {
+	return common.GetObjectWithContext[FabricAdapter](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedFabricAdapters gets the collection of FabricAdapter from
 // a provided reference.
-func ListReferencedFabricAdapters(c common.Client, link string) ([]*FabricAdapter, error) {
-	return common.GetCollectionObjects[FabricAdapter](c, link)
+func ListReferencedFabricAdapters(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*FabricAdapter, error) {
+	return ListReferencedFabricAdaptersWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedFabricAdaptersWithContext gets the collection of FabricAdapter from
+// a provided reference.
+func ListReferencedFabricAdaptersWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*FabricAdapter, error) {
+	return common.GetCollectionObjectsWithContext[FabricAdapter](ctx, c, link, queryOpts...)
 }
 
 // FabricAdapterGenZ shall contain Gen-Z related properties for a fabric adapter.

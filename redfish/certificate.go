@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -76,7 +77,7 @@ const (
 
 type SPDM struct {
 	// Slot identifier of the certificate.
-	SlotID int64 `json:"SlotId"`
+	SlotID *int64 `json:"SlotId,omitempty"`
 }
 
 type CertificateIdentifier struct {
@@ -196,16 +197,30 @@ func (certificate *Certificate) UnmarshalJSON(b []byte) error {
 }
 
 // GetCertificate will get a Certificate instance from the Redfish service.
-func GetCertificate(c common.Client, uri string) (*Certificate, error) {
-	return common.GetObject[Certificate](c, uri)
+func GetCertificate(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
+	return GetCertificateWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetCertificateWithContext will get a Certificate instance from the Redfish service.
+func GetCertificateWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Certificate, error) {
+	return common.GetObjectWithContext[Certificate](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedCertificates gets the Certificates collection.
-func ListReferencedCertificates(c common.Client, link string) ([]*Certificate, error) {
-	return common.GetCollectionObjects[Certificate](c, link)
+func ListReferencedCertificates(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	return ListReferencedCertificatesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedCertificatesWithContext gets the Certificates collection.
+func ListReferencedCertificatesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	return common.GetCollectionObjectsWithContext[Certificate](ctx, c, link, queryOpts...)
 }
 
 func (certificate *Certificate) RekeyCertificate(challengePassword, keyCurveID, keyPairAlgorithm string, keyBitLength int) error {
+	return certificate.RekeyCertificateWithContext(common.ContextOf(certificate.GetClient()), challengePassword, keyCurveID, keyPairAlgorithm, keyBitLength)
+}
+
+func (certificate *Certificate) RekeyCertificateWithContext(ctx context.Context, challengePassword, keyCurveID, keyPairAlgorithm string, keyBitLength int) error {
 	t := struct {
 		ChallengePassword string
 		KeyCurveID        string `json:"KeyCurveId"`
@@ -217,12 +232,16 @@ func (certificate *Certificate) RekeyCertificate(challengePassword, keyCurveID, 
 		KeyPairAlgorithm:  keyPairAlgorithm,
 		KeyBitLength:      keyBitLength,
 	}
-	return certificate.Post(certificate.rekeyTarget, t)
+	return certificate.PostWithContext(ctx, certificate.rekeyTarget, t)
 }
 
 func (certificate *Certificate) RenewCertificate(challengePassword string) error {
+	return certificate.RenewCertificateWithContext(common.ContextOf(certificate.GetClient()), challengePassword)
+}
+
+func (certificate *Certificate) RenewCertificateWithContext(ctx context.Context, challengePassword string) error {
 	t := struct {
 		ChallengePassword string
 	}{ChallengePassword: challengePassword}
-	return certificate.Post(certificate.renewTarget, t)
+	return certificate.PostWithContext(ctx, certificate.renewTarget, t)
 }

@@ -8,8 +8,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -26,8 +29,12 @@ import (
 	"github.com/coreweave/gofish/redfish"
 )
 
-const userAgent = "gofish/1.0"
-const applicationJSON = "application/json"
+const (
+	userAgent       = "gofish/1.0"
+	applicationJSON = "application/json"
+)
+
+var ErrClientCertChanged = errors.New("client cert unexpectedly changed")
 
 // APIClient represents a connection to a Redfish/Swordfish enabled service
 // or device.
@@ -57,6 +64,11 @@ type APIClient struct {
 	keepAlive bool
 
 	Settings common.ClientSettings
+
+	certHashMonitoring bool
+	CertHash           string
+	// Cert stores the first seen certificate. This is stable only if cert hash monitoring is enabled.
+	Cert *x509.Certificate
 }
 
 // Session holds the session ID and auth token needed to identify an
@@ -109,6 +121,9 @@ type ClientConfig struct {
 
 	// AutoExpand enables $expand if supported and automatically falls back if $expand fails.
 	AutoExpand bool
+
+	// EnableTLSHashMonitoring if set monitors the TLS peer signature on every response. If it changes between responses, an error is returned.
+	EnableTLSHashMonitoring bool
 }
 
 // setupClientWithConfig setups the client using the client config
@@ -118,9 +133,10 @@ func setupClientWithConfig(ctx context.Context, config *ClientConfig) (c *APICli
 	}
 
 	client := &APIClient{
-		endpoint:   config.Endpoint,
-		dumpWriter: config.DumpWriter,
-		ctx:        ctx,
+		endpoint:           config.Endpoint,
+		dumpWriter:         config.DumpWriter,
+		ctx:                ctx,
+		certHashMonitoring: config.EnableTLSHashMonitoring,
 	}
 
 	if config.MaxConcurrentRequests <= 0 {
@@ -176,10 +192,21 @@ func setupClientWithConfig(ctx context.Context, config *ClientConfig) (c *APICli
 		client.keepAlive = true
 	}
 
-	// Fetch the service root
-	client.Service, err = ServiceRoot(client)
+	// Fetch the service root and TLS cert
+	var tlsCert *x509.Certificate
+	client.Service, tlsCert, err = ServiceRootWithCertWithContext(ctx, client)
 	if err != nil {
 		return nil, err
+	}
+
+	// CertHash is populated once when the client is initialized.
+	// After that, it should never change. If monitoring is enabled and it changes, an error is thrown
+	client.CertHash = tlsCertHash(tlsCert)
+	if tlsCert != nil {
+		certClone, err := x509.ParseCertificate(tlsCert.Raw)
+		if err == nil {
+			client.Cert = certClone
+		}
 	}
 
 	// Init default settings
@@ -218,7 +245,7 @@ func setupClientWithEndpoint(ctx context.Context, endpoint string) (c *APIClient
 	client.HTTPClient = &http.Client{}
 
 	// Fetch the service root
-	client.Service, err = ServiceRoot(client)
+	client.Service, err = ServiceRootWithContext(ctx, client)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +254,7 @@ func setupClientWithEndpoint(ctx context.Context, endpoint string) (c *APIClient
 }
 
 // setupClientAuth setups the authentication in the client using the client config
-func (c *APIClient) setupClientAuth(config *ClientConfig) error {
+func (c *APIClient) setupClientAuth(ctx context.Context, config *ClientConfig) error {
 	if config.Session != nil {
 		c.auth = &redfish.AuthToken{
 			Session: config.Session.ID,
@@ -243,7 +270,7 @@ func (c *APIClient) setupClientAuth(config *ClientConfig) error {
 			}
 		} else {
 			var err error
-			auth, err = c.Service.CreateSession(config.Username, config.Password)
+			auth, err = c.Service.CreateSessionWithContext(ctx, config.Username, config.Password)
 			if err != nil {
 				return err
 			}
@@ -268,7 +295,7 @@ func ConnectContext(ctx context.Context, config ClientConfig) (c *APIClient, err
 	}
 
 	// Authenticate with the service
-	err = client.setupClientAuth(&config)
+	err = client.setupClientAuth(ctx, &config)
 	if err != nil {
 		return c, err
 	}
@@ -296,6 +323,18 @@ func (c *APIClient) GetService() *Service {
 	return c.Service
 }
 
+var _ common.Client = (*APIClient)(nil)
+
+// Context returns the client's cached context, used by the context-free methods
+// to delegate to their WithContext variants. It never returns nil: a client
+// without a cached context reports context.Background().
+func (c *APIClient) Context() context.Context {
+	if c == nil || c.ctx == nil {
+		return context.Background()
+	}
+	return c.ctx
+}
+
 // WithContext returns a copy of the client using the provided context
 func (c *APIClient) WithContext(ctx context.Context) *APIClient {
 	newClient := *c
@@ -313,21 +352,30 @@ func (c *APIClient) WithContext(ctx context.Context) *APIClient {
 	return &newClient
 }
 
-// CloneWithSession will create a new Client with a session instead of basic auth.
+// CloneWithSession will create a new Client with a session instead of basic auth
+// using the client's cached context.
 func (c *APIClient) CloneWithSession() (*APIClient, error) {
+	return c.CloneWithSessionWithContext(c.ctx)
+}
+
+// CloneWithSessionWithContext will create a new Client with a session instead
+// of basic auth. The context scopes only the session-setup requests; the
+// returned client keeps the parent's cached context (unlike WithContext, which
+// caches the given context on the copy).
+func (c *APIClient) CloneWithSessionWithContext(ctx context.Context) (*APIClient, error) {
 	if c.auth != nil && c.auth.Session != "" {
 		return nil, fmt.Errorf("client already has a session")
 	}
 
 	newClient := *c
 	newClient.HTTPClient = c.HTTPClient
-	service, err := ServiceRoot(&newClient)
+	service, err := ServiceRootWithContext(ctx, &newClient)
 	if err != nil {
 		return nil, err
 	}
 	newClient.Service = service
 
-	auth, err := newClient.Service.CreateSession(
+	auth, err := newClient.Service.CreateSessionWithContext(ctx,
 		newClient.auth.Username,
 		newClient.auth.Password)
 	if err != nil {
@@ -350,84 +398,154 @@ func (c *APIClient) GetSession() (*Session, error) {
 	}, nil
 }
 
-// Get performs a HEAD request against the Redfish service.
+// Head performs a HEAD request against the Redfish service using the client's cached context.
 func (c *APIClient) Head(url string) (*http.Response, error) {
-	return c.HeadWithHeaders(url, nil)
+	return c.HeadWithContext(c.ctx, url)
 }
 
-// GetWithHeaders performs a HEAD request against the Redfish service but allowing custom headers
+// HeadWithContext performs a HEAD request against the Redfish service.
+func (c *APIClient) HeadWithContext(ctx context.Context, url string) (*http.Response, error) {
+	return c.HeadWithHeadersWithContext(ctx, url, nil)
+}
+
+// HeadWithHeaders performs a HEAD request against the Redfish service but allowing custom headers using the client's cached context.
 func (c *APIClient) HeadWithHeaders(url string, customHeaders map[string]string) (*http.Response, error) {
+	return c.HeadWithHeadersWithContext(c.ctx, url, customHeaders)
+}
+
+// HeadWithHeadersWithContext performs a HEAD request against the Redfish service but allowing custom headers
+func (c *APIClient) HeadWithHeadersWithContext(ctx context.Context, url string, customHeaders map[string]string) (*http.Response, error) {
 	relativePath := url
 	if relativePath == "" {
 		relativePath = common.DefaultServiceRoot
 	}
 
-	return c.runRequestWithHeaders(http.MethodHead, relativePath, nil, customHeaders)
+	return c.runRequestWithHeadersWithContext(ctx, http.MethodHead, relativePath, nil, customHeaders)
 }
 
-// Get performs a GET request against the Redfish service.
+// Get performs a GET request against the Redfish service using the client's cached context.
 func (c *APIClient) Get(url string) (*http.Response, error) {
-	return c.GetWithHeaders(url, nil)
+	return c.GetWithContext(c.ctx, url)
 }
 
-// GetWithHeaders performs a GET request against the Redfish service but allowing custom headers
+// GetWithContext performs a GET request against the Redfish service.
+func (c *APIClient) GetWithContext(ctx context.Context, url string) (*http.Response, error) {
+	return c.GetWithHeadersWithContext(ctx, url, nil)
+}
+
+// GetWithHeaders performs a GET request against the Redfish service but allowing custom headers using the client's cached context.
 func (c *APIClient) GetWithHeaders(url string, customHeaders map[string]string) (*http.Response, error) {
+	return c.GetWithHeadersWithContext(c.ctx, url, customHeaders)
+}
+
+// GetWithHeadersWithContext performs a GET request against the Redfish service but allowing custom headers
+func (c *APIClient) GetWithHeadersWithContext(ctx context.Context, url string, customHeaders map[string]string) (*http.Response, error) {
 	relativePath := url
 	if relativePath == "" {
 		relativePath = common.DefaultServiceRoot
 	}
 
-	return c.runRequestWithHeaders(http.MethodGet, relativePath, nil, customHeaders)
+	return c.runRequestWithHeadersWithContext(ctx, http.MethodGet, relativePath, nil, customHeaders)
 }
 
-// Post performs a Post request against the Redfish service.
+// Post performs a Post request against the Redfish service using the client's cached context.
 func (c *APIClient) Post(url string, payload interface{}) (*http.Response, error) {
-	return c.PostWithHeaders(url, payload, nil)
+	return c.PostWithContext(c.ctx, url, payload)
 }
 
-// PostWithHeaders performs a Post request against the Redfish service but allowing custom headers
+// PostWithContext performs a Post request against the Redfish service.
+func (c *APIClient) PostWithContext(ctx context.Context, url string, payload interface{}) (*http.Response, error) {
+	return c.PostWithHeadersWithContext(ctx, url, payload, nil)
+}
+
+// PostWithHeaders performs a Post request against the Redfish service but allowing custom headers using the client's cached context.
 func (c *APIClient) PostWithHeaders(url string, payload interface{}, customHeaders map[string]string) (*http.Response, error) {
-	return c.runRequestWithHeaders(http.MethodPost, url, payload, customHeaders)
+	return c.PostWithHeadersWithContext(c.ctx, url, payload, customHeaders)
 }
 
-// PostMultipart performs a Post request against the Redfish service with multipart payload.
+// PostWithHeadersWithContext performs a Post request against the Redfish service but allowing custom headers
+func (c *APIClient) PostWithHeadersWithContext(ctx context.Context, url string, payload interface{}, customHeaders map[string]string) (*http.Response, error) {
+	return c.runRequestWithHeadersWithContext(ctx, http.MethodPost, url, payload, customHeaders)
+}
+
+// PostMultipart performs a Post request against the Redfish service with multipart payload using the client's cached context.
 func (c *APIClient) PostMultipart(url string, payload map[string]io.Reader) (*http.Response, error) {
-	return c.PostMultipartWithHeaders(url, payload, nil)
+	return c.PostMultipartWithContext(c.ctx, url, payload)
 }
 
-// PostMultipartWithHeadersperforms a Post request against the Redfish service with multipart payload but allowing custom headers
+// PostMultipartWithContext performs a Post request against the Redfish service with multipart payload.
+func (c *APIClient) PostMultipartWithContext(ctx context.Context, url string, payload map[string]io.Reader) (*http.Response, error) {
+	return c.PostMultipartWithHeadersWithContext(ctx, url, payload, nil)
+}
+
+// PostMultipartWithHeaders performs a Post request against the Redfish service with multipart payload but allowing custom headers using the client's cached context.
 func (c *APIClient) PostMultipartWithHeaders(url string, payload map[string]io.Reader, customHeaders map[string]string) (*http.Response, error) {
-	return c.runRequestWithMultipartPayloadWithHeaders(http.MethodPost, url, payload, customHeaders)
+	return c.PostMultipartWithHeadersWithContext(c.ctx, url, payload, customHeaders)
 }
 
-// Put performs a Put request against the Redfish service.
+// PostMultipartWithHeadersWithContext performs a Post request against the Redfish service with multipart payload but allowing custom headers
+func (c *APIClient) PostMultipartWithHeadersWithContext(ctx context.Context, url string, payload map[string]io.Reader, customHeaders map[string]string) (*http.Response, error) {
+	return c.runRequestWithMultipartPayloadWithHeadersWithContext(ctx, http.MethodPost, url, payload, customHeaders)
+}
+
+// Put performs a Put request against the Redfish service using the client's cached context.
 func (c *APIClient) Put(url string, payload interface{}) (*http.Response, error) {
-	return c.PutWithHeaders(url, payload, nil)
+	return c.PutWithContext(c.ctx, url, payload)
 }
 
-// PutWithHeaders performs a Put request against the Redfish service but allowing custom headers
+// PutWithContext performs a Put request against the Redfish service.
+func (c *APIClient) PutWithContext(ctx context.Context, url string, payload interface{}) (*http.Response, error) {
+	return c.PutWithHeadersWithContext(ctx, url, payload, nil)
+}
+
+// PutWithHeaders performs a Put request against the Redfish service but allowing custom headers using the client's cached context.
 func (c *APIClient) PutWithHeaders(url string, payload interface{}, customHeaders map[string]string) (*http.Response, error) {
-	return c.runRequestWithHeaders(http.MethodPut, url, payload, customHeaders)
+	return c.PutWithHeadersWithContext(c.ctx, url, payload, customHeaders)
 }
 
-// Patch performs a Patch request against the Redfish service.
+// PutWithHeadersWithContext performs a Put request against the Redfish service but allowing custom headers
+func (c *APIClient) PutWithHeadersWithContext(ctx context.Context, url string, payload interface{}, customHeaders map[string]string) (*http.Response, error) {
+	return c.runRequestWithHeadersWithContext(ctx, http.MethodPut, url, payload, customHeaders)
+}
+
+// Patch performs a Patch request against the Redfish service using the client's cached context.
 func (c *APIClient) Patch(url string, payload interface{}) (*http.Response, error) {
-	return c.PatchWithHeaders(url, payload, nil)
+	return c.PatchWithContext(c.ctx, url, payload)
 }
 
-// PatchWithHeaders performs a Patch request against the Redfish service but allowing custom headers
+// PatchWithContext performs a Patch request against the Redfish service.
+func (c *APIClient) PatchWithContext(ctx context.Context, url string, payload interface{}) (*http.Response, error) {
+	return c.PatchWithHeadersWithContext(ctx, url, payload, nil)
+}
+
+// PatchWithHeaders performs a Patch request against the Redfish service but allowing custom headers using the client's cached context.
 func (c *APIClient) PatchWithHeaders(url string, payload interface{}, customHeaders map[string]string) (*http.Response, error) {
-	return c.runRequestWithHeaders(http.MethodPatch, url, payload, customHeaders)
+	return c.PatchWithHeadersWithContext(c.ctx, url, payload, customHeaders)
 }
 
-// Delete performs a Delete request against the Redfish service
+// PatchWithHeadersWithContext performs a Patch request against the Redfish service but allowing custom headers
+func (c *APIClient) PatchWithHeadersWithContext(ctx context.Context, url string, payload interface{}, customHeaders map[string]string) (*http.Response, error) {
+	return c.runRequestWithHeadersWithContext(ctx, http.MethodPatch, url, payload, customHeaders)
+}
+
+// Delete performs a Delete request against the Redfish service using the client's cached context.
 func (c *APIClient) Delete(url string) (*http.Response, error) {
-	return c.DeleteWithHeaders(url, nil)
+	return c.DeleteWithContext(c.ctx, url)
 }
 
-// DeleteWithHeaders performs a Delete request against the Redfish service but allowing custom headers
+// DeleteWithContext performs a Delete request against the Redfish service
+func (c *APIClient) DeleteWithContext(ctx context.Context, url string) (*http.Response, error) {
+	return c.DeleteWithHeadersWithContext(ctx, url, nil)
+}
+
+// DeleteWithHeaders performs a Delete request against the Redfish service but allowing custom headers using the client's cached context.
 func (c *APIClient) DeleteWithHeaders(url string, customHeaders map[string]string) (*http.Response, error) {
-	resp, err := c.runRequestWithHeaders(http.MethodDelete, url, nil, customHeaders)
+	return c.DeleteWithHeadersWithContext(c.ctx, url, customHeaders)
+}
+
+// DeleteWithHeadersWithContext performs a Delete request against the Redfish service but allowing custom headers
+func (c *APIClient) DeleteWithHeadersWithContext(ctx context.Context, url string, customHeaders map[string]string) (*http.Response, error) {
+	resp, err := c.runRequestWithHeadersWithContext(ctx, http.MethodDelete, url, nil, customHeaders)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil {
 		return nil, err
@@ -435,8 +553,8 @@ func (c *APIClient) DeleteWithHeaders(url string, customHeaders map[string]strin
 	return resp, nil
 }
 
-// runRequestWithHeaders performs JSON REST calls but allowing custom headers
-func (c *APIClient) runRequestWithHeaders(method, url string, payload interface{}, customHeaders map[string]string) (*http.Response, error) {
+// runRequestWithHeadersWithContext performs JSON REST calls but allowing custom headers
+func (c *APIClient) runRequestWithHeadersWithContext(ctx context.Context, method, url string, payload interface{}, customHeaders map[string]string) (*http.Response, error) {
 	if url == "" {
 		return nil, fmt.Errorf("unable to execute request, no target provided")
 	}
@@ -450,11 +568,11 @@ func (c *APIClient) runRequestWithHeaders(method, url string, payload interface{
 		payloadBuffer = bytes.NewReader(body)
 	}
 
-	return c.runRawRequestWithHeaders(method, url, payloadBuffer, applicationJSON, customHeaders)
+	return c.runRawRequestWithHeadersWithContext(ctx, method, url, payloadBuffer, applicationJSON, customHeaders)
 }
 
-// runRequestWithMultipartPayloadWithHeaders performs REST calls with a multipart payload but allowing custom headers
-func (c *APIClient) runRequestWithMultipartPayloadWithHeaders(method, url string, payload map[string]io.Reader, customHeaders map[string]string) (*http.Response, error) {
+// runRequestWithMultipartPayloadWithHeadersWithContext performs REST calls with a multipart payload but allowing custom headers
+func (c *APIClient) runRequestWithMultipartPayloadWithHeadersWithContext(ctx context.Context, method, url string, payload map[string]io.Reader, customHeaders map[string]string) (*http.Response, error) {
 	if url == "" {
 		return nil, fmt.Errorf("unable to execute request, no target provided")
 	}
@@ -481,7 +599,7 @@ func (c *APIClient) runRequestWithMultipartPayloadWithHeaders(method, url string
 	}
 	payloadWriter.Close()
 
-	return c.runRawRequestWithHeaders(method, url, bytes.NewReader(payloadBuffer.Bytes()), payloadWriter.FormDataContentType(), customHeaders)
+	return c.runRawRequestWithHeadersWithContext(ctx, method, url, bytes.NewReader(payloadBuffer.Bytes()), payloadWriter.FormDataContentType(), customHeaders)
 }
 
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
@@ -499,21 +617,26 @@ func createFormField(fieldname string, w *multipart.Writer) (io.Writer, error) {
 	return w.CreatePart(h)
 }
 
-// runRawRequest actually performs the REST calls
+// runRawRequest actually performs the REST calls using the client's cached context
 func (c *APIClient) runRawRequest(method, url string, payloadBuffer io.ReadSeeker, contentType string) (*http.Response, error) {
-	return c.runRawRequestWithHeaders(method, url, payloadBuffer, contentType, nil)
+	return c.runRawRequestWithHeadersWithContext(c.ctx, method, url, payloadBuffer, contentType, nil)
 }
 
-// RunRawRequestWithHeaders actually performs the REST calls but allowing custom headers
+// RunRawRequestWithHeaders actually performs the REST calls but allowing custom headers using the client's cached context
 func (c *APIClient) RunRawRequestWithHeaders(method, url string, payloadBuffer io.ReadSeeker, contentType string, customHeaders map[string]string) (*http.Response, error) {
-	return c.runRawRequestWithHeaders(method, url, payloadBuffer, contentType, customHeaders)
+	return c.RunRawRequestWithHeadersWithContext(c.ctx, method, url, payloadBuffer, contentType, customHeaders)
+}
+
+// RunRawRequestWithHeadersWithContext actually performs the REST calls but allowing custom headers
+func (c *APIClient) RunRawRequestWithHeadersWithContext(ctx context.Context, method, url string, payloadBuffer io.ReadSeeker, contentType string, customHeaders map[string]string) (*http.Response, error) {
+	return c.runRawRequestWithHeadersWithContext(ctx, method, url, payloadBuffer, contentType, customHeaders)
 }
 
 // acquireSemaphore blocks until either the http concurrency semaphore is acquired or the context is cancelled
-func (c *APIClient) acquireSemaphore() error {
+func (c *APIClient) acquireSemaphore(ctx context.Context) error {
 	select {
-	case <-c.ctx.Done():
-		return c.ctx.Err()
+	case <-ctx.Done():
+		return ctx.Err()
 	case c.sem <- true:
 		return nil
 	}
@@ -524,14 +647,34 @@ func (c *APIClient) releaseSemaphore() {
 	<-c.sem
 }
 
-// runRawRequestWithHeaders actually performs the REST calls but allowing custom headers
-func (c *APIClient) runRawRequestWithHeaders(method, url string, payloadBuffer io.ReadSeeker, contentType string, customHeaders map[string]string) (*http.Response, error) {
+func tlsCertHash(cert *x509.Certificate) string {
+	if cert == nil {
+		return ""
+	}
+
+	// this is not actually a cert hash but it's good enough for now
+	return hex.EncodeToString(cert.Signature)
+}
+
+func (c *APIClient) checkCertHashMismatch(resp *http.Response) (*http.Response, error) {
+	if c.certHashMonitoring && c.CertHash != "" && resp != nil && resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
+		peerCertHash := tlsCertHash(resp.TLS.PeerCertificates[0])
+		if c.CertHash != peerCertHash {
+			defer common.DeferredCleanupHTTPResponse(resp)
+			return nil, ErrClientCertChanged
+		}
+	}
+	return resp, nil
+}
+
+// runRawRequestWithHeadersWithContext actually performs the REST calls but allowing custom headers
+func (c *APIClient) runRawRequestWithHeadersWithContext(ctx context.Context, method, url string, payloadBuffer io.ReadSeeker, contentType string, customHeaders map[string]string) (*http.Response, error) {
 	if url == "" {
 		return nil, common.ConstructError(0, []byte("unable to execute request, no target provided"))
 	}
 
 	endpoint := fmt.Sprintf("%s%s", c.endpoint, url)
-	req, err := http.NewRequestWithContext(c.ctx, method, endpoint, payloadBuffer)
+	req, err := http.NewRequestWithContext(ctx, method, endpoint, payloadBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -588,12 +731,16 @@ func (c *APIClient) runRawRequestWithHeaders(method, url string, payloadBuffer i
 		}
 	}
 
-	if err := c.acquireSemaphore(); err != nil {
+	if err := c.acquireSemaphore(ctx); err != nil {
 		return nil, err
 	}
 	resp, err := c.HTTPClient.Do(req)
 	c.releaseSemaphore()
 	if err != nil {
+		return nil, err
+	}
+
+	if resp, err = c.checkCertHashMismatch(resp); err != nil {
 		return nil, err
 	}
 
@@ -650,16 +797,27 @@ func (c *APIClient) dumpResponse(resp *http.Response) error {
 }
 
 // Logout will delete any active session. Useful to defer logout when creating
-// a new connection.
+// a new connection. It uses the client's cached context, falling back to a
+// fresh context when the cached one is already dead.
 func (c *APIClient) Logout() {
+	if c == nil {
+		return
+	}
+	// if APIClient is created with ConnectContext (f.e. with http request ctx)
+	// and passed context is cancelled (f.e. downstream request is aborted),
+	// we need a live context to clean up the Redfish API session
+	ctx := c.ctx
+	if ctx == nil || ctx.Err() != nil {
+		ctx = context.Background()
+	}
+	c.LogoutWithContext(ctx)
+}
+
+// LogoutWithContext will delete any active session. Useful to defer logout when
+// creating a new connection.
+func (c *APIClient) LogoutWithContext(ctx context.Context) {
 	if c != nil && c.Service != nil && c.auth != nil {
-		// if APIClient is created with ConnectContext (f.e. with http request ctx)
-		// and passed context is cancelled (f.e. downstream request is aborted),
-		// we need to create a new context to clean up Redfish API session
-		if c.ctx.Err() != nil {
-			c.ctx = context.Background()
-		}
-		if err := c.Service.DeleteSession(c.auth.Session); err == nil {
+		if err := c.Service.DeleteSessionWithContext(ctx, c.auth.Session); err == nil {
 			// Clean up invalid session token and ID upon successful Logout
 			c.auth.Session = ""
 			c.auth.Token = ""

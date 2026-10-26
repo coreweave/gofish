@@ -5,6 +5,8 @@
 package redfish
 
 import (
+	"context"
+
 	"github.com/coreweave/gofish/common"
 )
 
@@ -28,7 +30,7 @@ type BatteryMetrics struct {
 	// Description provides a description of this resource.
 	Description string
 	// DischargeCycles shall contain the number of discharges this battery has sustained.
-	DischargeCycles float64
+	DischargeCycles *float64 `json:",omitempty"`
 	// InputCurrentAmps shall contain the input current, in ampere units, for this battery. The value of the
 	// DataSourceUri property, if present, shall reference a resource of type Sensor with the ReadingType property
 	// containing the value 'Current'.
@@ -67,12 +69,23 @@ type BatteryMetrics struct {
 }
 
 // GetBatteryMetrics will get a BatteryMetrics instance from the service.
-func GetBatteryMetrics(c common.Client, uri string) (*BatteryMetrics, error) {
-	return common.GetObject[BatteryMetrics](c, uri)
+func GetBatteryMetrics(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*BatteryMetrics, error) {
+	return GetBatteryMetricsWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetBatteryMetricsWithContext will get a BatteryMetrics instance from the service.
+func GetBatteryMetricsWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*BatteryMetrics, error) {
+	return common.GetObjectWithContext[BatteryMetrics](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedBatteryMetricss gets the collection of BatteryMetrics from
 // a provided reference.
-func ListReferencedBatteryMetricss(c common.Client, link string) ([]*BatteryMetrics, error) {
-	return common.GetCollectionObjects[BatteryMetrics](c, link)
+func ListReferencedBatteryMetricss(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*BatteryMetrics, error) {
+	return ListReferencedBatteryMetricssWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedBatteryMetricssWithContext gets the collection of BatteryMetrics from
+// a provided reference.
+func ListReferencedBatteryMetricssWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*BatteryMetrics, error) {
+	return common.GetCollectionObjectsWithContext[BatteryMetrics](ctx, c, link, queryOpts...)
 }

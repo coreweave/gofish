@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -255,8 +256,13 @@ func (clientcertificate *ClientCertificate) UnmarshalJSON(b []byte) error {
 }
 
 // ClientCertificates gets the client certificates.
-func (clientcertificate *ClientCertificate) ClientCertificates(c common.Client) ([]*Certificate, error) {
-	return ListReferencedCertificates(c, clientcertificate.certificates)
+func (clientcertificate *ClientCertificate) ClientCertificates(c common.Client, queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	return clientcertificate.ClientCertificatesWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// ClientCertificatesWithContext gets the client certificates.
+func (clientcertificate *ClientCertificate) ClientCertificatesWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	return ListReferencedCertificatesWithContext(ctx, c, clientcertificate.certificates, queryOpts...)
 }
 
 // AccountService contains properties for managing user accounts. The
@@ -296,11 +302,11 @@ type AccountService struct {
 	// value is `0`, no lockout shall occur.  If
 	// AccountLockoutCounterResetEnabled value is `false`, this property
 	// shall be ignored.
-	AccountLockoutDuration int
+	AccountLockoutDuration *int `json:",omitempty"`
 	// AccountLockoutThreshold shall contain the threshold
 	// of failed login attempts before a user account is locked.  If `0`, the
 	// account shall never be locked.
-	AccountLockoutThreshold int
+	AccountLockoutThreshold *int `json:",omitempty"`
 	// accounts shall contain a link to a Resource Collection of type
 	// ManagerAccountCollection.
 	accounts string
@@ -353,7 +359,7 @@ type AccountService struct {
 	// outboundConnections shall contain a link to a collection of type OutboundConnection.
 	outboundConnections string
 	// PasswordExpirationDays is the number of days before account passwords in this account service will expire.
-	PasswordExpirationDays int
+	PasswordExpirationDays *int `json:",omitempty"`
 	// PrivilegeMap shall contain a link to a resource of type PrivilegeMapping that contains the privileges that are
 	// required for a user context to complete a requested operation on a URI associated with this service.
 	privilegeMap string
@@ -433,20 +439,35 @@ func (accountservice *AccountService) UnmarshalJSON(b []byte) error {
 }
 
 // AdditionalExternalAccountProviders gets additional external account providers that this account service uses.
-func (accountservice *AccountService) AdditionalExternalAccountProviders() ([]*ExternalAccountProvider, error) {
-	return ListReferencedExternalAccountProviders(accountservice.GetClient(), accountservice.additionalExternalAccountProviders)
+func (accountservice *AccountService) AdditionalExternalAccountProviders(queryOpts ...common.QueryGroupOption) ([]*ExternalAccountProvider, error) {
+	return accountservice.AdditionalExternalAccountProvidersWithContext(common.ContextOf(accountservice.GetClient()), queryOpts...)
+}
+
+// AdditionalExternalAccountProvidersWithContext gets additional external account providers that this account service uses.
+func (accountservice *AccountService) AdditionalExternalAccountProvidersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*ExternalAccountProvider, error) {
+	return ListReferencedExternalAccountProvidersWithContext(ctx, accountservice.GetClient(), accountservice.additionalExternalAccountProviders, queryOpts...)
 }
 
 // PrivilegeMap gets the mapping of the privileges required to complete a requested operation on a URI associated with this service.
-func (accountservice *AccountService) PrivilegeMap() (*PrivilegeRegistry, error) {
+func (accountservice *AccountService) PrivilegeMap(queryOpts ...common.QueryGroupOption) (*PrivilegeRegistry, error) {
+	return accountservice.PrivilegeMapWithContext(common.ContextOf(accountservice.GetClient()), queryOpts...)
+}
+
+// PrivilegeMapWithContext gets the mapping of the privileges required to complete a requested operation on a URI associated with this service.
+func (accountservice *AccountService) PrivilegeMapWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*PrivilegeRegistry, error) {
 	if accountservice.privilegeMap == "" {
 		return nil, nil
 	}
-	return GetPrivilegeRegistry(accountservice.GetClient(), accountservice.privilegeMap)
+	return GetPrivilegeRegistryWithContext(ctx, accountservice.GetClient(), accountservice.privilegeMap, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (accountservice *AccountService) Update() error {
+	return accountservice.UpdateWithContext(common.ContextOf(accountservice.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (accountservice *AccountService) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"AccountLockoutCounterResetAfter",
 		"AccountLockoutCounterResetEnabled",
@@ -459,23 +480,39 @@ func (accountservice *AccountService) Update() error {
 		"ServiceEnabled",
 	}
 
-	return accountservice.UpdateFromRawData(accountservice, accountservice.RawData, readWriteFields)
+	return accountservice.UpdateFromRawDataWithContext(ctx, accountservice, accountservice.RawData, readWriteFields)
 }
 
 // GetAccountService will get the AccountService instance from the Redfish
 // service.
-func GetAccountService(c common.Client, uri string) (*AccountService, error) {
-	return common.GetObject[AccountService](c, uri)
+func GetAccountService(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*AccountService, error) {
+	return GetAccountServiceWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetAccountServiceWithContext will get the AccountService instance from the Redfish
+// service.
+func GetAccountServiceWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*AccountService, error) {
+	return common.GetObjectWithContext[AccountService](ctx, c, uri, queryOpts...)
 }
 
 // Accounts get the accounts from the account service
-func (accountservice *AccountService) Accounts() ([]*ManagerAccount, error) {
-	return ListReferencedManagerAccounts(accountservice.GetClient(), accountservice.accounts)
+func (accountservice *AccountService) Accounts(queryOpts ...common.QueryGroupOption) ([]*ManagerAccount, error) {
+	return accountservice.AccountsWithContext(common.ContextOf(accountservice.GetClient()), queryOpts...)
+}
+
+// AccountsWithContext get the accounts from the account service
+func (accountservice *AccountService) AccountsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*ManagerAccount, error) {
+	return ListReferencedManagerAccountsWithContext(ctx, accountservice.GetClient(), accountservice.accounts, queryOpts...)
 }
 
 // Roles gets the roles from the account service
-func (accountservice *AccountService) Roles() ([]*Role, error) {
-	return ListReferencedRoles(accountservice.GetClient(), accountservice.roles)
+func (accountservice *AccountService) Roles(queryOpts ...common.QueryGroupOption) ([]*Role, error) {
+	return accountservice.RolesWithContext(common.ContextOf(accountservice.GetClient()), queryOpts...)
+}
+
+// RolesWithContext gets the roles from the account service
+func (accountservice *AccountService) RolesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Role, error) {
+	return ListReferencedRolesWithContext(ctx, accountservice.GetClient(), accountservice.roles, queryOpts...)
 }
 
 // CreateAccount creates a new Redfish user account.
@@ -488,6 +525,19 @@ func (accountservice *AccountService) Roles() ([]*Role, error) {
 //
 // Returns the created user account that can then be updated for things like setting `passwordChangeRequried`, etc.
 func (accountservice *AccountService) CreateAccount(userName, password, roleID string) (*ManagerAccount, error) {
+	return accountservice.CreateAccountWithContext(common.ContextOf(accountservice.GetClient()), userName, password, roleID)
+}
+
+// CreateAccountWithContext creates a new Redfish user account.
+//
+// `userName` is the new username to use.
+//
+// `password` is the initial password, must conform to configured password requirements.
+//
+// `roleID` is the role to assign to the user, typically one of `Administrator`, `Operator`, or `ReadOnly`.
+//
+// Returns the created user account that can then be updated for things like setting `passwordChangeRequried`, etc.
+func (accountservice *AccountService) CreateAccountWithContext(ctx context.Context, userName, password, roleID string) (*ManagerAccount, error) {
 	t := struct {
 		UserName string
 		Enabled  bool
@@ -506,7 +556,7 @@ func (accountservice *AccountService) CreateAccount(userName, password, roleID s
 	// If ETag matching is disabled, we don't care and don't need to waste a request,
 	// but otherwise, we need to load /Accounts to get the ETag then issue the request against that Entity
 	if !accountservice.IsEtagMatchDisabled() {
-		accountsEntity, err := common.GetObject[common.Entity](accountservice.GetClient(), accountservice.accounts)
+		accountsEntity, err := common.GetObjectWithContext[common.Entity](ctx, accountservice.GetClient(), accountservice.accounts)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get accounts entity: %w", err)
 		}
@@ -514,7 +564,7 @@ func (accountservice *AccountService) CreateAccount(userName, password, roleID s
 		baseEntity = accountsEntity
 	}
 
-	resp, err := baseEntity.PostWithResponse(accountservice.accounts, t)
+	resp, err := baseEntity.PostWithResponseWithContext(ctx, accountservice.accounts, t)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil {
 		return nil, err

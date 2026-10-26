@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -47,15 +48,15 @@ type AllowDeny struct {
 	Description string
 	// DestinationPortLower shall contain the TCP, UDP, or other destination port to which this rule begins
 	// application, inclusive.
-	DestinationPortLower int
+	DestinationPortLower *int `json:",omitempty"`
 	// DestinationPortUpper shall contain the TCP, UDP, or other destination port to which this rule ends application,
 	// inclusive.
-	DestinationPortUpper int
+	DestinationPortUpper *int `json:",omitempty"`
 	// Direction shall indicate the direction of the data to which this permission applies for this network device
 	// function.
 	Direction DataDirection
 	// IANAProtocolNumber shall contain the IANA protocol number to which this permission applies.
-	IANAProtocolNumber int
+	IANAProtocolNumber *int `json:",omitempty"`
 	// IPAddressLower shall contain the lower IP address to which this permission applies.
 	IPAddressLower string
 	// IPAddressType shall contain the type of IP address populated in the IPAddressLower and IPAddressUpper
@@ -65,9 +66,9 @@ type AllowDeny struct {
 	IPAddressUpper string
 	// SourcePortLower shall contain the TCP, UDP, or other source port to which this rule begins application,
 	// inclusive.
-	SourcePortLower int
+	SourcePortLower *int `json:",omitempty"`
 	// SourcePortUpper shall contain the TCP, UDP, or other source port to which this rule ends application, inclusive.
-	SourcePortUpper int
+	SourcePortUpper *int `json:",omitempty"`
 	// StatefulSession shall indicate if this permission only applies to stateful connections, which are those using
 	// SYN, ACK, and FIN.
 	StatefulSession bool
@@ -97,6 +98,11 @@ func (allowdeny *AllowDeny) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (allowdeny *AllowDeny) Update() error {
+	return allowdeny.UpdateWithContext(common.ContextOf(allowdeny.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (allowdeny *AllowDeny) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"AllowType",
 		"DestinationPortLower",
@@ -111,16 +117,27 @@ func (allowdeny *AllowDeny) Update() error {
 		"StatefulSession",
 	}
 
-	return allowdeny.UpdateFromRawData(allowdeny, allowdeny.rawData, readWriteFields)
+	return allowdeny.UpdateFromRawDataWithContext(ctx, allowdeny, allowdeny.rawData, readWriteFields)
 }
 
 // GetAllowDeny will get a AllowDeny instance from the service.
-func GetAllowDeny(c common.Client, uri string) (*AllowDeny, error) {
-	return common.GetObject[AllowDeny](c, uri)
+func GetAllowDeny(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*AllowDeny, error) {
+	return GetAllowDenyWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetAllowDenyWithContext will get a AllowDeny instance from the service.
+func GetAllowDenyWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*AllowDeny, error) {
+	return common.GetObjectWithContext[AllowDeny](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedAllowDenys gets the collection of AllowDeny from
 // a provided reference.
-func ListReferencedAllowDenys(c common.Client, link string) ([]*AllowDeny, error) {
-	return common.GetCollectionObjects[AllowDeny](c, link)
+func ListReferencedAllowDenys(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*AllowDeny, error) {
+	return ListReferencedAllowDenysWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedAllowDenysWithContext gets the collection of AllowDeny from
+// a provided reference.
+func ListReferencedAllowDenysWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*AllowDeny, error) {
+	return common.GetCollectionObjectsWithContext[AllowDeny](ctx, c, link, queryOpts...)
 }

@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -35,13 +36,13 @@ type Battery struct {
 	// Assembly shall contain a link to a resource of type Assembly.
 	assembly string
 	// CapacityActualAmpHours shall contain the actual maximum capacity of this battery in amp-hour units.
-	CapacityActualAmpHours float64
+	CapacityActualAmpHours *float64 `json:",omitempty"`
 	// CapacityActualWattHours shall contain the actual maximum capacity of this battery in watt-hour units.
-	CapacityActualWattHours float64
+	CapacityActualWattHours *float64 `json:",omitempty"`
 	// CapacityRatedAmpHours shall contain the rated maximum capacity of this battery in amp-hour units.
-	CapacityRatedAmpHours float64
+	CapacityRatedAmpHours *float64 `json:",omitempty"`
 	// CapacityRatedWattHours shall contain the rated maximum capacity of this battery in watt-hour units.
-	CapacityRatedWattHours float64
+	CapacityRatedWattHours *float64 `json:",omitempty"`
 	// ChargeState shall contain the charge state of this battery.
 	ChargeState ChargeState
 	// Description provides a description of this resource.
@@ -58,16 +59,16 @@ type Battery struct {
 	Location common.Location
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// Manufacturer shall contain the name of the organization responsible for producing the battery. This organization
 	// may be the entity from whom the battery is purchased, but this is not necessarily true.
 	Manufacturer string
 	// MaxChargeRateAmps shall contain the maximum charge rate of this battery in amp units.
-	MaxChargeRateAmps float64
+	MaxChargeRateAmps *float64 `json:",omitempty"`
 	// MaxChargeVoltage shall contain the maximum charge voltage of this battery.
-	MaxChargeVoltage float64
+	MaxChargeVoltage *float64 `json:",omitempty"`
 	// MaxDischargeRateAmps shall contain the maximum discharge rate of this battery in amp units.
-	MaxDischargeRateAmps float64
+	MaxDischargeRateAmps *float64 `json:",omitempty"`
 	// Metrics shall contain a link to a resource of type BatteryMetrics.
 	metrics string
 	// Model shall contain the model information as defined by the manufacturer for this battery.
@@ -168,66 +169,117 @@ func (battery *Battery) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (battery *Battery) Update() error {
+	return battery.UpdateWithContext(common.ContextOf(battery.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (battery *Battery) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"LocationIndicatorActive",
 	}
 
-	return battery.UpdateFromRawData(battery, battery.rawData, readWriteFields)
+	return battery.UpdateFromRawDataWithContext(ctx, battery, battery.rawData, readWriteFields)
 }
 
 // GetBattery will get a Battery instance from the service.
-func GetBattery(c common.Client, uri string) (*Battery, error) {
-	return common.GetObject[Battery](c, uri)
+func GetBattery(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Battery, error) {
+	return GetBatteryWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetBatteryWithContext will get a Battery instance from the service.
+func GetBatteryWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Battery, error) {
+	return common.GetObjectWithContext[Battery](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedBatterys gets the collection of Battery from
 // a provided reference.
-func ListReferencedBatterys(c common.Client, link string) ([]*Battery, error) {
-	return common.GetCollectionObjects[Battery](c, link)
+func ListReferencedBatterys(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Battery, error) {
+	return ListReferencedBatterysWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedBatterysWithContext gets the collection of Battery from
+// a provided reference.
+func ListReferencedBatterysWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Battery, error) {
+	return common.GetCollectionObjectsWithContext[Battery](ctx, c, link, queryOpts...)
 }
 
 // Assembly get the containing assembly of this battery.
-func (battery *Battery) Assembly() (*Assembly, error) {
+func (battery *Battery) Assembly(queryOpts ...common.QueryGroupOption) (*Assembly, error) {
+	return battery.AssemblyWithContext(common.ContextOf(battery.GetClient()), queryOpts...)
+}
+
+// AssemblyWithContext get the containing assembly of this battery.
+func (battery *Battery) AssemblyWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Assembly, error) {
 	if battery.assembly == "" {
 		return nil, nil
 	}
-	return GetAssembly(battery.GetClient(), battery.assembly)
+	return GetAssemblyWithContext(ctx, battery.GetClient(), battery.assembly, queryOpts...)
 }
 
 // BatteryMetrics get the metrics for this battery.
-func (battery *Battery) BatteryMetrics() (*BatteryMetrics, error) {
+func (battery *Battery) BatteryMetrics(queryOpts ...common.QueryGroupOption) (*BatteryMetrics, error) {
+	return battery.BatteryMetricsWithContext(common.ContextOf(battery.GetClient()), queryOpts...)
+}
+
+// BatteryMetricsWithContext get the metrics for this battery.
+func (battery *Battery) BatteryMetricsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*BatteryMetrics, error) {
 	if battery.metrics == "" {
 		return nil, nil
 	}
-	return GetBatteryMetrics(battery.GetClient(), battery.metrics)
+	return GetBatteryMetricsWithContext(ctx, battery.GetClient(), battery.metrics, queryOpts...)
 }
 
 // Memory returns a collection of Memory devices associated with this Battery.
-func (battery *Battery) Memory() ([]*Memory, error) {
-	return common.GetObjects[Memory](battery.GetClient(), battery.memory)
+func (battery *Battery) Memory(queryOpts ...common.QueryGroupOption) ([]*Memory, error) {
+	return battery.MemoryWithContext(common.ContextOf(battery.GetClient()), queryOpts...)
+}
+
+// MemoryWithContext returns a collection of Memory devices associated with this Battery.
+func (battery *Battery) MemoryWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Memory, error) {
+	return common.GetObjectsWithContext[Memory](ctx, battery.GetClient(), battery.memory, queryOpts...)
 }
 
 // StorageControllers returns a collection of StorageControllers associated with this Battery.
-func (battery *Battery) StorageControllers() ([]*StorageController, error) {
-	return common.GetObjects[StorageController](battery.GetClient(), battery.storageControllers)
+func (battery *Battery) StorageControllers(queryOpts ...common.QueryGroupOption) ([]*StorageController, error) {
+	return battery.StorageControllersWithContext(common.ContextOf(battery.GetClient()), queryOpts...)
+}
+
+// StorageControllersWithContext returns a collection of StorageControllers associated with this Battery.
+func (battery *Battery) StorageControllersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*StorageController, error) {
+	return common.GetObjectsWithContext[StorageController](ctx, battery.GetClient(), battery.storageControllers, queryOpts...)
 }
 
 // Calibrate performs a self-calibration, or learn cycle, of the battery.
 func (battery *Battery) Calibrate() error {
+	return battery.CalibrateWithContext(common.ContextOf(battery.GetClient()))
+}
+
+// CalibrateWithContext performs a self-calibration, or learn cycle, of the battery.
+func (battery *Battery) CalibrateWithContext(ctx context.Context) error {
 	payload := struct{}{}
-	return battery.Post(battery.calibrateTarget, payload)
+	return battery.PostWithContext(ctx, battery.calibrateTarget, payload)
 }
 
 // Reset resets the battery.
 func (battery *Battery) Reset(resetType ResetType) error {
+	return battery.ResetWithContext(common.ContextOf(battery.GetClient()), resetType)
+}
+
+// ResetWithContext resets the battery.
+func (battery *Battery) ResetWithContext(ctx context.Context, resetType ResetType) error {
 	t := struct {
 		ResetType ResetType
 	}{ResetType: resetType}
-	return battery.Post(battery.resetTarget, t)
+	return battery.PostWithContext(ctx, battery.resetTarget, t)
 }
 
 // SelfTest performs a self-test of the battery.
 func (battery *Battery) SelfTest() error {
+	return battery.SelfTestWithContext(common.ContextOf(battery.GetClient()))
+}
+
+// SelfTestWithContext performs a self-test of the battery.
+func (battery *Battery) SelfTestWithContext(ctx context.Context) error {
 	payload := struct{}{}
-	return battery.Post(battery.selfTestTarget, payload)
+	return battery.PostWithContext(ctx, battery.selfTestTarget, payload)
 }

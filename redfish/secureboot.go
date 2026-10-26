@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -52,6 +53,11 @@ const (
 	DeployedModeSecureBootModeType SecureBootModeType = "DeployedMode"
 )
 
+// SecureBootActions contains the actions supported by a Secure Boot resource.
+type SecureBootActions struct {
+	ResetKeys common.ActionTarget `json:"#SecureBoot.ResetKeys"`
+}
+
 // SecureBoot is used to represent a UEFI Secure Boot resource.
 type SecureBoot struct {
 	common.Entity
@@ -67,36 +73,27 @@ type SecureBoot struct {
 	SecureBootCurrentBoot SecureBootCurrentBootType
 	// SecureBootEnable set to true enables UEFI Secure Boot, and setting it to
 	// false disables it. This property can be enabled only in UEFI boot mode.
-	SecureBootEnable bool
+	SecureBootEnable *bool
 	// SecureBootMode shall contain the current Secure Boot mode, as defined in
 	// the UEFI Specification.
 	SecureBootMode SecureBootModeType
 	// rawData holds the original serialized JSON so we can compare updates.
 	rawData []byte
 
-	// resetKeysTarget is the URL to send ResetKeys requests.
-	resetKeysTarget string
+	// Actions contains the actions advertised by the service.
+	Actions SecureBootActions
+	// Settings contains the settings resource information advertised by the service.
+	Settings common.Settings `json:"@Redfish.Settings"`
 }
 
 // UnmarshalJSON unmarshals a SecureBoot object from the raw JSON.
 func (secureboot *SecureBoot) UnmarshalJSON(b []byte) error {
 	type temp SecureBoot
-	type actions struct {
-		ResetKeys common.ActionTarget `json:"#SecureBoot.ResetKeys"`
-	}
-	var t struct {
-		temp
-		Actions actions
-	}
-
-	err := json.Unmarshal(b, &t)
-	if err != nil {
+	var t temp
+	if err := json.Unmarshal(b, &t); err != nil {
 		return err
 	}
-
-	// Extract the links to other entities for later
-	*secureboot = SecureBoot(t.temp)
-	secureboot.resetKeysTarget = t.Actions.ResetKeys.Target
+	*secureboot = SecureBoot(t)
 
 	// This is a read/write object, so we need to save the raw object data for later
 	secureboot.rawData = b
@@ -106,22 +103,38 @@ func (secureboot *SecureBoot) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (secureboot *SecureBoot) Update() error {
+	return secureboot.UpdateWithContext(common.ContextOf(secureboot.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (secureboot *SecureBoot) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"SecureBootEnable",
 	}
 
-	return secureboot.UpdateFromRawData(secureboot, secureboot.rawData, readWriteFields)
+	return secureboot.UpdateFromRawDataWithContext(ctx, secureboot, secureboot.rawData, readWriteFields)
 }
 
 // GetSecureBoot will get a SecureBoot instance from the service.
-func GetSecureBoot(c common.Client, uri string) (*SecureBoot, error) {
-	return common.GetObject[SecureBoot](c, uri)
+func GetSecureBoot(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*SecureBoot, error) {
+	return GetSecureBootWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetSecureBootWithContext will get a SecureBoot instance from the service.
+func GetSecureBootWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*SecureBoot, error) {
+	return common.GetObjectWithContext[SecureBoot](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedSecureBoots gets the collection of SecureBoot from
 // a provided reference.
-func ListReferencedSecureBoots(c common.Client, link string) ([]*SecureBoot, error) {
-	return common.GetCollectionObjects[SecureBoot](c, link)
+func ListReferencedSecureBoots(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*SecureBoot, error) {
+	return ListReferencedSecureBootsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedSecureBootsWithContext gets the collection of SecureBoot from
+// a provided reference.
+func ListReferencedSecureBootsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*SecureBoot, error) {
+	return common.GetCollectionObjectsWithContext[SecureBoot](ctx, c, link, queryOpts...)
 }
 
 // ResetKeys shall perform a reset of the Secure Boot key databases. The
@@ -130,9 +143,18 @@ func ListReferencedSecureBoots(c common.Client, link string) ([]*SecureBoot, err
 // UEFI Secure Boot key databases. The DeletePK value shall delete the content
 // of the PK Secure boot key.
 func (secureboot *SecureBoot) ResetKeys(resetType ResetKeysType) error {
+	return secureboot.ResetKeysWithContext(common.ContextOf(secureboot.GetClient()), resetType)
+}
+
+// ResetKeysWithContext shall perform a reset of the Secure Boot key databases. The
+// ResetAllKeysToDefault value shall reset the UEFI Secure Boot key databases to
+// their default values. The DeleteAllKeys value shall delete the content of the
+// UEFI Secure Boot key databases. The DeletePK value shall delete the content
+// of the PK Secure boot key.
+func (secureboot *SecureBoot) ResetKeysWithContext(ctx context.Context, resetType ResetKeysType) error {
 	t := struct {
 		ResetKeysType ResetKeysType
 	}{ResetKeysType: resetType}
 
-	return secureboot.Post(secureboot.resetKeysTarget, t)
+	return secureboot.PostWithContext(ctx, secureboot.Actions.ResetKeys.Target, t)
 }

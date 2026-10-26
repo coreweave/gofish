@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -69,14 +70,25 @@ type PrivilegeRegistry struct {
 }
 
 // GetPrivilegeRegistry will get a PrivilegeRegistry instance from the service.
-func GetPrivilegeRegistry(c common.Client, uri string) (*PrivilegeRegistry, error) {
-	return common.GetObject[PrivilegeRegistry](c, uri)
+func GetPrivilegeRegistry(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PrivilegeRegistry, error) {
+	return GetPrivilegeRegistryWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetPrivilegeRegistryWithContext will get a PrivilegeRegistry instance from the service.
+func GetPrivilegeRegistryWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PrivilegeRegistry, error) {
+	return common.GetObjectWithContext[PrivilegeRegistry](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedPrivilegeRegistrys gets the collection of PrivilegeRegistry from
 // a provided reference.
-func ListReferencedPrivilegeRegistrys(c common.Client, link string) ([]*PrivilegeRegistry, error) {
-	return common.GetCollectionObjects[PrivilegeRegistry](c, link)
+func ListReferencedPrivilegeRegistrys(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PrivilegeRegistry, error) {
+	return ListReferencedPrivilegeRegistrysWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedPrivilegeRegistrysWithContext gets the collection of PrivilegeRegistry from
+// a provided reference.
+func ListReferencedPrivilegeRegistrysWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PrivilegeRegistry, error) {
+	return common.GetCollectionObjectsWithContext[PrivilegeRegistry](ctx, c, link, queryOpts...)
 }
 
 // TargetPrivilegeMap shall describe a mapping between one or more targets and the HTTP operations associated with

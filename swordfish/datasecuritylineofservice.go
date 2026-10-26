@@ -5,6 +5,8 @@
 package swordfish
 
 import (
+	"context"
+
 	"github.com/coreweave/gofish/common"
 )
 
@@ -44,12 +46,23 @@ type DataSecurityLineOfService struct {
 }
 
 // GetDataSecurityLineOfService will get a DataSecurityLineOfService instance from the service.
-func GetDataSecurityLineOfService(c common.Client, uri string) (*DataSecurityLineOfService, error) {
-	return common.GetObject[DataSecurityLineOfService](c, uri)
+func GetDataSecurityLineOfService(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*DataSecurityLineOfService, error) {
+	return GetDataSecurityLineOfServiceWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetDataSecurityLineOfServiceWithContext will get a DataSecurityLineOfService instance from the service.
+func GetDataSecurityLineOfServiceWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*DataSecurityLineOfService, error) {
+	return common.GetObjectWithContext[DataSecurityLineOfService](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedDataSecurityLineOfServices gets the collection of DataSecurityLineOfService from
 // a provided reference.
-func ListReferencedDataSecurityLineOfServices(c common.Client, link string) ([]*DataSecurityLineOfService, error) {
-	return common.GetCollectionObjects[DataSecurityLineOfService](c, link)
+func ListReferencedDataSecurityLineOfServices(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*DataSecurityLineOfService, error) {
+	return ListReferencedDataSecurityLineOfServicesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedDataSecurityLineOfServicesWithContext gets the collection of DataSecurityLineOfService from
+// a provided reference.
+func ListReferencedDataSecurityLineOfServicesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*DataSecurityLineOfService, error) {
+	return common.GetCollectionObjectsWithContext[DataSecurityLineOfService](ctx, c, link, queryOpts...)
 }

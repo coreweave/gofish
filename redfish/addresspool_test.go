@@ -51,20 +51,28 @@ func TestAddressPool(t *testing.T) {
 	assertEquals(t, "Address Pool 1", result.Name)
 	assertEquals(t, "0x1A", result.GenZ.AccessKey)
 
-	if result.GenZ.MinCID != 1 {
-		t.Errorf("Expected Genz.MinCID to be 1, got %d", result.GenZ.MinCID)
+	if result.GenZ.MinCID == nil {
+		t.Error("Expected GenZ.MinCID to be set")
+	} else if *result.GenZ.MinCID != 1 {
+		t.Errorf("Expected Genz.MinCID to be 1, got %d", *result.GenZ.MinCID)
 	}
 
-	if result.GenZ.MinSID != 100 {
-		t.Errorf("Expected Genz.MinSID to be 100, got %d", result.GenZ.MinSID)
+	if result.GenZ.MinSID == nil {
+		t.Error("Expected GenZ.MinSID to be set")
+	} else if *result.GenZ.MinSID != 100 {
+		t.Errorf("Expected Genz.MinSID to be 100, got %d", *result.GenZ.MinSID)
 	}
 
-	if result.GenZ.MaxCID != 4096 {
-		t.Errorf("Expected Genz.MaxCID to be 4096, got %d", result.GenZ.MaxCID)
+	if result.GenZ.MaxCID == nil {
+		t.Error("Expected GenZ.MaxCID to be set")
+	} else if *result.GenZ.MaxCID != 4096 {
+		t.Errorf("Expected Genz.MaxCID to be 4096, got %d", *result.GenZ.MaxCID)
 	}
 
-	if result.GenZ.MaxSID != 8192 {
-		t.Errorf("Expected Genz.MinSID to be 8192, got %d", result.GenZ.MaxSID)
+	if result.GenZ.MaxSID == nil {
+		t.Error("Expected GenZ.MaxSID to be set")
+	} else if *result.GenZ.MaxSID != 8192 {
+		t.Errorf("Expected Genz.MinSID to be 8192, got %d", *result.GenZ.MaxSID)
 	}
 
 	if len(result.endpoints) != 1 {

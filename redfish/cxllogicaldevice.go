@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -116,49 +117,85 @@ func (cxllogicaldevice *CXLLogicalDevice) UnmarshalJSON(b []byte) error {
 }
 
 // Log gets the LogService for this device.
-func (cxllogicaldevice *CXLLogicalDevice) Log() (*LogService, error) {
+func (cxllogicaldevice *CXLLogicalDevice) Log(queryOpts ...common.QueryGroupOption) (*LogService, error) {
+	return cxllogicaldevice.LogWithContext(common.ContextOf(cxllogicaldevice.GetClient()), queryOpts...)
+}
+
+// LogWithContext gets the LogService for this device.
+func (cxllogicaldevice *CXLLogicalDevice) LogWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*LogService, error) {
 	if cxllogicaldevice.log == "" {
 		return nil, nil
 	}
 
-	return GetLogService(cxllogicaldevice.GetClient(), cxllogicaldevice.log)
+	return GetLogServiceWithContext(ctx, cxllogicaldevice.GetClient(), cxllogicaldevice.log, queryOpts...)
 }
 
 // Endpoints get the endpoints associated with this CXL logical device.
-func (cxllogicaldevice *CXLLogicalDevice) Endpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](cxllogicaldevice.GetClient(), cxllogicaldevice.endpoints)
+func (cxllogicaldevice *CXLLogicalDevice) Endpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return cxllogicaldevice.EndpointsWithContext(common.ContextOf(cxllogicaldevice.GetClient()), queryOpts...)
+}
+
+// EndpointsWithContext get the endpoints associated with this CXL logical device.
+func (cxllogicaldevice *CXLLogicalDevice) EndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, cxllogicaldevice.GetClient(), cxllogicaldevice.endpoints, queryOpts...)
 }
 
 // MemoryChunks get the memory chunks associated with this CXL logical device.
-func (cxllogicaldevice *CXLLogicalDevice) MemoryChunks() ([]*MemoryChunks, error) {
-	return common.GetObjects[MemoryChunks](cxllogicaldevice.GetClient(), cxllogicaldevice.memoryChunks)
+func (cxllogicaldevice *CXLLogicalDevice) MemoryChunks(queryOpts ...common.QueryGroupOption) ([]*MemoryChunks, error) {
+	return cxllogicaldevice.MemoryChunksWithContext(common.ContextOf(cxllogicaldevice.GetClient()), queryOpts...)
+}
+
+// MemoryChunksWithContext get the memory chunks associated with this CXL logical device.
+func (cxllogicaldevice *CXLLogicalDevice) MemoryChunksWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*MemoryChunks, error) {
+	return common.GetObjectsWithContext[MemoryChunks](ctx, cxllogicaldevice.GetClient(), cxllogicaldevice.memoryChunks, queryOpts...)
 }
 
 // MemoryDomains get the memory domains associated with this CXL logical device.
-func (cxllogicaldevice *CXLLogicalDevice) MemoryDomains() ([]*MemoryDomain, error) {
-	return common.GetObjects[MemoryDomain](cxllogicaldevice.GetClient(), cxllogicaldevice.memoryDomains)
+func (cxllogicaldevice *CXLLogicalDevice) MemoryDomains(queryOpts ...common.QueryGroupOption) ([]*MemoryDomain, error) {
+	return cxllogicaldevice.MemoryDomainsWithContext(common.ContextOf(cxllogicaldevice.GetClient()), queryOpts...)
+}
+
+// MemoryDomainsWithContext get the memory domains associated with this CXL logical device.
+func (cxllogicaldevice *CXLLogicalDevice) MemoryDomainsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*MemoryDomain, error) {
+	return common.GetObjectsWithContext[MemoryDomain](ctx, cxllogicaldevice.GetClient(), cxllogicaldevice.memoryDomains, queryOpts...)
 }
 
 // PCIeFunctions get the PCIe functions associated with this CXL logical device.
-func (cxllogicaldevice *CXLLogicalDevice) PCIeFunctions() ([]*PCIeFunction, error) {
-	return common.GetObjects[PCIeFunction](cxllogicaldevice.GetClient(), cxllogicaldevice.pcieFunctions)
+func (cxllogicaldevice *CXLLogicalDevice) PCIeFunctions(queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
+	return cxllogicaldevice.PCIeFunctionsWithContext(common.ContextOf(cxllogicaldevice.GetClient()), queryOpts...)
+}
+
+// PCIeFunctionsWithContext get the PCIe functions associated with this CXL logical device.
+func (cxllogicaldevice *CXLLogicalDevice) PCIeFunctionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
+	return common.GetObjectsWithContext[PCIeFunction](ctx, cxllogicaldevice.GetClient(), cxllogicaldevice.pcieFunctions, queryOpts...)
 }
 
 // GetCXLLogicalDevice will get a CXLLogicalDevice instance from the service.
-func GetCXLLogicalDevice(c common.Client, uri string) (*CXLLogicalDevice, error) {
-	return common.GetObject[CXLLogicalDevice](c, uri)
+func GetCXLLogicalDevice(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*CXLLogicalDevice, error) {
+	return GetCXLLogicalDeviceWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetCXLLogicalDeviceWithContext will get a CXLLogicalDevice instance from the service.
+func GetCXLLogicalDeviceWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*CXLLogicalDevice, error) {
+	return common.GetObjectWithContext[CXLLogicalDevice](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedCXLLogicalDevices gets the collection of CXLLogicalDevice from
 // a provided reference.
-func ListReferencedCXLLogicalDevices(c common.Client, link string) ([]*CXLLogicalDevice, error) {
-	return common.GetCollectionObjects[CXLLogicalDevice](c, link)
+func ListReferencedCXLLogicalDevices(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*CXLLogicalDevice, error) {
+	return ListReferencedCXLLogicalDevicesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedCXLLogicalDevicesWithContext gets the collection of CXLLogicalDevice from
+// a provided reference.
+func ListReferencedCXLLogicalDevicesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*CXLLogicalDevice, error) {
+	return common.GetCollectionObjectsWithContext[CXLLogicalDevice](ctx, c, link, queryOpts...)
 }
 
 // QoS shall contain the quality of service properties of this CXL logical device.
 type QoS struct {
 	// AllocatedBandwidth shall contain the bandwidth allocated for this CXL logical device in multiples of 256.
-	AllocatedBandwidth int
+	AllocatedBandwidth *int `json:",omitempty"`
 	// LimitPercent shall contain the bandwidth limit, '0' to '100', for this CXL logical device as a percentage.
-	LimitPercent int
+	LimitPercent *int `json:",omitempty"`
 }

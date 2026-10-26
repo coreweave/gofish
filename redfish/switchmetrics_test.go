@@ -49,8 +49,10 @@ func TestSwitchMetrics(t *testing.T) {
 	assertEquals(t, "SwitchMetrics", result.ID)
 	assertEquals(t, "PCIe Switch Metrics", result.Name)
 
-	if result.PCIeErrors.CorrectableErrorCount != 1 {
-		t.Errorf("Unexpected PCIeErrors.CorrectableErrorCount: %d", result.PCIeErrors.CorrectableErrorCount)
+	if result.PCIeErrors.CorrectableErrorCount == nil {
+		t.Error("Expected PCIeErrors.CorrectableErrorCount to be set")
+	} else if *result.PCIeErrors.CorrectableErrorCount != 1 {
+		t.Errorf("Unexpected PCIeErrors.CorrectableErrorCount: %d", *result.PCIeErrors.CorrectableErrorCount)
 	}
 
 	if result.InternalMemoryMetrics.CurrentPeriod.CorrectableECCErrorCount != 1 {

@@ -60,6 +60,7 @@ var powerBody = strings.NewReader(
 			"FirmwareVersion": "1.0",
 			"HotPluggable": true,
 			"IndicatorLED": "Lit",
+			"LocationIndicatorActive": true,
 			"InputRanges": [{
 					"InputType": "AC",
 					"MaximumFrequencyHz": 99.0,
@@ -636,6 +637,9 @@ func TestPower(t *testing.T) {
 		t.Errorf("Invalid PowerSupply IndicatorLED: %s",
 			result.PowerSupplies[0].IndicatorLED)
 	}
+	if result.PowerSupplies[0].LocationIndicatorActive == nil || !*result.PowerSupplies[0].LocationIndicatorActive {
+		t.Error("Invalid PowerSupply LocationIndicatorActive")
+	}
 
 	if result.PowerSupplies[0].assembly != "/Assembly" {
 		t.Errorf("Invalid PowerSupply Assembly: %s",
@@ -1053,5 +1057,32 @@ func TestCiscoPower(t *testing.T) {
 
 	if *voltage.UpperThresholdCritical != 14.0 {
 		t.Errorf("Expected UpperThresholdCritical to be 14.0: %v", voltage.UpperThresholdCritical)
+	}
+
+	if voltage.LowerThresholdCritical != nil {
+		t.Errorf("Expected \"N/A\" LowerThresholdCritical to be nil: %v", *voltage.LowerThresholdCritical)
+	}
+
+	if voltage.ReadingVolts == nil {
+		t.Error("Expected ReadingVolts to be set")
+	} else if *voltage.ReadingVolts != 11.9 {
+		t.Errorf("Expected string ReadingVolts to parse to 11.9: %v", *voltage.ReadingVolts)
+	}
+}
+
+// TestPowerMetricUnparseableInterval ensures an IntervalInMin string that isn't a number decodes to nil.
+func TestPowerMetricUnparseableInterval(t *testing.T) {
+	var result PowerMetric
+	err := json.NewDecoder(strings.NewReader(`{"IntervalInMin": "N/A", "MaxConsumedWatts": 12}`)).Decode(&result)
+	if err != nil {
+		t.Fatalf("Error decoding JSON: %s", err)
+	}
+
+	if result.IntervalInMin != nil {
+		t.Errorf("Expected IntervalInMin to be nil: %d", *result.IntervalInMin)
+	}
+
+	if result.MaxConsumedWatts == nil || *result.MaxConsumedWatts != 12 {
+		t.Errorf("Expected MaxConsumedWatts to be 12: %v", result.MaxConsumedWatts)
 	}
 }

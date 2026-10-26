@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -361,7 +362,7 @@ type LogEntry struct {
 	ODataType string `json:"@odata.type"`
 	// AdditionalDataSizeBytes shall contain the size of the additional data retrieved from the URI specified by the
 	// AdditionalDataURI property for this log entry.
-	AdditionalDataSizeBytes int
+	AdditionalDataSizeBytes *int `json:",omitempty"`
 	// AdditionalDataURI shall contain the URI at which to access the additional data for this log entry, using the
 	// Redfish protocol and authentication methods. If both DiagnosticData and AdditionalDataURI are present,
 	// DiagnosticData shall contain the Base64-encoding of the data retrieved from the URI specified by the
@@ -399,7 +400,7 @@ type LogEntry struct {
 	// same root cause. Implementations shall use separate values for events
 	// with separate root cause. There shall not be ordering of events implied
 	// by the value of this property.
-	EventGroupID int `json:"EventGroupId"`
+	EventGroupID *int `json:"EventGroupId,omitempty"`
 	// EventID records an Event and the value shall indicate a unique identifier
 	// for the event, the format of which is implementation dependent.
 	EventID string `json:"EventId"`
@@ -490,7 +491,7 @@ type LogEntry struct {
 	// SensorNumber shall be the IPMI sensor
 	// number if the EntryType is SEL, the count of events if the EntryType
 	// is Event, and OEM Specific if EntryType is Oem.
-	SensorNumber int
+	SensorNumber *int `json:",omitempty"`
 	// SensorType shall be present if the EntryType value is
 	// SEL. These enumerations are the values from table 42-3 of the IPMI
 	// specification.
@@ -563,26 +564,47 @@ func (logentry *LogEntry) UnmarshalJSON(b []byte) error {
 }
 
 // RelatedLogEntries gets the set of LogEntry in this or other log services that are related to this log entry.
-func (logentry *LogEntry) RelatedLogEntries() ([]*LogEntry, error) {
-	return common.GetObjects[LogEntry](logentry.GetClient(), logentry.relatedLogEntries)
+func (logentry *LogEntry) RelatedLogEntries(queryOpts ...common.QueryGroupOption) ([]*LogEntry, error) {
+	return logentry.RelatedLogEntriesWithContext(common.ContextOf(logentry.GetClient()), queryOpts...)
+}
+
+// RelatedLogEntriesWithContext gets the set of LogEntry in this or other log services that are related to this log entry.
+func (logentry *LogEntry) RelatedLogEntriesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*LogEntry, error) {
+	return common.GetObjectsWithContext[LogEntry](ctx, logentry.GetClient(), logentry.relatedLogEntries, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (logentry *LogEntry) Update() error {
+	return logentry.UpdateWithContext(common.ContextOf(logentry.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (logentry *LogEntry) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"Resolved",
 	}
 
-	return logentry.UpdateFromRawData(logentry, logentry.rawData, readWriteFields)
+	return logentry.UpdateFromRawDataWithContext(ctx, logentry, logentry.rawData, readWriteFields)
 }
 
 // GetLogEntry will get a LogEntry instance from the service.
-func GetLogEntry(c common.Client, uri string) (*LogEntry, error) {
-	return common.GetObject[LogEntry](c, uri)
+func GetLogEntry(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*LogEntry, error) {
+	return GetLogEntryWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetLogEntryWithContext will get a LogEntry instance from the service.
+func GetLogEntryWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*LogEntry, error) {
+	return common.GetObjectWithContext[LogEntry](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedLogEntrys gets the collection of LogEntry from
 // a provided reference.
-func ListReferencedLogEntrys(c common.Client, link string) ([]*LogEntry, error) {
-	return common.GetCollectionObjects[LogEntry](c, link)
+func ListReferencedLogEntrys(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*LogEntry, error) {
+	return ListReferencedLogEntrysWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedLogEntrysWithContext gets the collection of LogEntry from
+// a provided reference.
+func ListReferencedLogEntrysWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*LogEntry, error) {
+	return common.GetCollectionObjectsWithContext[LogEntry](ctx, c, link, queryOpts...)
 }

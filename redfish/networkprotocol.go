@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -262,6 +263,11 @@ func (networkProtocol *NetworkProtocolSettings) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (networkProtocol *NetworkProtocolSettings) Update() error {
+	return networkProtocol.UpdateWithContext(common.ContextOf(networkProtocol.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (networkProtocol *NetworkProtocolSettings) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"DHCP",
 		"DHCPv6",
@@ -280,9 +286,13 @@ func (networkProtocol *NetworkProtocolSettings) Update() error {
 		"VirtualMedia",
 	}
 
-	return networkProtocol.UpdateFromRawData(networkProtocol, networkProtocol.rawData, readWriteFields)
+	return networkProtocol.UpdateFromRawDataWithContext(ctx, networkProtocol, networkProtocol.rawData, readWriteFields)
 }
 
-func GetNetworkProtocol(c common.Client, uri string) (*NetworkProtocolSettings, error) {
-	return common.GetObject[NetworkProtocolSettings](c, uri)
+func GetNetworkProtocol(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*NetworkProtocolSettings, error) {
+	return GetNetworkProtocolWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+func GetNetworkProtocolWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*NetworkProtocolSettings, error) {
+	return common.GetObjectWithContext[NetworkProtocolSettings](ctx, c, uri, queryOpts...)
 }

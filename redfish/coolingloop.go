@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -29,22 +30,22 @@ type Coolant struct {
 	AdditiveName string
 	// AdditivePercent shall contain the percent of additives, '0' to '100', by volume, contained in the coolant
 	// mixture.
-	AdditivePercent float64
+	AdditivePercent *float64 `json:",omitempty"`
 	// CoolantType shall contain the type of coolant used by this resource.
 	CoolantType CoolantType
 	// DensityKgPerCubicMeter shall contain the density of the coolant, in kilograms per cubic meter units, as measured
 	// at room temperature (20-25 degrees C) and atmospheric pressure.
-	DensityKgPerCubicMeter float64
+	DensityKgPerCubicMeter *float64 `json:",omitempty"`
 	// RatedServiceHours shall contain the number of hours of service that the coolant is rated to provide before
 	// servicing or replacement is necessary.
-	RatedServiceHours float64
+	RatedServiceHours *float64 `json:",omitempty"`
 	// ServiceHours shall contain the number of hours of service that the coolant has provided.
-	ServiceHours float64
+	ServiceHours *float64 `json:",omitempty"`
 	// ServicedDate shall contain the date the coolant was last serviced or tested for quality.
 	ServicedDate string
 	// SpecificHeatkJoulesPerKgK shall contain the specific heat capacity of the coolant, in kilojoules per kilogram
 	// per degree kelvin units, as measured at room temperature (20-25 degrees C) and atmospheric pressure.
-	SpecificHeatkJoulesPerKgK float64
+	SpecificHeatkJoulesPerKgK *float64 `json:",omitempty"`
 }
 
 // CoolingLoop shall represent a cooling loop for a Redfish implementation.
@@ -75,14 +76,14 @@ type CoolingLoop struct {
 	Description string
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// PrimaryCoolantConnectors shall contain a link to a resource collection of type CoolantConnectorCollection that
 	// contains the primary coolant connectors for this equipment.
-	PrimaryCoolantConnectors string
+	primaryCoolantConnectors string
 	// RatedFlowLitersPerMinute shall contain the rated liquid flow, in liters per minute units, for this cooling loop.
-	RatedFlowLitersPerMinute float64
+	RatedFlowLitersPerMinute *float64 `json:",omitempty"`
 	// RatedPressurekPa shall contain the rated maximum pressure, in kilopascal units, for this cooling loop.
-	RatedPressurekPa float64
+	RatedPressurekPa *float64 `json:",omitempty"`
 	// SecondaryCoolantConnectors shall contain a link to a resource collection of type CoolantConnectorCollection that
 	// contains the secondary coolant connectors for this equipment.
 	secondaryCoolantConnectors string
@@ -121,6 +122,7 @@ func (coolingloop *CoolingLoop) UnmarshalJSON(b []byte) error {
 	}
 	var t struct {
 		temp
+		PrimaryCoolantConnectors   common.Link
 		SecondaryCoolantConnectors common.Link
 		Links                      Links
 	}
@@ -133,6 +135,7 @@ func (coolingloop *CoolingLoop) UnmarshalJSON(b []byte) error {
 	*coolingloop = CoolingLoop(t.temp)
 
 	// Extract the links to other entities for later
+	coolingloop.primaryCoolantConnectors = t.PrimaryCoolantConnectors.String()
 	coolingloop.secondaryCoolantConnectors = t.SecondaryCoolantConnectors.String()
 	coolingloop.chassis = t.Links.Chassis.String()
 	coolingloop.facility = t.Links.Facility.String()
@@ -147,6 +150,11 @@ func (coolingloop *CoolingLoop) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (coolingloop *CoolingLoop) Update() error {
+	return coolingloop.UpdateWithContext(common.ContextOf(coolingloop.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (coolingloop *CoolingLoop) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"ConsumingEquipmentNames",
 		"CoolingManagerURI",
@@ -155,36 +163,77 @@ func (coolingloop *CoolingLoop) Update() error {
 		"UserLabel",
 	}
 
-	return coolingloop.UpdateFromRawData(coolingloop, coolingloop.rawData, readWriteFields)
+	return coolingloop.UpdateFromRawDataWithContext(ctx, coolingloop, coolingloop.rawData, readWriteFields)
 }
 
 // GetCoolingLoop will get a CoolingLoop instance from the service.
-func GetCoolingLoop(c common.Client, uri string) (*CoolingLoop, error) {
-	return common.GetObject[CoolingLoop](c, uri)
+func GetCoolingLoop(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*CoolingLoop, error) {
+	return GetCoolingLoopWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetCoolingLoopWithContext will get a CoolingLoop instance from the service.
+func GetCoolingLoopWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*CoolingLoop, error) {
+	return common.GetObjectWithContext[CoolingLoop](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedCoolingLoops gets the collection of CoolingLoop from
 // a provided reference.
-func ListReferencedCoolingLoops(c common.Client, link string) ([]*CoolingLoop, error) {
-	return common.GetCollectionObjects[CoolingLoop](c, link)
+func ListReferencedCoolingLoops(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*CoolingLoop, error) {
+	return ListReferencedCoolingLoopsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedCoolingLoopsWithContext gets the collection of CoolingLoop from
+// a provided reference.
+func ListReferencedCoolingLoopsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*CoolingLoop, error) {
+	return common.GetCollectionObjectsWithContext[CoolingLoop](ctx, c, link, queryOpts...)
+}
+
+// PrimaryCoolantConnectors gets the primary coolant connectors for this equipment.
+func (coolingloop *CoolingLoop) PrimaryCoolantConnectors(queryOpts ...common.QueryGroupOption) ([]*CoolantConnector, error) {
+	return coolingloop.PrimaryCoolantConnectorsWithContext(common.ContextOf(coolingloop.GetClient()), queryOpts...)
+}
+
+// PrimaryCoolantConnectorsWithContext gets the primary coolant connectors for this equipment.
+func (coolingloop *CoolingLoop) PrimaryCoolantConnectorsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*CoolantConnector, error) {
+	return ListReferencedCoolantConnectorsWithContext(ctx, coolingloop.GetClient(), coolingloop.primaryCoolantConnectors, queryOpts...)
 }
 
 // SecondaryCoolantConnectors gets the secondary coolant connectors for this equipment.
-func (coolingloop *CoolingLoop) SecondaryCoolantConnectors() ([]*CoolantConnector, error) {
-	return ListReferencedCoolantConnectors(coolingloop.GetClient(), coolingloop.secondaryCoolantConnectors)
+func (coolingloop *CoolingLoop) SecondaryCoolantConnectors(queryOpts ...common.QueryGroupOption) ([]*CoolantConnector, error) {
+	return coolingloop.SecondaryCoolantConnectorsWithContext(common.ContextOf(coolingloop.GetClient()), queryOpts...)
+}
+
+// SecondaryCoolantConnectorsWithContext gets the secondary coolant connectors for this equipment.
+func (coolingloop *CoolingLoop) SecondaryCoolantConnectorsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*CoolantConnector, error) {
+	return ListReferencedCoolantConnectorsWithContext(ctx, coolingloop.GetClient(), coolingloop.secondaryCoolantConnectors, queryOpts...)
 }
 
 // Chassis gets the physical container that contains this resource.
-func (coolingloop *CoolingLoop) Chassis() (*Chassis, error) {
-	return GetChassis(coolingloop.GetClient(), coolingloop.chassis)
+func (coolingloop *CoolingLoop) Chassis(queryOpts ...common.QueryGroupOption) (*Chassis, error) {
+	return coolingloop.ChassisWithContext(common.ContextOf(coolingloop.GetClient()), queryOpts...)
+}
+
+// ChassisWithContext gets the physical container that contains this resource.
+func (coolingloop *CoolingLoop) ChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Chassis, error) {
+	return GetChassisWithContext(ctx, coolingloop.GetClient(), coolingloop.chassis, queryOpts...)
 }
 
 // Facility gets the physical container that contains this resource.
-func (coolingloop *CoolingLoop) Facility() (*Facility, error) {
-	return GetFacility(coolingloop.GetClient(), coolingloop.chassis)
+func (coolingloop *CoolingLoop) Facility(queryOpts ...common.QueryGroupOption) (*Facility, error) {
+	return coolingloop.FacilityWithContext(common.ContextOf(coolingloop.GetClient()), queryOpts...)
+}
+
+// FacilityWithContext gets the physical container that contains this resource.
+func (coolingloop *CoolingLoop) FacilityWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Facility, error) {
+	return GetFacilityWithContext(ctx, coolingloop.GetClient(), coolingloop.chassis, queryOpts...)
 }
 
 // ManagedBy gets the collection of managers of this equipment.
-func (coolingloop *CoolingLoop) ManagedBy() ([]*Manager, error) {
-	return common.GetObjects[Manager](coolingloop.GetClient(), coolingloop.managedBy)
+func (coolingloop *CoolingLoop) ManagedBy(queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return coolingloop.ManagedByWithContext(common.ContextOf(coolingloop.GetClient()), queryOpts...)
+}
+
+// ManagedByWithContext gets the collection of managers of this equipment.
+func (coolingloop *CoolingLoop) ManagedByWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return common.GetObjectsWithContext[Manager](ctx, coolingloop.GetClient(), coolingloop.managedBy, queryOpts...)
 }

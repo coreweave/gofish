@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -57,19 +58,19 @@ type TransferConfiguration struct {
 	// when they are both qualified and in synchronization.
 	ClosedTransitionAllowed bool
 	// The time in seconds to wait for a closed transition to occur.
-	ClosedTransitionTimeoutSeconds int64
+	ClosedTransitionTimeoutSeconds *int64 `json:",omitempty"`
 	// The preferred source for the mains circuit to this equipment.
 	PreferredMainsID string `json:"PreferredMainsId"`
 	// The time in seconds to delay the automatic transfer
 	// from the alternate mains circuit back to the preferred mains circuit.
-	RetransferDelaySeconds int64
+	RetransferDelaySeconds *int64 `json:",omitempty"`
 	// Indicates if the automatic transfer is permitted from the alternate mains circuit
 	// back to the preferred mains circuit after the preferred mains circuit is qualified again
 	// and the Retransfer Delay time has expired.
 	RetransferEnabled bool
 	// The time in seconds to delay the automatic transfer from the preferred mains circuit
 	// to the alternate mains circuit when the preferred mains circuit is disqualified.
-	TransferDelaySeconds int64
+	TransferDelaySeconds *int64 `json:",omitempty"`
 	// Indicates if any transfer is inhibited.
 	TransferInhibit bool
 }
@@ -78,19 +79,19 @@ type TransferConfiguration struct {
 type TransferCriteria struct {
 	// The frequency in hertz over the nominal value
 	// that satisfies a criterion for transfer.
-	OverNominalFrequencyHz float32
+	OverNominalFrequencyHz *float32 `json:",omitempty"`
 	// The positive percentage of voltage RMS over the nominal value
 	// that satisfies a criterion for transfer.
-	OverVoltageRMSPercentage int
+	OverVoltageRMSPercentage *int `json:",omitempty"`
 	// The sensitivity to voltage waveform quality
 	// to satisfy the criterion for initiating a transfer.
 	TransferSensitivity TransferSensitivity
 	// The frequency in hertz under the nominal value
 	// that satisfies a criterion for transfer.
-	UnderNominalFrequencyHz float32
+	UnderNominalFrequencyHz *float32 `json:",omitempty"`
 	// The negative percentage of voltage RMS under the nominal value
 	// that satisfies a criterion for transfer.
-	UnderVoltageRMSPercentage int
+	UnderVoltageRMSPercentage *int `json:",omitempty"`
 }
 
 // PowerDistribution shall be used to represent
@@ -117,6 +118,8 @@ type PowerDistribution struct {
 	FirmwareVersion string
 	// The location of the equipment.
 	Location common.Location
+	// LocationIndicatorActive is the state of the indicator used to physically identify or locate this resource.
+	LocationIndicatorActive *bool
 	// A link to the power input circuits for this equipment.
 	mains string
 	// The redundancy information for the mains (input) circuits for this equipment.
@@ -249,17 +252,28 @@ func (powerDistribution *PowerDistribution) UnmarshalJSON(b []byte) error {
 }
 
 // GetPowerDistribution will get a PowerDistribution instance from the Redfish service.
-func GetPowerDistribution(c common.Client, uri string) (*PowerDistribution, error) {
-	return common.GetObject[PowerDistribution](c, uri)
+func GetPowerDistribution(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PowerDistribution, error) {
+	return GetPowerDistributionWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetPowerDistributionWithContext will get a PowerDistribution instance from the Redfish service.
+func GetPowerDistributionWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PowerDistribution, error) {
+	return common.GetObjectWithContext[PowerDistribution](ctx, c, uri, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (powerDistribution *PowerDistribution) Update() error {
+	return powerDistribution.UpdateWithContext(common.ContextOf(powerDistribution.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (powerDistribution *PowerDistribution) UpdateWithContext(ctx context.Context) error {
 	// Note: current definition (2023.3) only includes AssetTag and UserLabel.
 	// May have errors trying to set other values, but keeping in here for backwards
 	// compatibility.
 	readWriteFields := []string{
 		"AssetTag",
+		"LocationIndicatorActive",
 		"UserLabel",
 		"ActiveMainsId",
 		"AutoTransferEnabled",
@@ -277,83 +291,154 @@ func (powerDistribution *PowerDistribution) Update() error {
 		"UnderVoltageRMSPercentage",
 	}
 
-	return powerDistribution.UpdateFromRawData(powerDistribution, powerDistribution.rawData, readWriteFields)
+	return powerDistribution.UpdateFromRawDataWithContext(ctx, powerDistribution, powerDistribution.rawData, readWriteFields)
 }
 
 // This action shall transfer power input from the existing mains circuit to the alternative mains circuit.
 func (powerDistribution *PowerDistribution) TransferControl() error {
+	return powerDistribution.TransferControlWithContext(common.ContextOf(powerDistribution.GetClient()))
+}
+
+// This action shall transfer power input from the existing mains circuit to the alternative mains circuit.
+func (powerDistribution *PowerDistribution) TransferControlWithContext(ctx context.Context) error {
 	if powerDistribution.transferControlTarget == "" {
 		return errors.New("TransferControl is not supported")
 	}
 
-	return powerDistribution.Post(powerDistribution.transferControlTarget, nil)
+	return powerDistribution.PostWithContext(ctx, powerDistribution.transferControlTarget, nil)
 }
 
 // ListReferencedPowerDistribution gets the collection of PowerDistribution from
 // a provided reference.
-func ListReferencedPowerDistributionUnits(c common.Client, link string) ([]*PowerDistribution, error) {
-	return common.GetCollectionObjects[PowerDistribution](c, link)
+func ListReferencedPowerDistributionUnits(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PowerDistribution, error) {
+	return ListReferencedPowerDistributionUnitsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedPowerDistribution gets the collection of PowerDistribution from
+// a provided reference.
+func ListReferencedPowerDistributionUnitsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PowerDistribution, error) {
+	return common.GetCollectionObjectsWithContext[PowerDistribution](ctx, c, link, queryOpts...)
 }
 
 // Deprecated: (v1.3) in favor of the Sensors link in the Chassis resource.
-func (powerDistribution *PowerDistribution) Sensors() ([]*Sensor, error) {
-	return ListReferencedSensors(powerDistribution.GetClient(), powerDistribution.sensors)
+func (powerDistribution *PowerDistribution) Sensors(queryOpts ...common.QueryGroupOption) ([]*Sensor, error) {
+	return powerDistribution.SensorsWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// Deprecated: (v1.3) in favor of the Sensors link in the Chassis resource.
+func (powerDistribution *PowerDistribution) SensorsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Sensor, error) {
+	return ListReferencedSensorsWithContext(ctx, powerDistribution.GetClient(), powerDistribution.sensors, queryOpts...)
 }
 
 // Deprecated: (v1.3) in favor of the PowerSupplies link in the Chassis resource.
-func (powerDistribution *PowerDistribution) PowerSupplies() ([]*PowerSupplyUnit, error) {
-	return ListReferencedPowerSupplyUnits(powerDistribution.GetClient(), powerDistribution.powerSupplies)
+func (powerDistribution *PowerDistribution) PowerSupplies(queryOpts ...common.QueryGroupOption) ([]*PowerSupplyUnit, error) {
+	return powerDistribution.PowerSuppliesWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// Deprecated: (v1.3) in favor of the PowerSupplies link in the Chassis resource.
+func (powerDistribution *PowerDistribution) PowerSuppliesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PowerSupplyUnit, error) {
+	return ListReferencedPowerSupplyUnitsWithContext(ctx, powerDistribution.GetClient(), powerDistribution.powerSupplies, queryOpts...)
 }
 
 // ManagedBy gets the collection of managers for this equipment.
-func (powerDistribution *PowerDistribution) ManagedBy() ([]*Manager, error) {
-	return common.GetObjects[Manager](powerDistribution.GetClient(), powerDistribution.managedBy)
+func (powerDistribution *PowerDistribution) ManagedBy(queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return powerDistribution.ManagedByWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// ManagedByWithContext gets the collection of managers for this equipment.
+func (powerDistribution *PowerDistribution) ManagedByWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return common.GetObjectsWithContext[Manager](ctx, powerDistribution.GetClient(), powerDistribution.managedBy, queryOpts...)
 }
 
 // Chassis gets the collection of chassis for this equipment.
-func (powerDistribution *PowerDistribution) Chassis() ([]*Chassis, error) {
-	return common.GetObjects[Chassis](powerDistribution.GetClient(), powerDistribution.chassis)
+func (powerDistribution *PowerDistribution) Chassis(queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return powerDistribution.ChassisWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// ChassisWithContext gets the collection of chassis for this equipment.
+func (powerDistribution *PowerDistribution) ChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return common.GetObjectsWithContext[Chassis](ctx, powerDistribution.GetClient(), powerDistribution.chassis, queryOpts...)
 }
 
 // Branches gets the collection that contains the branch circuits for this equipment.
-func (powerDistribution *PowerDistribution) Branches() ([]*Circuit, error) {
-	return ListReferencedCircuits(powerDistribution.GetClient(), powerDistribution.branches)
+func (powerDistribution *PowerDistribution) Branches(queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return powerDistribution.BranchesWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// BranchesWithContext gets the collection that contains the branch circuits for this equipment.
+func (powerDistribution *PowerDistribution) BranchesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return ListReferencedCircuitsWithContext(ctx, powerDistribution.GetClient(), powerDistribution.branches, queryOpts...)
 }
 
 // Feeders gets the collection that contains the feeder circuits for this equipment.
-func (powerDistribution *PowerDistribution) Feeders() ([]*Circuit, error) {
-	return ListReferencedCircuits(powerDistribution.GetClient(), powerDistribution.feeders)
+func (powerDistribution *PowerDistribution) Feeders(queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return powerDistribution.FeedersWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// FeedersWithContext gets the collection that contains the feeder circuits for this equipment.
+func (powerDistribution *PowerDistribution) FeedersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return ListReferencedCircuitsWithContext(ctx, powerDistribution.GetClient(), powerDistribution.feeders, queryOpts...)
 }
 
 // Mains gets the collection that contains the power input circuits for this equipment.
-func (powerDistribution *PowerDistribution) Mains() ([]*Circuit, error) {
-	return ListReferencedCircuits(powerDistribution.GetClient(), powerDistribution.mains)
+func (powerDistribution *PowerDistribution) Mains(queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return powerDistribution.MainsWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// MainsWithContext gets the collection that contains the power input circuits for this equipment.
+func (powerDistribution *PowerDistribution) MainsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return ListReferencedCircuitsWithContext(ctx, powerDistribution.GetClient(), powerDistribution.mains, queryOpts...)
 }
 
 // Subfeeds gets the collection that contains the subfeed circuits for this equipment.
-func (powerDistribution *PowerDistribution) Subfeeds() ([]*Circuit, error) {
-	return ListReferencedCircuits(powerDistribution.GetClient(), powerDistribution.subfeeds)
+func (powerDistribution *PowerDistribution) Subfeeds(queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return powerDistribution.SubfeedsWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// SubfeedsWithContext gets the collection that contains the subfeed circuits for this equipment.
+func (powerDistribution *PowerDistribution) SubfeedsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return ListReferencedCircuitsWithContext(ctx, powerDistribution.GetClient(), powerDistribution.subfeeds, queryOpts...)
 }
 
 // Facility gets a resource that represents the facility that contains this equipment.
-func (powerDistribution *PowerDistribution) Facility() (*Facility, error) {
-	return GetFacility(powerDistribution.GetClient(), powerDistribution.facility)
+func (powerDistribution *PowerDistribution) Facility(queryOpts ...common.QueryGroupOption) (*Facility, error) {
+	return powerDistribution.FacilityWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// FacilityWithContext gets a resource that represents the facility that contains this equipment.
+func (powerDistribution *PowerDistribution) FacilityWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Facility, error) {
+	return GetFacilityWithContext(ctx, powerDistribution.GetClient(), powerDistribution.facility, queryOpts...)
 }
 
 // Metrics gets the metrics of a power distribution component or unit.
-func (powerDistribution *PowerDistribution) Metrics() (metrics *PowerDistributionMetrics, err error) {
+func (powerDistribution *PowerDistribution) Metrics(queryOpts ...common.QueryGroupOption) (metrics *PowerDistributionMetrics, err error) {
+	return powerDistribution.MetricsWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// MetricsWithContext gets the metrics of a power distribution component or unit.
+func (powerDistribution *PowerDistribution) MetricsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (metrics *PowerDistributionMetrics, err error) {
 	if powerDistribution.metrics == "" {
 		return
 	}
-	return GetPowerDistributionMetrics(powerDistribution.GetClient(), powerDistribution.metrics)
+	return GetPowerDistributionMetricsWithContext(ctx, powerDistribution.GetClient(), powerDistribution.metrics, queryOpts...)
 }
 
 // OutletGroups gets the collection that contains the outlet groups for this equipment.
-func (powerDistribution *PowerDistribution) OutletGroups() ([]*OutletGroup, error) {
-	return ListReferencedOutletGroups(powerDistribution.GetClient(), powerDistribution.outletGroups)
+func (powerDistribution *PowerDistribution) OutletGroups(queryOpts ...common.QueryGroupOption) ([]*OutletGroup, error) {
+	return powerDistribution.OutletGroupsWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// OutletGroupsWithContext gets the collection that contains the outlet groups for this equipment.
+func (powerDistribution *PowerDistribution) OutletGroupsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*OutletGroup, error) {
+	return ListReferencedOutletGroupsWithContext(ctx, powerDistribution.GetClient(), powerDistribution.outletGroups, queryOpts...)
 }
 
 // Outlets gets the collection that contains the outlets for this equipment.
-func (powerDistribution *PowerDistribution) Outlets() ([]*Outlet, error) {
-	return ListReferencedOutlets(powerDistribution.GetClient(), powerDistribution.outlets)
+func (powerDistribution *PowerDistribution) Outlets(queryOpts ...common.QueryGroupOption) ([]*Outlet, error) {
+	return powerDistribution.OutletsWithContext(common.ContextOf(powerDistribution.GetClient()), queryOpts...)
+}
+
+// OutletsWithContext gets the collection that contains the outlets for this equipment.
+func (powerDistribution *PowerDistribution) OutletsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Outlet, error) {
+	return ListReferencedOutletsWithContext(ctx, powerDistribution.GetClient(), powerDistribution.outlets, queryOpts...)
 }

@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -13,7 +14,7 @@ import (
 // Device shall describe a storage device visible to SimpleStorage.
 type Device struct {
 	// CapacityBytes shall represent the size (in bytes) of the Storage Device.
-	CapacityBytes int64
+	CapacityBytes *int64 `json:",omitempty"`
 	// Manufacturer shall indicate the name of the manufacturer of this storage device.
 	Manufacturer string
 	// Model shall indicate the model information as provided by the manufacturer
@@ -83,30 +84,51 @@ func (simplestorage *SimpleStorage) UnmarshalJSON(b []byte) error {
 }
 
 // GetSimpleStorage will get a SimpleStorage instance from the service.
-func GetSimpleStorage(c common.Client, uri string) (*SimpleStorage, error) {
-	return common.GetObject[SimpleStorage](c, uri)
+func GetSimpleStorage(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*SimpleStorage, error) {
+	return GetSimpleStorageWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetSimpleStorageWithContext will get a SimpleStorage instance from the service.
+func GetSimpleStorageWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*SimpleStorage, error) {
+	return common.GetObjectWithContext[SimpleStorage](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedSimpleStorages gets the collection of SimpleStorage from
 // a provided reference.
-func ListReferencedSimpleStorages(c common.Client, link string) ([]*SimpleStorage, error) {
-	return common.GetCollectionObjects[SimpleStorage](c, link)
+func ListReferencedSimpleStorages(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*SimpleStorage, error) {
+	return ListReferencedSimpleStoragesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedSimpleStoragesWithContext gets the collection of SimpleStorage from
+// a provided reference.
+func ListReferencedSimpleStoragesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*SimpleStorage, error) {
+	return common.GetCollectionObjectsWithContext[SimpleStorage](ctx, c, link, queryOpts...)
 }
 
 // Chassis gets the chassis containing this storage service.
-func (simplestorage *SimpleStorage) Chassis() (*Chassis, error) {
+func (simplestorage *SimpleStorage) Chassis(queryOpts ...common.QueryGroupOption) (*Chassis, error) {
+	return simplestorage.ChassisWithContext(common.ContextOf(simplestorage.GetClient()), queryOpts...)
+}
+
+// ChassisWithContext gets the chassis containing this storage service.
+func (simplestorage *SimpleStorage) ChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Chassis, error) {
 	if simplestorage.chassis == "" {
 		return nil, nil
 	}
 
-	return GetChassis(simplestorage.GetClient(), simplestorage.chassis)
+	return GetChassisWithContext(ctx, simplestorage.GetClient(), simplestorage.chassis, queryOpts...)
 }
 
 // Storage gets the chassis containing this storage service.
-func (simplestorage *SimpleStorage) Storage() (*Storage, error) {
+func (simplestorage *SimpleStorage) Storage(queryOpts ...common.QueryGroupOption) (*Storage, error) {
+	return simplestorage.StorageWithContext(common.ContextOf(simplestorage.GetClient()), queryOpts...)
+}
+
+// StorageWithContext gets the chassis containing this storage service.
+func (simplestorage *SimpleStorage) StorageWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Storage, error) {
 	if simplestorage.storage == "" {
 		return nil, nil
 	}
 
-	return GetStorage(simplestorage.GetClient(), simplestorage.storage)
+	return GetStorageWithContext(ctx, simplestorage.GetClient(), simplestorage.storage, queryOpts...)
 }

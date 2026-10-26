@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -37,19 +38,19 @@ type OutletGroup struct {
 	PowerControlLocked bool
 	// PowerCycleDelaySeconds shall contain the number of seconds to delay power on after a PowerControl action to
 	// cycle power. The value '0' shall indicate no delay to power on.
-	PowerCycleDelaySeconds float64
+	PowerCycleDelaySeconds *float64 `json:",omitempty"`
 	// PowerEnabled shall contain the power enable state of the outlet group. The value 'true' shall indicate that the
 	// group can be powered on, and the value 'false' shall indicate that the group cannot be powered.
 	PowerEnabled bool
 	// PowerOffDelaySeconds shall contain the number of seconds to delay power off after a PowerControl action. The
 	// value '0' shall indicate no delay to power off.
-	PowerOffDelaySeconds float64
+	PowerOffDelaySeconds *float64 `json:",omitempty"`
 	// PowerOnDelaySeconds shall contain the number of seconds to delay power up after a power cycle or a PowerControl
 	// action. The value '0' shall indicate no delay to power up.
-	PowerOnDelaySeconds float64
+	PowerOnDelaySeconds *float64 `json:",omitempty"`
 	// PowerRestoreDelaySeconds shall contain the number of seconds to delay power on after a power fault. The value
 	// '0' shall indicate no delay to power on.
-	PowerRestoreDelaySeconds float64
+	PowerRestoreDelaySeconds *float64 `json:",omitempty"`
 	// PowerRestorePolicy shall contain the desired PowerState of the outlet group when power is applied. The value
 	// 'LastState' shall return the outlet group to the PowerState it was in when power was lost.
 	PowerRestorePolicy PowerRestorePolicyTypes
@@ -117,26 +118,46 @@ func (outletgroup *OutletGroup) UnmarshalJSON(b []byte) error {
 
 // PowerControl controls the power state of the outlet group.
 func (outletgroup *OutletGroup) PowerControl(powerState PowerState) error {
+	return outletgroup.PowerControlWithContext(common.ContextOf(outletgroup.GetClient()), powerState)
+}
+
+// PowerControlWithContext controls the power state of the outlet group.
+func (outletgroup *OutletGroup) PowerControlWithContext(ctx context.Context, powerState PowerState) error {
 	params := struct {
 		PowerState PowerState
 	}{
 		PowerState: powerState,
 	}
-	return outletgroup.Post(outletgroup.powerControlTarget, params)
+	return outletgroup.PostWithContext(ctx, outletgroup.powerControlTarget, params)
 }
 
 // ResetMetrics resets metrics related to this outlet group.
 func (outletgroup *OutletGroup) ResetMetrics() error {
-	return outletgroup.Post(outletgroup.resetMetricsTarget, nil)
+	return outletgroup.ResetMetricsWithContext(common.ContextOf(outletgroup.GetClient()))
+}
+
+// ResetMetricsWithContext resets metrics related to this outlet group.
+func (outletgroup *OutletGroup) ResetMetricsWithContext(ctx context.Context) error {
+	return outletgroup.PostWithContext(ctx, outletgroup.resetMetricsTarget, nil)
 }
 
 // Outlets get the outlets that are in this outlet group.
-func (outletgroup *OutletGroup) Outlets() ([]*Outlet, error) {
-	return common.GetObjects[Outlet](outletgroup.GetClient(), outletgroup.outlets)
+func (outletgroup *OutletGroup) Outlets(queryOpts ...common.QueryGroupOption) ([]*Outlet, error) {
+	return outletgroup.OutletsWithContext(common.ContextOf(outletgroup.GetClient()), queryOpts...)
+}
+
+// OutletsWithContext get the outlets that are in this outlet group.
+func (outletgroup *OutletGroup) OutletsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Outlet, error) {
+	return common.GetObjectsWithContext[Outlet](ctx, outletgroup.GetClient(), outletgroup.outlets, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (outletgroup *OutletGroup) Update() error {
+	return outletgroup.UpdateWithContext(common.ContextOf(outletgroup.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (outletgroup *OutletGroup) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"ConfigurationLocked",
 		"CreatedBy",
@@ -148,16 +169,27 @@ func (outletgroup *OutletGroup) Update() error {
 		"PowerRestorePolicy",
 	}
 
-	return outletgroup.UpdateFromRawData(outletgroup, outletgroup.rawData, readWriteFields)
+	return outletgroup.UpdateFromRawDataWithContext(ctx, outletgroup, outletgroup.rawData, readWriteFields)
 }
 
 // GetOutletGroup will get a OutletGroup instance from the service.
-func GetOutletGroup(c common.Client, uri string) (*OutletGroup, error) {
-	return common.GetObject[OutletGroup](c, uri)
+func GetOutletGroup(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*OutletGroup, error) {
+	return GetOutletGroupWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetOutletGroupWithContext will get a OutletGroup instance from the service.
+func GetOutletGroupWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*OutletGroup, error) {
+	return common.GetObjectWithContext[OutletGroup](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedOutletGroups gets the collection of OutletGroup from
 // a provided reference.
-func ListReferencedOutletGroups(c common.Client, link string) ([]*OutletGroup, error) {
-	return common.GetCollectionObjects[OutletGroup](c, link)
+func ListReferencedOutletGroups(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*OutletGroup, error) {
+	return ListReferencedOutletGroupsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedOutletGroupsWithContext gets the collection of OutletGroup from
+// a provided reference.
+func ListReferencedOutletGroupsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*OutletGroup, error) {
+	return common.GetCollectionObjectsWithContext[OutletGroup](ctx, c, link, queryOpts...)
 }

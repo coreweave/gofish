@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/coreweave/gofish/common"
@@ -43,9 +44,9 @@ type ActionInfoParameter struct {
 	// AllowableValues shall indicate the allowable values for this parameter as applied to this action target.
 	AllowableValues []string
 	// ArraySizeMaximum shall contain the maximum number of array elements that this service supports for this parameter.
-	ArraySizeMaximum uint64
+	ArraySizeMaximum *uint64 `json:",omitempty"`
 	// ArraySizeMinimum shall contain the minimum number of array elements required by this service for this parameter.
-	ArraySizeMinimum uint64
+	ArraySizeMinimum *uint64 `json:",omitempty"`
 	// DataType shall contain the JSON property type for this parameter.
 	DataType ActionInfoDataTypes
 	// MaximumValue integer or number property shall contain the maximum value that this service supports.
@@ -60,8 +61,12 @@ type ActionInfoParameter struct {
 	Required bool
 }
 
-func GetActionInfo(c common.Client, uri string) (*ActionInfo, error) {
-	return common.GetObject[ActionInfo](c, uri)
+func GetActionInfo(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ActionInfo, error) {
+	return GetActionInfoWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+func GetActionInfoWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ActionInfo, error) {
+	return common.GetObjectWithContext[ActionInfo](ctx, c, uri, queryOpts...)
 }
 
 func (actionInfo *ActionInfo) GetParamValues(name string, dataType ActionInfoDataTypes) ([]string, error) {

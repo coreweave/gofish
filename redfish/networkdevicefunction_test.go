@@ -102,8 +102,10 @@ func TestNetworkDeviceFunction(t *testing.T) {
 		t.Errorf("Invalid ethernet MAC address: %s", result.Ethernet.MACAddress)
 	}
 
-	if result.FibreChannel.FCoEActiveVLANID != 500 {
-		t.Errorf("Invalid active VLAN: %d", result.FibreChannel.FCoEActiveVLANID)
+	if result.FibreChannel.FCoEActiveVLANID == nil {
+		t.Error("Expected FibreChannel.FCoEActiveVLANID to be set")
+	} else if *result.FibreChannel.FCoEActiveVLANID != 500 {
+		t.Errorf("Invalid active VLAN: %d", *result.FibreChannel.FCoEActiveVLANID)
 	}
 
 	if result.FibreChannel.WWNSource != ConfiguredLocallyWWNSource {

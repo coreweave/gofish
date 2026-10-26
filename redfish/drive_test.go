@@ -110,16 +110,22 @@ func TestDrive(t *testing.T) {
 		t.Errorf("Incorrect assembly link: %s", result.assembly)
 	}
 
-	if result.BlockSizeBytes != 512 {
-		t.Errorf("Incorrect block size bytes: %d", result.BlockSizeBytes)
+	if result.BlockSizeBytes == nil {
+		t.Error("Expected BlockSizeBytes to be set")
+	} else if *result.BlockSizeBytes != 512 {
+		t.Errorf("Incorrect block size bytes: %d", *result.BlockSizeBytes)
 	}
 
-	if result.CapableSpeedGbs != 40 {
-		t.Errorf("Incorrect capable speed: %f", result.CapableSpeedGbs)
+	if result.CapableSpeedGbs == nil {
+		t.Error("Expected CapableSpeedGbs to be set")
+	} else if *result.CapableSpeedGbs != 40 {
+		t.Errorf("Incorrect capable speed: %f", *result.CapableSpeedGbs)
 	}
 
-	if result.CapacityBytes != 1099511627776 {
-		t.Errorf("Incorrect capacity: %d", result.CapacityBytes)
+	if result.CapacityBytes == nil {
+		t.Error("Expected CapacityBytes to be set")
+	} else if *result.CapacityBytes != 1099511627776 {
+		t.Errorf("Incorrect capacity: %d", *result.CapacityBytes)
 	}
 
 	if result.EncryptionAbility != "SelfEncryptingDrive" {

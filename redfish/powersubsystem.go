@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -13,10 +14,10 @@ import (
 // PowerAllocation shall contain the set of properties describing the allocation of power for a subsystem.
 type PowerAllocation struct {
 	// AllocatedWatts shall represent the total power currently allocated or budgeted to this subsystem.
-	AllocatedWatts float64
+	AllocatedWatts *float64 `json:",omitempty"`
 	// RequestedWatts shall represent the amount of power, in watt units, that the subsystem currently requests to be
 	// budgeted for future use.
-	RequestedWatts float64
+	RequestedWatts *float64 `json:",omitempty"`
 }
 
 // PowerSubsystem shall represent a power subsystem for a Redfish implementation.
@@ -31,9 +32,11 @@ type PowerSubsystem struct {
 	// Batteries shall contain a link to a resource collection of type BatteryCollection.
 	batteries string
 	// CapacityWatts shall represent the total power capacity that can be allocated to this subsystem.
-	CapacityWatts float64
+	CapacityWatts *float64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
+	// LocationIndicatorActive in the resource that represents the functional view of this Chassis, such as a PowerSubsystem
+	LocationIndicatorActive *bool
 	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
@@ -89,22 +92,43 @@ func (powersubsystem *PowerSubsystem) UnmarshalJSON(b []byte) error {
 }
 
 // Batteries gets the batteries in this power subsystem.
-func (powersubsystem *PowerSubsystem) Batteries() ([]*Battery, error) {
-	return ListReferencedBatterys(powersubsystem.GetClient(), powersubsystem.batteries)
+func (powersubsystem *PowerSubsystem) Batteries(queryOpts ...common.QueryGroupOption) ([]*Battery, error) {
+	return powersubsystem.BatteriesWithContext(common.ContextOf(powersubsystem.GetClient()), queryOpts...)
+}
+
+// BatteriesWithContext gets the batteries in this power subsystem.
+func (powersubsystem *PowerSubsystem) BatteriesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Battery, error) {
+	return ListReferencedBatterysWithContext(ctx, powersubsystem.GetClient(), powersubsystem.batteries, queryOpts...)
 }
 
 // PowerSupplies gets the power supplies in this power subsystem.
-func (powersubsystem *PowerSubsystem) PowerSupplies() ([]*PowerSupply, error) {
-	return ListReferencedPowerSupplies(powersubsystem.GetClient(), powersubsystem.powerSupplies)
+func (powersubsystem *PowerSubsystem) PowerSupplies(queryOpts ...common.QueryGroupOption) ([]*PowerSupply, error) {
+	return powersubsystem.PowerSuppliesWithContext(common.ContextOf(powersubsystem.GetClient()), queryOpts...)
+}
+
+// PowerSuppliesWithContext gets the power supplies in this power subsystem.
+func (powersubsystem *PowerSubsystem) PowerSuppliesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PowerSupply, error) {
+	return ListReferencedPowerSuppliesWithContext(ctx, powersubsystem.GetClient(), powersubsystem.powerSupplies, queryOpts...)
 }
 
 // GetPowerSubsystem will get a PowerSubsystem instance from the service.
-func GetPowerSubsystem(c common.Client, uri string) (*PowerSubsystem, error) {
-	return common.GetObject[PowerSubsystem](c, uri)
+func GetPowerSubsystem(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PowerSubsystem, error) {
+	return GetPowerSubsystemWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetPowerSubsystemWithContext will get a PowerSubsystem instance from the service.
+func GetPowerSubsystemWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PowerSubsystem, error) {
+	return common.GetObjectWithContext[PowerSubsystem](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedPowerSubsystems gets the collection of PowerSubsystem from
 // a provided reference.
-func ListReferencedPowerSubsystems(c common.Client, link string) ([]*PowerSubsystem, error) {
-	return common.GetCollectionObjects[PowerSubsystem](c, link)
+func ListReferencedPowerSubsystems(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PowerSubsystem, error) {
+	return ListReferencedPowerSubsystemsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedPowerSubsystemsWithContext gets the collection of PowerSubsystem from
+// a provided reference.
+func ListReferencedPowerSubsystemsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PowerSubsystem, error) {
+	return common.GetCollectionObjectsWithContext[PowerSubsystem](ctx, c, link, queryOpts...)
 }

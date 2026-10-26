@@ -6,10 +6,18 @@ package gofish
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -198,5 +206,78 @@ func TestClientRunRawRequestNoURL(t *testing.T) {
 
 	if err.Error() != "unable to execute request, no target provided" {
 		t.Errorf("Unexpected error response: %s", err.Error())
+	}
+}
+
+func genTLSCert(t *testing.T) tls.Certificate {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("failed to generate private key: %v", err)
+	}
+
+	notBefore := time.Now()
+	notAfter := notBefore.Add(1 * time.Hour)
+
+	template := x509.Certificate{
+		// serial doesn't matter to us here and old golang needs it
+		// newer golang versions can autogen
+		SerialNumber:          big.NewInt(100),
+		Subject:               pkix.Name{Organization: []string{"test"}},
+		NotBefore:             notBefore,
+		NotAfter:              notAfter,
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		t.Fatalf("Failed to create certificate: %v", err)
+	}
+
+	return tls.Certificate{
+		Certificate: [][]byte{derBytes},
+		PrivateKey:  privateKey,
+	}
+}
+
+func TestCertHashMonitoring(t *testing.T) {
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte(`{}`)) //nolint
+	}))
+	defer ts.Close()
+
+	client, err := Connect(ClientConfig{Endpoint: ts.URL, HTTPClient: ts.Client(), EnableTLSHashMonitoring: true})
+	if err != nil {
+		t.Error("connect should not fail")
+	}
+
+	if client.CertHash == "" {
+		t.Error("cert hash should be present")
+	}
+
+	expectedHash := hex.EncodeToString(ts.Certificate().Signature)
+	if expectedHash != client.CertHash {
+		t.Error("cert hash mismatch")
+	}
+
+	svc, err := ServiceRoot(client)
+	if err != nil || svc == nil {
+		t.Error("failed to get service root")
+	}
+
+	client.HTTPClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
+
+	ts.TLS.Certificates = []tls.Certificate{genTLSCert(t)}
+	if ts.Certificate() == nil || client.Cert == nil || !slices.Equal(ts.Certificate().Raw, client.Cert.Raw) {
+		t.Error("certs not equal")
+	}
+
+	for i := 0; i < 5; i++ {
+		_, err = ServiceRoot(client)
+		if !errors.Is(err, ErrClientCertChanged) {
+			t.Error("expecting client cert changed err")
+		}
 	}
 }

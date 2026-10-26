@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -33,11 +34,11 @@ const (
 
 type LBAFormat struct {
 	// LBADataSizeBytes shall be the LBA data size reported in bytes.
-	LBADataSizeBytes int
+	LBADataSizeBytes *int `json:",omitempty"`
 	// LBAFormatType shall be the LBA format type. This property is intended for capabilities instrumentation.
 	LBAFormatType string
 	// LBAMetadataSizeBytes shall be the LBA metadata size reported in bytes.
-	LBAMetadataSizeBytes int
+	LBAMetadataSizeBytes *int `json:",omitempty"`
 	// RelativePerformance shall be the LBA Relative Performance type. This field indicates the relative performance of
 	// the LBA format indicated relative to other LBA formats supported by the controller. This property is intended
 	// for capabilities instrumentation.
@@ -77,7 +78,7 @@ type NVMeNamespaceProperties struct {
 	// NumberLBAFormats shall contain the number of LBA data size and metadata size combinations supported by this
 	// namespace. The value of this property is between 0 and 16. LBA formats with an index set beyond this value will
 	// not be supported.
-	NumberLBAFormats int
+	NumberLBAFormats *int `json:",omitempty"`
 	// Type shall identify the type of namespace.
 	Type string
 }
@@ -109,7 +110,7 @@ type Operation struct {
 	// Operation shall contain the type of the operation.
 	Operation string
 	// PercentageComplete The percentage of the operation that has been completed.
-	PercentageComplete int
+	PercentageComplete *int `json:",omitempty"`
 }
 
 // RAIDType is
@@ -415,11 +416,11 @@ type Volume struct {
 	// AllocatedPools shall contain references to all storage pools allocated from this volume.
 	AllocatedPools string
 	// BlockSizeBytes shall contain size of the smallest addressable unit of the associated volume.
-	BlockSizeBytes int
+	BlockSizeBytes *int `json:",omitempty"`
 	// Capacity Information about the utilization of capacity allocated to this storage volume.
 	Capacity string
 	// CapacityBytes shall contain the size in bytes of the associated volume.
-	CapacityBytes int
+	CapacityBytes *int `json:",omitempty"`
 	// CapacitySources Fully or partially consumed storage from a source resource. Each entry provides capacity
 	// allocation information from a named source resource. Uses the Swordfish CapacitySource.
 	CapacitySources json.RawMessage
@@ -459,17 +460,17 @@ type Volume struct {
 	IsBootCapable bool
 	// LogicalUnitNumber shall contain host-visible LogicalUnitNumber assigned to this Volume. This property shall only
 	// be used when in a single connect configuration and no StorageGroup configuration is used.
-	LogicalUnitNumber int
+	LogicalUnitNumber *int `json:",omitempty"`
 	// LowSpaceWarningThresholdPercents shall be triggered: Across all CapacitySources entries, percent =
 	// (SUM(AllocatedBytes) - SUM(ConsumedBytes))/SUM(AllocatedBytes).
 	LowSpaceWarningThresholdPercents []string
 	// Manufacturer shall contain a value that represents the manufacturer or implementer of the storage volume.
 	Manufacturer string
 	// MaxBlockSizeBytes shall contain size of the largest addressable unit of this storage volume.
-	MaxBlockSizeBytes int
+	MaxBlockSizeBytes *int `json:",omitempty"`
 	// MediaSpanCount shall indicate the number of media elements used per span in the secondary RAID for a
 	// hierarchical RAID type.
-	MediaSpanCount int
+	MediaSpanCount *int `json:",omitempty"`
 	// Metrics shall contain a link to a resource of type VolumeMetrics that specifies the metrics for this volume. IO
 	// metrics are reported in the IOStatistics property.
 	// Uses Swordfish VolumeMetrics.
@@ -485,7 +486,7 @@ type Volume struct {
 	Operations []common.Operations
 	// OptimumIOSizeBytes shall contain the optimum IO size to use when performing IO on this volume. For logical
 	// disks, this is the stripe size. For physical disks, this describes the physical sector size.
-	OptimumIOSizeBytes int
+	OptimumIOSizeBytes *int `json:",omitempty"`
 	// ProvisioningPolicy shall specify the volume's supported storage allocation policy.
 	ProvisioningPolicy ProvisioningPolicy
 	// RAIDType shall contain the RAID type of the associated Volume.
@@ -494,10 +495,10 @@ type Volume struct {
 	ReadCachePolicy ReadCachePolicyType
 	// RecoverableCapacitySourceCount The value is the number of available capacity source resources currently
 	// available in the event that an equivalent capacity source resource fails.
-	RecoverableCapacitySourceCount int
+	RecoverableCapacitySourceCount *int `json:",omitempty"`
 	// RemainingCapacityPercent shall return {[(SUM(AllocatedBytes) - SUM(ConsumedBytes)]/SUM(AllocatedBytes)}*100
 	// represented as an integer value.
-	RemainingCapacityPercent int
+	RemainingCapacityPercent *int `json:",omitempty"`
 	// RemoteReplicaTargets shall reference the URIs to the remote target replicas that are sourced by this replica.
 	// Remote indicates that the replica is managed by a separate Swordfish service instance.
 	RemoteReplicaTargets []string
@@ -516,7 +517,7 @@ type Volume struct {
 	Status common.Status
 	// StripSizeBytes The number of consecutively addressed virtual disk blocks (bytes) mapped to consecutively
 	// addressed blocks on a single member extent of a disk array. Synonym for stripe depth and chunk size.
-	StripSizeBytes int
+	StripSizeBytes *int `json:",omitempty"`
 	// VolumeUsage shall contain the volume usage type for the Volume.
 	VolumeUsage string
 	// WriteCachePolicy shall contain a boolean indicator of the write cache policy for the Volume.
@@ -649,6 +650,18 @@ func (volume *Volume) UnmarshalJSON(b []byte) error {
 //
 // `targetVolumeURI` is the URI to the existing target volume.
 func (volume *Volume) AssignReplicaTarget(replicaType, replicaUpdateMode, targetVolumeURI string) error {
+	return volume.AssignReplicaTargetWithContext(common.ContextOf(volume.GetClient()), replicaType, replicaUpdateMode, targetVolumeURI)
+}
+
+// AssignReplicaTargetWithContext is used to establish a replication relationship by assigning an
+// existing volume to serve as a target replica for an existing source volume.
+//
+// `replicaType` is the Swordfish-defined ReplicaType to be created.
+//
+// `replicaUpdateMode` is the Swordfish-defined ReplicaUpdateMode (synchronous vs asynchronous).
+//
+// `targetVolumeURI` is the URI to the existing target volume.
+func (volume *Volume) AssignReplicaTargetWithContext(ctx context.Context, replicaType, replicaUpdateMode, targetVolumeURI string) error {
 	if volume.assignReplicaTargetTarget == "" {
 		return errors.New("assignReplicaTarget is not supported by this volume")
 	}
@@ -661,7 +674,7 @@ func (volume *Volume) AssignReplicaTarget(replicaType, replicaUpdateMode, target
 		ReplicaUpdateMode: replicaUpdateMode,
 		TargetVolume:      targetVolumeURI,
 	}
-	return volume.Post(volume.assignReplicaTargetTarget, t)
+	return volume.PostWithContext(ctx, volume.assignReplicaTargetTarget, t)
 }
 
 // ChangeRAIDLayout will request the system to change the RAID layout of the volume.
@@ -679,6 +692,24 @@ func (volume *Volume) AssignReplicaTarget(replicaType, replicaUpdateMode, target
 //
 // `stripSizeBytes` is the number of blocks (bytes) requested for the new strip size.
 func (volume *Volume) ChangeRAIDLayout(drives []*Drive, mediaSpanCount int, raidType string, stripSizeBytes int) error {
+	return volume.ChangeRAIDLayoutWithContext(common.ContextOf(volume.GetClient()), drives, mediaSpanCount, raidType, stripSizeBytes)
+}
+
+// ChangeRAIDLayoutWithContext will request the system to change the RAID layout of the volume.
+// Depending on the combination of the submitted parameters, this could be changing
+// the RAID type, changing the span count, changing the number of drives used by the
+// volume, or another configuration change supported by the system. Note that usage
+// of this action while online may potentially cause data loss if the available
+// capacity is reduced.
+//
+// `drives` is an array of the drives to be used by the volume.
+//
+// `mediaSpanCount` is the number of media elements used per span in the secondary RAID for a hierarchical RAID type.
+//
+// `raidType` is the Swordfish-defined RAIDType for the volume.
+//
+// `stripSizeBytes` is the number of blocks (bytes) requested for the new strip size.
+func (volume *Volume) ChangeRAIDLayoutWithContext(ctx context.Context, drives []*Drive, mediaSpanCount int, raidType string, stripSizeBytes int) error {
 	if volume.changeRAIDLayoutTarget == "" {
 		return errors.New("changeRAIDLayout is not supported by this volume")
 	}
@@ -694,16 +725,22 @@ func (volume *Volume) ChangeRAIDLayout(drives []*Drive, mediaSpanCount int, raid
 		RAIDType:       raidType,
 		StripSizeBytes: stripSizeBytes,
 	}
-	return volume.Post(volume.changeRAIDLayoutTarget, t)
+	return volume.PostWithContext(ctx, volume.changeRAIDLayoutTarget, t)
 }
 
 // CheckConsistency is used to force a check of the Volume's parity or redundant
 // data to ensure it matches calculated values.
 func (volume *Volume) CheckConsistency() error {
+	return volume.CheckConsistencyWithContext(common.ContextOf(volume.GetClient()))
+}
+
+// CheckConsistencyWithContext is used to force a check of the Volume's parity or redundant
+// data to ensure it matches calculated values.
+func (volume *Volume) CheckConsistencyWithContext(ctx context.Context) error {
 	if volume.checkConsistencyTarget == "" {
 		return errors.New("checkConsistency is not supported by this volume")
 	}
-	return volume.Post(volume.checkConsistencyTarget, nil)
+	return volume.PostWithContext(ctx, volume.checkConsistencyTarget, nil)
 }
 
 // CreateReplicaTarget is used to create a new volume resource to provide expanded
@@ -717,6 +754,20 @@ func (volume *Volume) CheckConsistency() error {
 //
 // `volumeName` is the name for the new target volume.
 func (volume *Volume) CreateReplicaTarget(replicaType, replicaUpdateMode, targetStoragePoolURI, volumeName string) error {
+	return volume.CreateReplicaTargetWithContext(common.ContextOf(volume.GetClient()), replicaType, replicaUpdateMode, targetStoragePoolURI, volumeName)
+}
+
+// CreateReplicaTargetWithContext is used to create a new volume resource to provide expanded
+// data protection through a replica relationship with the specified source volume.
+//
+// `replicaType` is the Swordfish-defined ReplicaType to be created.
+//
+// `replicaUpdateMode` is the Swordfish-defined ReplicaUpdateMode (synchronous vs asynchronous).
+//
+// `targetStoragePoolURI` is the URI to the existing target storage pool.
+//
+// `volumeName` is the name for the new target volume.
+func (volume *Volume) CreateReplicaTargetWithContext(ctx context.Context, replicaType, replicaUpdateMode, targetStoragePoolURI, volumeName string) error {
 	if volume.createReplicaTargetTarget == "" {
 		return errors.New("createReplicaTarget is not supported by this volume")
 	}
@@ -731,15 +782,20 @@ func (volume *Volume) CreateReplicaTarget(replicaType, replicaUpdateMode, target
 		TargetStoragePool: targetStoragePoolURI,
 		VolumeName:        volumeName,
 	}
-	return volume.Post(volume.createReplicaTargetTarget, t)
+	return volume.PostWithContext(ctx, volume.createReplicaTargetTarget, t)
 }
 
 // ForceEnable is used to force the volume to an enabled state regardless of data loss.
 func (volume *Volume) ForceEnable() error {
+	return volume.ForceEnableWithContext(common.ContextOf(volume.GetClient()))
+}
+
+// ForceEnableWithContext is used to force the volume to an enabled state regardless of data loss.
+func (volume *Volume) ForceEnableWithContext(ctx context.Context) error {
 	if volume.forceEnableTarget == "" {
 		return errors.New("forceEnable is not supported by this volume")
 	}
-	return volume.Post(volume.forceEnableTarget, nil)
+	return volume.PostWithContext(ctx, volume.forceEnableTarget, nil)
 }
 
 // Initialize is used to prepare the contents of the volume for use by the system.
@@ -751,6 +807,18 @@ func (volume *Volume) ForceEnable() error {
 //
 // `initializeType` is the Swordfish-defined InitializeType to be performed.
 func (volume *Volume) Initialize(initializeMethod InitializeMethod, initializeType InitializeType) error {
+	return volume.InitializeWithContext(common.ContextOf(volume.GetClient()), initializeMethod, initializeType)
+}
+
+// InitializeWithContext is used to prepare the contents of the volume for use by the system.
+// If InitializeMethod is not specified in the request body, but the property
+// InitializeMethod is specified, the property InitializeMethod value should be
+// used. If neither is specified, the InitializeMethod should be Foreground.
+//
+// `initializeMethod` is the Swordfish-defined InitializeMethod to be performed.
+//
+// `initializeType` is the Swordfish-defined InitializeType to be performed.
+func (volume *Volume) InitializeWithContext(ctx context.Context, initializeMethod InitializeMethod, initializeType InitializeType) error {
 	if volume.initializeTarget == "" {
 		return errors.New("initialize is not supported by this volume")
 	}
@@ -761,7 +829,7 @@ func (volume *Volume) Initialize(initializeMethod InitializeMethod, initializeTy
 		InitializeMethod: initializeMethod,
 		InitializeType:   initializeType,
 	}
-	return volume.Post(volume.initializeTarget, t)
+	return volume.PostWithContext(ctx, volume.initializeTarget, t)
 }
 
 // RemoveReplicaRelationship is used to disable data synchronization between a source and
@@ -771,6 +839,16 @@ func (volume *Volume) Initialize(initializeMethod InitializeMethod, initializeTy
 //
 // `targetVolumeURI` is the URI to the existing target volume.
 func (volume *Volume) RemoveReplicaRelationship(deleteTargetVolume bool, targetVolumeURI string) error {
+	return volume.RemoveReplicaRelationshipWithContext(common.ContextOf(volume.GetClient()), deleteTargetVolume, targetVolumeURI)
+}
+
+// RemoveReplicaRelationshipWithContext is used to disable data synchronization between a source and
+// target volume, remove the replication relationship, and optionally delete the target volume.
+//
+// `deleteTargetVolume` indicates whether to delete the target volume as part of the operation.
+//
+// `targetVolumeURI` is the URI to the existing target volume.
+func (volume *Volume) RemoveReplicaRelationshipWithContext(ctx context.Context, deleteTargetVolume bool, targetVolumeURI string) error {
 	if volume.removeReplicaRelationshipTarget == "" {
 		return errors.New("removeReplicaRelationship not supported by this volume")
 	}
@@ -782,7 +860,7 @@ func (volume *Volume) RemoveReplicaRelationship(deleteTargetVolume bool, targetV
 		DeleteTargetVolume: deleteTargetVolume,
 		TargetVolume:       targetVolumeURI,
 	}
-	return volume.Post(volume.removeReplicaRelationshipTarget, t)
+	return volume.PostWithContext(ctx, volume.removeReplicaRelationshipTarget, t)
 }
 
 // ResumeReplication is used to resume the active data synchronization between a source
@@ -790,6 +868,14 @@ func (volume *Volume) RemoveReplicaRelationship(deleteTargetVolume bool, targetV
 //
 // `targetVolumeURI` is the URI to the existing target volume.
 func (volume *Volume) ResumeReplication(targetVolumeURI string) error {
+	return volume.ResumeReplicationWithContext(common.ContextOf(volume.GetClient()), targetVolumeURI)
+}
+
+// ResumeReplicationWithContext is used to resume the active data synchronization between a source
+// and target volume, without otherwise altering the replication relationship.
+//
+// `targetVolumeURI` is the URI to the existing target volume.
+func (volume *Volume) ResumeReplicationWithContext(ctx context.Context, targetVolumeURI string) error {
 	if volume.resumeReplicationTarget == "" {
 		return errors.New("resumeReplication not supported by this volume")
 	}
@@ -799,7 +885,7 @@ func (volume *Volume) ResumeReplication(targetVolumeURI string) error {
 	}{
 		TargetVolume: targetVolumeURI,
 	}
-	return volume.Post(volume.resumeReplicationTarget, t)
+	return volume.PostWithContext(ctx, volume.resumeReplicationTarget, t)
 }
 
 // ReverseReplicationRelationship is used to reverse the replication relationship
@@ -807,6 +893,14 @@ func (volume *Volume) ResumeReplication(targetVolumeURI string) error {
 //
 // `targetVolumeURI` is the URI to the existing target volume.
 func (volume *Volume) ReverseReplicationRelationship(targetVolumeURI string) error {
+	return volume.ReverseReplicationRelationshipWithContext(common.ContextOf(volume.GetClient()), targetVolumeURI)
+}
+
+// ReverseReplicationRelationshipWithContext is used to reverse the replication relationship
+// between a source and target volume.
+//
+// `targetVolumeURI` is the URI to the existing target volume.
+func (volume *Volume) ReverseReplicationRelationshipWithContext(ctx context.Context, targetVolumeURI string) error {
 	if volume.reverseReplicationRelationshipTarget == "" {
 		return errors.New("reverseReplicationRelationship not supported by this volume")
 	}
@@ -816,7 +910,7 @@ func (volume *Volume) ReverseReplicationRelationship(targetVolumeURI string) err
 	}{
 		TargetVolume: targetVolumeURI,
 	}
-	return volume.Post(volume.reverseReplicationRelationshipTarget, t)
+	return volume.PostWithContext(ctx, volume.reverseReplicationRelationshipTarget, t)
 }
 
 // SplitReplication is used to split the replication relationship and suspend data
@@ -824,6 +918,14 @@ func (volume *Volume) ReverseReplicationRelationship(targetVolumeURI string) err
 //
 // `targetVolumeURI` is the URI to the existing target volume.
 func (volume *Volume) SplitReplication(targetVolumeURI string) error {
+	return volume.SplitReplicationWithContext(common.ContextOf(volume.GetClient()), targetVolumeURI)
+}
+
+// SplitReplicationWithContext is used to split the replication relationship and suspend data
+// synchronization between a source and target volume.
+//
+// `targetVolumeURI` is the URI to the existing target volume.
+func (volume *Volume) SplitReplicationWithContext(ctx context.Context, targetVolumeURI string) error {
 	if volume.splitReplicationTarget == "" {
 		return errors.New("splitReplication not supported by this volume")
 	}
@@ -833,7 +935,7 @@ func (volume *Volume) SplitReplication(targetVolumeURI string) error {
 	}{
 		TargetVolume: targetVolumeURI,
 	}
-	return volume.Post(volume.splitReplicationTarget, t)
+	return volume.PostWithContext(ctx, volume.splitReplicationTarget, t)
 }
 
 // SuspendReplication is used to suspend active data synchronization between a source
@@ -841,6 +943,14 @@ func (volume *Volume) SplitReplication(targetVolumeURI string) error {
 //
 // `targetVolumeURI` is the URI to the existing target volume.
 func (volume *Volume) SuspendReplication(targetVolumeURI string) error {
+	return volume.SuspendReplicationWithContext(common.ContextOf(volume.GetClient()), targetVolumeURI)
+}
+
+// SuspendReplicationWithContext is used to suspend active data synchronization between a source
+// and target volume, without otherwise altering the replication relationship.
+//
+// `targetVolumeURI` is the URI to the existing target volume.
+func (volume *Volume) SuspendReplicationWithContext(ctx context.Context, targetVolumeURI string) error {
 	if volume.suspendReplicationTarget == "" {
 		return errors.New("suspendReplication not supported by this volume")
 	}
@@ -850,22 +960,34 @@ func (volume *Volume) SuspendReplication(targetVolumeURI string) error {
 	}{
 		TargetVolume: targetVolumeURI,
 	}
-	return volume.Post(volume.suspendReplicationTarget, t)
+	return volume.PostWithContext(ctx, volume.suspendReplicationTarget, t)
 }
 
 // CacheDataVolumes gets the cache data volumes this volume serves as a cache volume. The
 // corresponding VolumeUsage property shall be set to CacheOnly when this property is used.
-func (volume *Volume) CacheDataVolumes() ([]*Volume, error) {
-	return common.GetObjects[Volume](volume.GetClient(), volume.cacheDataVolumes)
+func (volume *Volume) CacheDataVolumes(queryOpts ...common.QueryGroupOption) ([]*Volume, error) {
+	return volume.CacheDataVolumesWithContext(common.ContextOf(volume.GetClient()), queryOpts...)
+}
+
+// CacheDataVolumesWithContext gets the cache data volumes this volume serves as a cache volume. The
+// corresponding VolumeUsage property shall be set to CacheOnly when this property is used.
+func (volume *Volume) CacheDataVolumesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Volume, error) {
+	return common.GetObjectsWithContext[Volume](ctx, volume.GetClient(), volume.cacheDataVolumes, queryOpts...)
 }
 
 // CacheVolumeSource gets the cache volume source for this volume. The corresponding VolumeUsage
 // property shall be set to Data when this property is used.
-func (volume *Volume) CacheVolumeSource() (*Volume, error) {
+func (volume *Volume) CacheVolumeSource(queryOpts ...common.QueryGroupOption) (*Volume, error) {
+	return volume.CacheVolumeSourceWithContext(common.ContextOf(volume.GetClient()), queryOpts...)
+}
+
+// CacheVolumeSourceWithContext gets the cache volume source for this volume. The corresponding VolumeUsage
+// property shall be set to Data when this property is used.
+func (volume *Volume) CacheVolumeSourceWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Volume, error) {
 	if volume.cacheVolumeSource == "" {
 		return nil, nil
 	}
-	return GetVolume(volume.GetClient(), volume.cacheVolumeSource)
+	return GetVolumeWithContext(ctx, volume.GetClient(), volume.cacheVolumeSource, queryOpts...)
 }
 
 // // ClassOfService gets the cache volume source for this volume. The corresponding VolumeUsage
@@ -878,33 +1000,60 @@ func (volume *Volume) CacheVolumeSource() (*Volume, error) {
 // }
 
 // ClientEndpoints gets the client Endpoints this volume is associated with.
-func (volume *Volume) ClientEndpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](volume.GetClient(), volume.clientEndpoints)
+func (volume *Volume) ClientEndpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return volume.ClientEndpointsWithContext(common.ContextOf(volume.GetClient()), queryOpts...)
+}
+
+// ClientEndpointsWithContext gets the client Endpoints this volume is associated with.
+func (volume *Volume) ClientEndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, volume.GetClient(), volume.clientEndpoints, queryOpts...)
 }
 
 // Controllers gets the controllers (of type StorageController) associated with this volume.
 // When the volume is of type NVMe, these may be both the physical and logical controller
 // representations.
-func (volume *Volume) Controllers() ([]*StorageController, error) {
-	return common.GetObjects[StorageController](volume.GetClient(), volume.controllers)
+func (volume *Volume) Controllers(queryOpts ...common.QueryGroupOption) ([]*StorageController, error) {
+	return volume.ControllersWithContext(common.ContextOf(volume.GetClient()), queryOpts...)
+}
+
+// ControllersWithContext gets the controllers (of type StorageController) associated with this volume.
+// When the volume is of type NVMe, these may be both the physical and logical controller
+// representations.
+func (volume *Volume) ControllersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*StorageController, error) {
+	return common.GetObjectsWithContext[StorageController](ctx, volume.GetClient(), volume.controllers, queryOpts...)
 }
 
 // DedicatedSpareDrives gets the drives which are dedicated spares for this volume.
-func (volume *Volume) DedicatedSpareDrives() ([]*Drive, error) {
-	return common.GetObjects[Drive](volume.GetClient(), volume.dedicatedSpareDrives)
+func (volume *Volume) DedicatedSpareDrives(queryOpts ...common.QueryGroupOption) ([]*Drive, error) {
+	return volume.DedicatedSpareDrivesWithContext(common.ContextOf(volume.GetClient()), queryOpts...)
+}
+
+// DedicatedSpareDrivesWithContext gets the drives which are dedicated spares for this volume.
+func (volume *Volume) DedicatedSpareDrivesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Drive, error) {
+	return common.GetObjectsWithContext[Drive](ctx, volume.GetClient(), volume.dedicatedSpareDrives, queryOpts...)
 }
 
 // Drives references the Drives that this volume is associated with.
-func (volume *Volume) Drives() ([]*Drive, error) {
-	return common.GetObjects[Drive](volume.GetClient(), volume.drives)
+func (volume *Volume) Drives(queryOpts ...common.QueryGroupOption) ([]*Drive, error) {
+	return volume.DrivesWithContext(common.ContextOf(volume.GetClient()), queryOpts...)
+}
+
+// DrivesWithContext references the Drives that this volume is associated with.
+func (volume *Volume) DrivesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Drive, error) {
+	return common.GetObjectsWithContext[Drive](ctx, volume.GetClient(), volume.drives, queryOpts...)
 }
 
 // OwningStorageResource gets the Storage resource that owns or contains this volume.
-func (volume *Volume) OwningStorageResource() (*Storage, error) {
+func (volume *Volume) OwningStorageResource(queryOpts ...common.QueryGroupOption) (*Storage, error) {
+	return volume.OwningStorageResourceWithContext(common.ContextOf(volume.GetClient()), queryOpts...)
+}
+
+// OwningStorageResourceWithContext gets the Storage resource that owns or contains this volume.
+func (volume *Volume) OwningStorageResourceWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Storage, error) {
 	if volume.owningStorageResource == "" {
 		return nil, nil
 	}
-	return GetStorage(volume.GetClient(), volume.owningStorageResource)
+	return GetStorageWithContext(ctx, volume.GetClient(), volume.owningStorageResource, queryOpts...)
 }
 
 // // OwningStorageService gets the StorageService that owns or contains this volume.
@@ -916,12 +1065,22 @@ func (volume *Volume) OwningStorageResource() (*Storage, error) {
 // }
 
 // ServerEndpoints gets the server Endpoints this volume is associated with.
-func (volume *Volume) ServerEndpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](volume.GetClient(), volume.serverEndpoints)
+func (volume *Volume) ServerEndpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return volume.ServerEndpointsWithContext(common.ContextOf(volume.GetClient()), queryOpts...)
+}
+
+// ServerEndpointsWithContext gets the server Endpoints this volume is associated with.
+func (volume *Volume) ServerEndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, volume.GetClient(), volume.serverEndpoints, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (volume *Volume) Update() error {
+	return volume.UpdateWithContext(common.ContextOf(volume.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (volume *Volume) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{"AccessCapabilities",
 		"CapacityBytes",
 		"CapacitySources",
@@ -941,22 +1100,37 @@ func (volume *Volume) Update() error {
 		"WriteCachePolicy",
 		"WriteHoleProtectionPolicy"}
 
-	return volume.UpdateFromRawData(volume, volume.rawData, readWriteFields)
+	return volume.UpdateFromRawDataWithContext(ctx, volume, volume.rawData, readWriteFields)
 }
 
 // GetVolume will get a Volume instance from the service.
-func GetVolume(c common.Client, uri string) (*Volume, error) {
-	return common.GetObject[Volume](c, uri)
+func GetVolume(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Volume, error) {
+	return GetVolumeWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetVolumeWithContext will get a Volume instance from the service.
+func GetVolumeWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Volume, error) {
+	return common.GetObjectWithContext[Volume](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedVolumes gets the collection of Volumes from a provided reference.
-func ListReferencedVolumes(c common.Client, link string) ([]*Volume, error) {
-	return common.GetCollectionObjects[Volume](c, link)
+func ListReferencedVolumes(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Volume, error) {
+	return ListReferencedVolumesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedVolumesWithContext gets the collection of Volumes from a provided reference.
+func ListReferencedVolumesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Volume, error) {
+	return common.GetCollectionObjectsWithContext[Volume](ctx, c, link, queryOpts...)
 }
 
 // AllowedVolumesUpdateApplyTimes returns the set of allowed apply times to request when setting the volumes values
 func AllowedVolumesUpdateApplyTimes(c common.Client, link string) ([]common.OperationApplyTime, error) {
-	resp, err := c.Get(link)
+	return AllowedVolumesUpdateApplyTimesWithContext(common.ContextOf(c), c, link)
+}
+
+// AllowedVolumesUpdateApplyTimesWithContext returns the set of allowed apply times to request when setting the volumes values
+func AllowedVolumesUpdateApplyTimesWithContext(ctx context.Context, c common.Client, link string) ([]common.OperationApplyTime, error) {
+	resp, err := c.GetWithContext(ctx, link)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil {
 		return nil, err

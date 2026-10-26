@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -86,7 +87,7 @@ type License struct {
 	ExpirationDate string
 	// GracePeriodDays shall contain the number of days that the license is still usable after the date and time
 	// specified by the ExpirationDate property.
-	GracePeriodDays int
+	GracePeriodDays *int `json:",omitempty"`
 	// InstallDate shall contain the date and time when the license was installed.
 	InstallDate string
 	// LicenseInfoURI shall contain the URI at which to provide more information about the license. The information
@@ -104,7 +105,7 @@ type License struct {
 	Manufacturer string
 	// MaxAuthorizedDevices shall contain the maximum number of devices that are authorized by the license. This
 	// property shall only be present if the AuthorizationScope property contains the value 'Capacity'.
-	MaxAuthorizedDevices int
+	MaxAuthorizedDevices *int `json:",omitempty"`
 	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
@@ -115,7 +116,7 @@ type License struct {
 	RemainingDuration string
 	// RemainingUseCount shall contain the remaining usage count before the license expires. This property shall only
 	// be present for licenses that are based on usage count.
-	RemainingUseCount int
+	RemainingUseCount *int `json:",omitempty"`
 	// Removable shall indicate whether a user can remove the license with an HTTP DELETE operation.
 	Removable bool
 	// SKU shall contain the SKU number for this license.
@@ -175,17 +176,34 @@ func (license *License) UnmarshalJSON(b []byte) error {
 
 // TargetServices gets a set of Manager objects that represent the services where
 // the license is installed, such as remote Redfish services.
-func (license *License) TargetServices() ([]*Manager, error) {
-	return common.GetObjects[Manager](license.GetClient(), license.targetServices)
+func (license *License) TargetServices(queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return license.TargetServicesWithContext(common.ContextOf(license.GetClient()), queryOpts...)
+}
+
+// TargetServicesWithContext gets a set of Manager objects that represent the services where
+// the license is installed, such as remote Redfish services.
+func (license *License) TargetServicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return common.GetObjectsWithContext[Manager](ctx, license.GetClient(), license.targetServices, queryOpts...)
 }
 
 // GetLicense will get a License instance from the service.
-func GetLicense(c common.Client, uri string) (*License, error) {
-	return common.GetObject[License](c, uri)
+func GetLicense(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*License, error) {
+	return GetLicenseWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetLicenseWithContext will get a License instance from the service.
+func GetLicenseWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*License, error) {
+	return common.GetObjectWithContext[License](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedLicenses gets the collection of License from
 // a provided reference.
-func ListReferencedLicenses(c common.Client, link string) ([]*License, error) {
-	return common.GetCollectionObjects[License](c, link)
+func ListReferencedLicenses(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*License, error) {
+	return ListReferencedLicensesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedLicensesWithContext gets the collection of License from
+// a provided reference.
+func ListReferencedLicensesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*License, error) {
+	return common.GetCollectionObjectsWithContext[License](ctx, c, link, queryOpts...)
 }

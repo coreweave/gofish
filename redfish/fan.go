@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -24,7 +25,7 @@ type Fan struct {
 	// Description provides a description of this resource.
 	Description string
 	// FanDiameterMm shall contain the diameter of the fan assembly in millimeter units.
-	FanDiameterMm int
+	FanDiameterMm *int `json:",omitempty"`
 	// HotPluggable shall indicate whether the device can be inserted or removed while the underlying equipment
 	// otherwise remains in its current operational state. Hot-pluggable devices can become operable without altering
 	// the operational state of the underlying equipment. Devices that cannot be inserted or removed from equipment in
@@ -35,7 +36,7 @@ type Fan struct {
 	Location common.Location
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// Manufacturer shall contain the name of the organization responsible for producing the fan. This organization may
 	// be the entity from whom the fan is purchased, but this is not necessarily true.
 	Manufacturer string
@@ -120,34 +121,58 @@ func (fan *Fan) UnmarshalJSON(b []byte) error {
 }
 
 // Assembly gets the assembly for this fan.
-func (fan *Fan) Assembly() (*Assembly, error) {
+func (fan *Fan) Assembly(queryOpts ...common.QueryGroupOption) (*Assembly, error) {
+	return fan.AssemblyWithContext(common.ContextOf(fan.GetClient()), queryOpts...)
+}
+
+// AssemblyWithContext gets the assembly for this fan.
+func (fan *Fan) AssemblyWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Assembly, error) {
 	if fan.assembly == "" {
 		return nil, nil
 	}
-	return GetAssembly(fan.GetClient(), fan.assembly)
+	return GetAssemblyWithContext(ctx, fan.GetClient(), fan.assembly, queryOpts...)
 }
 
 // CoolingChassis get the cooling chassis related to this fan.
-func (fan *Fan) CoolingChassis() ([]*Chassis, error) {
-	return common.GetObjects[Chassis](fan.GetClient(), fan.coolingChassis)
+func (fan *Fan) CoolingChassis(queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return fan.CoolingChassisWithContext(common.ContextOf(fan.GetClient()), queryOpts...)
+}
+
+// CoolingChassisWithContext get the cooling chassis related to this fan.
+func (fan *Fan) CoolingChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return common.GetObjectsWithContext[Chassis](ctx, fan.GetClient(), fan.coolingChassis, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
-func (fan *Fan) Update() error {
+func (fan *Fan) Update() error { return fan.UpdateWithContext(common.ContextOf(fan.GetClient())) }
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (fan *Fan) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"LocationIndicatorActive",
 	}
 
-	return fan.UpdateFromRawData(fan, fan.rawData, readWriteFields)
+	return fan.UpdateFromRawDataWithContext(ctx, fan, fan.rawData, readWriteFields)
 }
 
 // GetFan will get a Fan instance from the service.
-func GetFan(c common.Client, uri string) (*Fan, error) {
-	return common.GetObject[Fan](c, uri)
+func GetFan(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Fan, error) {
+	return GetFanWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetFanWithContext will get a Fan instance from the service.
+func GetFanWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Fan, error) {
+	return common.GetObjectWithContext[Fan](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedFans gets the collection of Fan from
 // a provided reference.
-func ListReferencedFans(c common.Client, link string) ([]*Fan, error) {
-	return common.GetCollectionObjects[Fan](c, link)
+func ListReferencedFans(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Fan, error) {
+	return ListReferencedFansWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedFansWithContext gets the collection of Fan from
+// a provided reference.
+func ListReferencedFansWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Fan, error) {
+	return common.GetCollectionObjectsWithContext[Fan](ctx, c, link, queryOpts...)
 }

@@ -5,7 +5,7 @@
 package redfish
 
 import (
-	"encoding/json"
+	"context"
 
 	"github.com/coreweave/gofish/common"
 )
@@ -19,15 +19,20 @@ const (
 	FloatSwitchLeakDetectorType LeakDetectorType = "FloatSwitch"
 )
 
+type LeakReactionType string
+
+const (
+	LeakReactionTypeForceOff         LeakReactionType = "ForceOff"
+	LeakReactionTypeGracefulShutdown LeakReactionType = "GracefulShutdown"
+	LeakReactionTypeNone             LeakReactionType = "None"
+)
+
 // LeakDetector shall represent a state-based or digital-value leak detector for a Redfish implementation.
 type LeakDetector struct {
-	common.Entity
-	// ODataContext is the odata context.
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the odata type.
-	ODataType string `json:"@odata.type"`
-	// Description provides a description of this resource.
-	Description string
+	common.Resource
+	// CriticalReactionType specifies the reaction to perform when a critical leak is detected.
+	CriticalReactionType LeakReactionType
+	CurrentAmps          SensorCurrentExcerpt `json:"CurrentAmps,omitempty"`
 	// DetectorState shall contain the state of the leak detector.
 	DetectorState common.Health
 	// Enabled shall indicate whether the leak detector is enabled.
@@ -41,9 +46,6 @@ type LeakDetector struct {
 	Manufacturer string
 	// Model shall contain the name by which the manufacturer generally refers to the leak detector.
 	Model string
-	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
-	// Redfish Specification-described requirements.
-	OEM json.RawMessage `json:"Oem"`
 	// PartNumber shall contain a part number assigned by the organization that is responsible for producing or
 	// manufacturing the leak detector.
 	PartNumber string
@@ -53,30 +55,46 @@ type LeakDetector struct {
 	// PhysicalSubContext shall contain a description of the usage or sub-region within the equipment to which this
 	// leak detector applies. This property generally differentiates multiple leak detectors within the same
 	// PhysicalContext instance.
-	PhysicalSubContext PhysicalSubContext
+	PhysicalSubContext   PhysicalSubContext
+	ReactionDelaySeconds *int
 	// SKU shall contain the stock-keeping unit number for this leak detector.
 	SKU string
 	// SensingFrequency shall contain the time interval between readings of the physical leak detector.
-	SensingFrequency float64
+	SensingFrequency *float64 `json:",omitempty"`
 	// SerialNumber shall contain a manufacturer-allocated number that identifies the leak detector.
 	SerialNumber string
 	// SparePartNumber shall contain the spare part number of the leak detector.
 	SparePartNumber string
 	// Status shall contain any status or health properties of the resource.
-	Status common.Status
+	Status    common.Status
+	UserLabel string
+	Voltage   SensorVoltageExcerpt
+	// WarningReactionType specifies the reaction to perform when a warning-level leak is detected.
+	WarningReactionType LeakReactionType
 	// RawData holds the original serialized JSON so we can compare updates
 	RawData []byte
 }
 
 // GetLeakDetector will get a LeakDetector instance from the service.
-func GetLeakDetector(c common.Client, uri string) (*LeakDetector, error) {
-	return common.GetObject[LeakDetector](c, uri)
+func GetLeakDetector(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*LeakDetector, error) {
+	return GetLeakDetectorWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetLeakDetectorWithContext will get a LeakDetector instance from the service.
+func GetLeakDetectorWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*LeakDetector, error) {
+	return common.GetObjectWithContext[LeakDetector](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedLeakDetectors gets the collection of LeakDetector from
 // a provided reference.
-func ListReferencedLeakDetectors(c common.Client, link string) ([]*LeakDetector, error) {
-	return common.GetCollectionObjects[LeakDetector](c, link)
+func ListReferencedLeakDetectors(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*LeakDetector, error) {
+	return ListReferencedLeakDetectorsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedLeakDetectorsWithContext gets the collection of LeakDetector from
+// a provided reference.
+func ListReferencedLeakDetectorsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*LeakDetector, error) {
+	return common.GetCollectionObjectsWithContext[LeakDetector](ctx, c, link, queryOpts...)
 }
 
 // LeakDetectorArrayExcerpt shall represent a state-based or digital-value leak detector for a Redfish
@@ -106,9 +124,17 @@ type LeakDetectorExcerpt struct {
 }
 
 func (leakdetector *LeakDetector) Update() error {
+	return leakdetector.UpdateWithContext(common.ContextOf(leakdetector.GetClient()))
+}
+
+func (leakdetector *LeakDetector) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"Enabled",
+		"ReactionDelaySeconds",
+		"CriticalReactionType",
+		"WarningReactionType",
+		"UserLabel",
 	}
 
-	return leakdetector.UpdateFromRawData(leakdetector, leakdetector.RawData, readWriteFields)
+	return leakdetector.UpdateFromRawDataWithContext(ctx, leakdetector, leakdetector.RawData, readWriteFields)
 }

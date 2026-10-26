@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -101,7 +102,7 @@ type Task struct {
 	// PercentComplete shall indicate the completion progress of the task,
 	// reported in percent of completion. If the task has not been started, the
 	// value shall be zero.
-	PercentComplete int
+	PercentComplete *int `json:",omitempty"`
 	// StartTime shall indicate the time the task was started.
 	StartTime string
 	// SubTasks shall contain a link to a resource collection of type TaskCollection. This property shall not be
@@ -163,17 +164,34 @@ func (task *Task) UnmarshalJSON(b []byte) error {
 
 // SubTasks gets the sub-tasks for this task.
 // This property shall not be present if this resource represents a sub-task for a task.
-func (task *Task) SubTasks() ([]*Task, error) {
-	return common.GetObjects[Task](task.GetClient(), task.subTasks)
+func (task *Task) SubTasks(queryOpts ...common.QueryGroupOption) ([]*Task, error) {
+	return task.SubTasksWithContext(common.ContextOf(task.GetClient()), queryOpts...)
+}
+
+// SubTasksWithContext gets the sub-tasks for this task.
+// This property shall not be present if this resource represents a sub-task for a task.
+func (task *Task) SubTasksWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Task, error) {
+	return common.GetObjectsWithContext[Task](ctx, task.GetClient(), task.subTasks, queryOpts...)
 }
 
 // GetTask will get a Task instance from the service.
-func GetTask(c common.Client, uri string) (*Task, error) {
-	return common.GetObject[Task](c, uri)
+func GetTask(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Task, error) {
+	return GetTaskWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetTaskWithContext will get a Task instance from the service.
+func GetTaskWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Task, error) {
+	return common.GetObjectWithContext[Task](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedTasks gets the collection of Task from
 // a provided reference.
-func ListReferencedTasks(c common.Client, link string) ([]*Task, error) {
-	return common.GetCollectionObjects[Task](c, link)
+func ListReferencedTasks(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Task, error) {
+	return ListReferencedTasksWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedTasksWithContext gets the collection of Task from
+// a provided reference.
+func ListReferencedTasksWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Task, error) {
+	return common.GetCollectionObjectsWithContext[Task](ctx, c, link, queryOpts...)
 }

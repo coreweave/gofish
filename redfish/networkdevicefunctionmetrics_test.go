@@ -47,24 +47,34 @@ func TestNetworkDeviceFunctionMetrics(t *testing.T) {
 	assertEquals(t, "NetworkDeviceFunctionMetrics", result.ID)
 	assertEquals(t, "Network Device Function Metrics", result.Name)
 
-	if result.TXAvgQueueDepthPercent != 13.7 {
-		t.Errorf("Unexpected TXAvgQueueDepthPercent value: %.2f", result.TXAvgQueueDepthPercent)
+	if result.TXAvgQueueDepthPercent == nil {
+		t.Error("Expected TXAvgQueueDepthPercent to be set")
+	} else if *result.TXAvgQueueDepthPercent != 13.7 {
+		t.Errorf("Unexpected TXAvgQueueDepthPercent value: %.2f", *result.TXAvgQueueDepthPercent)
 	}
 
-	if result.RXAvgQueueDepthPercent != 21.2 {
-		t.Errorf("Unexpected RXAvgQueueDepthPercent value: %.2f", result.RXAvgQueueDepthPercent)
+	if result.RXAvgQueueDepthPercent == nil {
+		t.Error("Expected RXAvgQueueDepthPercent to be set")
+	} else if *result.RXAvgQueueDepthPercent != 21.2 {
+		t.Errorf("Unexpected RXAvgQueueDepthPercent value: %.2f", *result.RXAvgQueueDepthPercent)
 	}
 
-	if result.RXFrames != 27193387 {
-		t.Errorf("Unexpected RXFrames value: %d", result.RXFrames)
+	if result.RXFrames == nil {
+		t.Error("Expected RXFrames to be set")
+	} else if *result.RXFrames != 27193387 {
+		t.Errorf("Unexpected RXFrames value: %d", *result.RXFrames)
 	}
 
-	if result.TXUnicastFrames != 17205770 {
-		t.Errorf("Unexpected TXUnicastFrames value: %d", result.TXUnicastFrames)
+	if result.TXUnicastFrames == nil {
+		t.Error("Expected TXUnicastFrames to be set")
+	} else if *result.TXUnicastFrames != 17205770 {
+		t.Errorf("Unexpected TXUnicastFrames value: %d", *result.TXUnicastFrames)
 	}
 
-	if result.RXMulticastFrames != 1000000 {
-		t.Errorf("Unexpected RXMulticastFrames value: %d", result.RXMulticastFrames)
+	if result.RXMulticastFrames == nil {
+		t.Error("Expected RXMulticastFrames to be set")
+	} else if *result.RXMulticastFrames != 1000000 {
+		t.Errorf("Unexpected RXMulticastFrames value: %d", *result.RXMulticastFrames)
 	}
 
 	if result.Ethernet.NumOffloadedIPv4Conns != 0 {

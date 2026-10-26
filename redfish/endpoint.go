@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -121,7 +122,7 @@ type Endpoint struct {
 	EndpointProtocol common.Protocol
 	// HostReservationMemoryBytes shall be the amount of memory in Bytes that
 	// the Host should allocate to connect to this endpoint.
-	HostReservationMemoryBytes int64
+	HostReservationMemoryBytes *int64 `json:",omitempty"`
 	// IPTransportDetails shall contain the details for each IP transport
 	// supported by this endpoint.
 	IPTransportDetails []IPTransportDetails
@@ -226,14 +227,25 @@ func (endpoint *Endpoint) UnmarshalJSON(b []byte) error {
 }
 
 // GetEndpoint will get a Endpoint instance from the service.
-func GetEndpoint(c common.Client, uri string) (*Endpoint, error) {
-	return common.GetObject[Endpoint](c, uri)
+func GetEndpoint(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Endpoint, error) {
+	return GetEndpointWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetEndpointWithContext will get a Endpoint instance from the service.
+func GetEndpointWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Endpoint, error) {
+	return common.GetObjectWithContext[Endpoint](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedEndpoints gets the collection of Endpoint from
 // a provided reference.
-func ListReferencedEndpoints(c common.Client, link string) ([]*Endpoint, error) {
-	return common.GetCollectionObjects[Endpoint](c, link)
+func ListReferencedEndpoints(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return ListReferencedEndpointsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedEndpointsWithContext gets the collection of Endpoint from
+// a provided reference.
+func ListReferencedEndpointsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetCollectionObjectsWithContext[Endpoint](ctx, c, link, queryOpts...)
 }
 
 // GCID shall contain the Gen-Z Core Specification-defined Global

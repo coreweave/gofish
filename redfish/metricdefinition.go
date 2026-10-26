@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -89,7 +90,7 @@ type MetricDefinition struct {
 	ODataType string `json:"@odata.type"`
 	// Accuracy shall contain the percent error +/- of the measured versus actual values. The property is not
 	// meaningful when the MetricType property is 'Discrete'.
-	Accuracy float64
+	Accuracy *float64 `json:",omitempty"`
 	// Calculable shall specify whether the metric can be used in a calculation.
 	Calculable Calculable
 	// CalculationAlgorithm shall contain the calculation performed to obtain the metric.
@@ -102,7 +103,7 @@ type MetricDefinition struct {
 	CalculationTimeInterval string
 	// Calibration shall contain the calibration offset added to the metric reading. The value shall have the units
 	// specified in the Units property. The property is not meaningful when the MetricType property is 'Discrete'.
-	Calibration float64
+	Calibration *float64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// DiscreteValues shall specify the possible values of the discrete metric. This property shall have values when
@@ -121,7 +122,7 @@ type MetricDefinition struct {
 	// MaxReadingRange shall indicate the highest possible value for a related MetricValue. The value shall have the
 	// units specified in the property Units. The property is not meaningful when the MetricType property is
 	// 'Discrete'.
-	MaxReadingRange float64
+	MaxReadingRange *float64 `json:",omitempty"`
 	// MetricDataType shall specify the data-type of the metric.
 	MetricDataType MetricDataType
 	// MetricProperties shall list the URIs with wildcards and property identifiers that this metric defines. A set of
@@ -135,7 +136,7 @@ type MetricDefinition struct {
 	MetricType MetricType
 	// MinReadingRange shall contain the lowest possible value for the metric reading. The value shall have the units
 	// specified in the property Units. The property is not meaningful when the MetricType property is 'Discrete'.
-	MinReadingRange float64
+	MinReadingRange *float64 `json:",omitempty"`
 	// OEMCalculationAlgorithm shall contain the OEM-defined calculation performed to obtain the metric. This property
 	// shall be present if CalculationAlgorithm is 'OEM'.
 	OEMCalculationAlgorithm string
@@ -146,7 +147,7 @@ type MetricDefinition struct {
 	PhysicalContext PhysicalContext
 	// Precision shall specify the number of significant digits in the metric reading. The property is not meaningful
 	// when the MetricType property is 'Discrete'.
-	Precision int
+	Precision *int `json:",omitempty"`
 	// SensingInterval shall specify the time interval between when a metric is updated.
 	SensingInterval string
 	// TimestampAccuracy shall specify the expected + or - variability of the timestamp.
@@ -185,6 +186,11 @@ func (metricdefinition *MetricDefinition) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (metricdefinition *MetricDefinition) Update() error {
+	return metricdefinition.UpdateWithContext(common.ContextOf(metricdefinition.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (metricdefinition *MetricDefinition) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"Calculable",
 		"CalculationTimeInterval",
@@ -197,18 +203,29 @@ func (metricdefinition *MetricDefinition) Update() error {
 		"Units",
 	}
 
-	return metricdefinition.UpdateFromRawData(metricdefinition, metricdefinition.rawData, readWriteFields)
+	return metricdefinition.UpdateFromRawDataWithContext(ctx, metricdefinition, metricdefinition.rawData, readWriteFields)
 }
 
 // GetMetricDefinition will get a MetricDefinition instance from the service.
-func GetMetricDefinition(c common.Client, uri string) (*MetricDefinition, error) {
-	return common.GetObject[MetricDefinition](c, uri)
+func GetMetricDefinition(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*MetricDefinition, error) {
+	return GetMetricDefinitionWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetMetricDefinitionWithContext will get a MetricDefinition instance from the service.
+func GetMetricDefinitionWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*MetricDefinition, error) {
+	return common.GetObjectWithContext[MetricDefinition](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedMetricDefinitions gets the collection of MetricDefinition from
 // a provided reference.
-func ListReferencedMetricDefinitions(c common.Client, link string) ([]*MetricDefinition, error) {
-	return common.GetCollectionObjects[MetricDefinition](c, link)
+func ListReferencedMetricDefinitions(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*MetricDefinition, error) {
+	return ListReferencedMetricDefinitionsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedMetricDefinitionsWithContext gets the collection of MetricDefinition from
+// a provided reference.
+func ListReferencedMetricDefinitionsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*MetricDefinition, error) {
+	return common.GetCollectionObjectsWithContext[MetricDefinition](ctx, c, link, queryOpts...)
 }
 
 // Wildcard shall contain a wildcard and its substitution values.

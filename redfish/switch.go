@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -38,12 +39,12 @@ type Switch struct {
 	certificates string
 	// CurrentBandwidthGbps shall contain the internal unidirectional bandwidth of this switch currently negotiated and
 	// running.
-	CurrentBandwidthGbps float64
+	CurrentBandwidthGbps *float64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// DomainID shall contain the domain ID for this switch. This property has a scope of uniqueness within the fabric
 	// of which the switch is a member.
-	DomainID int
+	DomainID *int `json:",omitempty"`
 	// Enabled shall indicate if this switch is enabled.
 	Enabled bool
 	// EnvironmentMetrics shall contain a link to a resource of type EnvironmentMetrics that specifies the environment
@@ -58,7 +59,7 @@ type Switch struct {
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource. A write to this property shall update the value of IndicatorLED in this resource, if supported, to
 	// reflect the implementation of the locating function.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// LogServices shall contain a link to a resource collection of type LogServiceCollection.
 	logServices string
 	// Manufacturer shall contain the name of the organization responsible for producing the switch. This organization
@@ -67,7 +68,7 @@ type Switch struct {
 	// MaxBandwidthGbps shall contain the maximum internal unidirectional bandwidth this switch is capable of being
 	// configured. If capable of autonegotiation, the switch shall attempt to negotiate to the specified maximum
 	// bandwidth.
-	MaxBandwidthGbps float64
+	MaxBandwidthGbps *float64 `json:",omitempty"`
 	// Metrics shall contain a link to the metrics associated with this switch.
 	metrics string
 	// Model shall contain the manufacturer-provided model information of this switch.
@@ -101,7 +102,7 @@ type Switch struct {
 	SwitchType common.Protocol
 	// TotalSwitchWidth shall contain the number of physical transport lanes, phys, or other physical transport links
 	// that this switch contains. For PCIe, this value shall be the lane count.
-	TotalSwitchWidth int
+	TotalSwitchWidth *int `json:",omitempty"`
 	// UUID shall contain a universally unique identifier number for the switch.
 	UUID string
 	// rawData holds the original serialized JSON so we can compare updates.
@@ -175,47 +176,92 @@ func (sw *Switch) UnmarshalJSON(b []byte) error {
 }
 
 // Certificates returns certificates related to this device.
-func (sw *Switch) Certificates() ([]*Certificate, error) {
-	return ListReferencedCertificates(sw.GetClient(), sw.certificates)
+func (sw *Switch) Certificates(queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	return sw.CertificatesWithContext(common.ContextOf(sw.GetClient()), queryOpts...)
+}
+
+// CertificatesWithContext returns certificates related to this device.
+func (sw *Switch) CertificatesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	return ListReferencedCertificatesWithContext(ctx, sw.GetClient(), sw.certificates, queryOpts...)
 }
 
 // LogServices gets the log services related to this device.
-func (sw *Switch) LogServices() ([]*LogService, error) {
-	return ListReferencedLogServices(sw.GetClient(), sw.logServices)
+func (sw *Switch) LogServices(queryOpts ...common.QueryGroupOption) ([]*LogService, error) {
+	return sw.LogServicesWithContext(common.ContextOf(sw.GetClient()), queryOpts...)
+}
+
+// LogServicesWithContext gets the log services related to this device.
+func (sw *Switch) LogServicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*LogService, error) {
+	return ListReferencedLogServicesWithContext(ctx, sw.GetClient(), sw.logServices, queryOpts...)
 }
 
 // Metrics gets the switch metrics related to this device.
-func (sw *Switch) Metrics() (*SwitchMetrics, error) {
-	return GetSwitchMetrics(sw.GetClient(), sw.metrics)
+func (sw *Switch) Metrics(queryOpts ...common.QueryGroupOption) (*SwitchMetrics, error) {
+	return sw.MetricsWithContext(common.ContextOf(sw.GetClient()), queryOpts...)
+}
+
+// MetricsWithContext gets the switch metrics related to this device.
+func (sw *Switch) MetricsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*SwitchMetrics, error) {
+	return GetSwitchMetricsWithContext(ctx, sw.GetClient(), sw.metrics, queryOpts...)
 }
 
 // Ports gets the ports related to this device.
-func (sw *Switch) Ports() ([]*Port, error) {
-	return ListReferencedPorts(sw.GetClient(), sw.ports)
+func (sw *Switch) Ports(queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return sw.PortsWithContext(common.ContextOf(sw.GetClient()), queryOpts...)
+}
+
+// PortsWithContext gets the ports related to this device.
+func (sw *Switch) PortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return ListReferencedPortsWithContext(ctx, sw.GetClient(), sw.ports, queryOpts...)
 }
 
 // Chassis gets the containing chassis of this device.
-func (sw *Switch) Chassis() (*Chassis, error) {
-	return GetChassis(sw.GetClient(), sw.chassis)
+func (sw *Switch) Chassis(queryOpts ...common.QueryGroupOption) (*Chassis, error) {
+	return sw.ChassisWithContext(common.ContextOf(sw.GetClient()), queryOpts...)
+}
+
+// ChassisWithContext gets the containing chassis of this device.
+func (sw *Switch) ChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Chassis, error) {
+	return GetChassisWithContext(ctx, sw.GetClient(), sw.chassis, queryOpts...)
 }
 
 // Endpoints gets any endpoints associated with this fabric.
-func (sw *Switch) Endpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](sw.GetClient(), sw.endpoints)
+func (sw *Switch) Endpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return sw.EndpointsWithContext(common.ContextOf(sw.GetClient()), queryOpts...)
+}
+
+// EndpointsWithContext gets any endpoints associated with this fabric.
+func (sw *Switch) EndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, sw.GetClient(), sw.endpoints, queryOpts...)
 }
 
 // ManagedBy gets the managers of this fabric.
-func (sw *Switch) ManagedBy() ([]*Manager, error) {
-	return common.GetObjects[Manager](sw.GetClient(), sw.managedBy)
+func (sw *Switch) ManagedBy(queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return sw.ManagedByWithContext(common.ContextOf(sw.GetClient()), queryOpts...)
+}
+
+// ManagedByWithContext gets the managers of this fabric.
+func (sw *Switch) ManagedByWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return common.GetObjectsWithContext[Manager](ctx, sw.GetClient(), sw.managedBy, queryOpts...)
 }
 
 // PCIeDevice gets the PCIe device providing this switch.
-func (sw *Switch) PCIeDevice() (*PCIeDevice, error) {
-	return GetPCIeDevice(sw.GetClient(), sw.pcieDevice)
+func (sw *Switch) PCIeDevice(queryOpts ...common.QueryGroupOption) (*PCIeDevice, error) {
+	return sw.PCIeDeviceWithContext(common.ContextOf(sw.GetClient()), queryOpts...)
+}
+
+// PCIeDeviceWithContext gets the PCIe device providing this switch.
+func (sw *Switch) PCIeDeviceWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*PCIeDevice, error) {
+	return GetPCIeDeviceWithContext(ctx, sw.GetClient(), sw.pcieDevice, queryOpts...)
 }
 
 // Reset resets this switch.
 func (sw *Switch) Reset(resetType ResetType) error {
+	return sw.ResetWithContext(common.ContextOf(sw.GetClient()), resetType)
+}
+
+// ResetWithContext resets this switch.
+func (sw *Switch) ResetWithContext(ctx context.Context, resetType ResetType) error {
 	if sw.resetTarget == "" {
 		return errors.New("Reset is not supported by this system")
 	}
@@ -225,28 +271,42 @@ func (sw *Switch) Reset(resetType ResetType) error {
 	}{
 		ResetType: resetType,
 	}
-	return sw.Post(sw.resetTarget, parameters)
+	return sw.PostWithContext(ctx, sw.resetTarget, parameters)
 }
 
 // Update commits updates to this object's properties to the running system.
-func (sw *Switch) Update() error {
+func (sw *Switch) Update() error { return sw.UpdateWithContext(common.ContextOf(sw.GetClient())) }
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (sw *Switch) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{"AssetTag",
 		"Enabled",
 		"IsManaged",
 		"LocationIndicatorActive"}
 
-	return sw.UpdateFromRawData(sw, sw.rawData, readWriteFields)
+	return sw.UpdateFromRawDataWithContext(ctx, sw, sw.rawData, readWriteFields)
 }
 
 // GetSwitch will get a Switch instance from the service.
-func GetSwitch(c common.Client, uri string) (*Switch, error) {
-	return common.GetObject[Switch](c, uri)
+func GetSwitch(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Switch, error) {
+	return GetSwitchWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetSwitchWithContext will get a Switch instance from the service.
+func GetSwitchWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Switch, error) {
+	return common.GetObjectWithContext[Switch](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedSwitches gets the collection of Switch from
 // a provided reference.
-func ListReferencedSwitches(c common.Client, link string) ([]*Switch, error) {
-	return common.GetCollectionObjects[Switch](c, link)
+func ListReferencedSwitches(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Switch, error) {
+	return ListReferencedSwitchesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedSwitchesWithContext gets the collection of Switch from
+// a provided reference.
+func ListReferencedSwitchesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Switch, error) {
+	return common.GetCollectionObjectsWithContext[Switch](ctx, c, link, queryOpts...)
 }
 
 // VCSSwitch shall contain Virtual CXL Switch (VCS) properties for a switch.

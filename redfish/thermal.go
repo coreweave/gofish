@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -72,16 +73,16 @@ type ThermalFan struct {
 
 	// Links to related objects (unmarshaled separately)
 	// Assembly contains a link to a resource of type Assembly.
-	assembly    string
-	redundancy  []string
-	relatedItem []string
+	assembly     string
+	redundancy   []string
+	RelatedItems []string
 
 	// Counters for related objects
 	RedundancyCount  int `json:"Redundancy@odata.count,omitempty"`
 	RelatedItemCount int `json:"RelatedItem@odata.count,omitempty"`
 
-	// rawData holds original JSON for comparison during updates.
-	rawData []byte
+	// RawData holds original JSON for comparison during updates.
+	RawData []byte
 }
 
 // UnmarshalJSON unmarshals a ThermalFan object from the raw JSON.
@@ -104,19 +105,24 @@ func (fan *ThermalFan) UnmarshalJSON(b []byte) error {
 	// Extract the links to other entities for later
 	fan.assembly = t.Assembly.String()
 	fan.redundancy = t.Redundancy.ToStrings()
-	fan.relatedItem = t.RelatedItem.ToStrings()
+	fan.RelatedItems = t.RelatedItem.ToStrings()
 
 	// This is a read/write object, so we need to save the raw object data for later
-	fan.rawData = b
+	fan.RawData = b
 
 	return nil
 }
 
 // Update commits updates to this object's properties to the running system.
 func (fan *ThermalFan) Update() error {
+	return fan.UpdateWithContext(common.ContextOf(fan.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (fan *ThermalFan) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{"IndicatorLED"}
 
-	return fan.UpdateFromRawData(fan, fan.rawData, readWriteFields)
+	return fan.UpdateFromRawDataWithContext(ctx, fan, fan.RawData, readWriteFields)
 }
 
 // Temperature represents a temperature sensor in a Redfish system.
@@ -168,13 +174,13 @@ type Temperature struct {
 	UpperThresholdUser *float32 `json:"UpperThresholdUser,omitempty"`
 
 	// Links to related items (unmarshaled separately)
-	relatedItem []string
+	RelatedItems []string
 
 	// Counter for related items
 	RelatedItemCount int `json:"RelatedItem@odata.count,omitempty"`
 
-	// rawData holds original JSON for comparison during updates.
-	rawData []byte
+	// RawData holds original JSON for comparison during updates.
+	RawData []byte
 }
 
 // UnmarshalJSON unmarshals a Temperature object from the raw JSON.
@@ -193,20 +199,27 @@ func (temperature *Temperature) UnmarshalJSON(b []byte) error {
 	*temperature = Temperature(t.temp)
 
 	// Extract the links to other entities for later
-	temperature.relatedItem = t.RelatedItem.ToStrings()
+	temperature.RelatedItems = t.RelatedItem.ToStrings()
 
 	// This is a read/write object, so we need to save the raw object data for later
-	temperature.rawData = b
+	temperature.RawData = b
 
 	return nil
 }
 
 // Update commits updates to this object's properties to the running system.
 func (temperature *Temperature) Update() error {
-	readWriteFields := []string{"LowerThresholdUser",
-		"UpperThresholdUser"}
+	return temperature.UpdateWithContext(common.ContextOf(temperature.GetClient()))
+}
 
-	return temperature.UpdateFromRawData(temperature, temperature.rawData, readWriteFields)
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (temperature *Temperature) UpdateWithContext(ctx context.Context) error {
+	readWriteFields := []string{
+		"LowerThresholdUser",
+		"UpperThresholdUser",
+	}
+
+	return temperature.UpdateFromRawDataWithContext(ctx, temperature, temperature.RawData, readWriteFields)
 }
 
 // Thermal represents thermal management data in a Redfish system.
@@ -261,18 +274,35 @@ func (thermal *Thermal) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (thermal *Thermal) Update() error {
-	readWriteFields := []string{"Fans",
-		"Temperatures"}
+	return thermal.UpdateWithContext(common.ContextOf(thermal.GetClient()))
+}
 
-	return thermal.UpdateFromRawData(thermal, thermal.rawData, readWriteFields)
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (thermal *Thermal) UpdateWithContext(ctx context.Context) error {
+	readWriteFields := []string{
+		"Fans",
+		"Temperatures",
+	}
+
+	return thermal.UpdateFromRawDataWithContext(ctx, thermal, thermal.rawData, readWriteFields)
 }
 
 // GetThermal will get a Thermal instance from the service.
-func GetThermal(c common.Client, uri string) (*Thermal, error) {
-	return common.GetObject[Thermal](c, uri)
+func GetThermal(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Thermal, error) {
+	return GetThermalWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetThermalWithContext will get a Thermal instance from the service.
+func GetThermalWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Thermal, error) {
+	return common.GetObjectWithContext[Thermal](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedThermals gets the collection of Thermal from a provided reference.
-func ListReferencedThermals(c common.Client, link string) ([]*Thermal, error) {
-	return common.GetCollectionObjects[Thermal](c, link)
+func ListReferencedThermals(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Thermal, error) {
+	return ListReferencedThermalsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedThermalsWithContext gets the collection of Thermal from a provided reference.
+func ListReferencedThermalsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Thermal, error) {
+	return common.GetCollectionObjectsWithContext[Thermal](ctx, c, link, queryOpts...)
 }

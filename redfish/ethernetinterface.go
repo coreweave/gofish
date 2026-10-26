@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -220,10 +221,10 @@ type EthernetInterface struct {
 	MACAddress string
 	// MTUSize shall be the size in bytes of largest Protocol Data Unit (PDU)
 	// that can be passed in an Ethernet (MAC) frame on this interface.
-	MTUSize int
+	MTUSize *int `json:",omitempty"`
 	// MaxIPv6StaticAddresses shall indicate the number of array items supported
 	// by IPv6StaticAddresses.
-	MaxIPv6StaticAddresses int
+	MaxIPv6StaticAddresses *int `json:",omitempty"`
 	// NameServers used on this interface.
 	NameServers []string
 	// Oem object used on this interface.
@@ -236,7 +237,7 @@ type EthernetInterface struct {
 	// interface belongs to a virtual machine or container.
 	RoutingScope RoutingScope
 	// SpeedMbps shall be the link speed of the interface in Mbps.
-	SpeedMbps int
+	SpeedMbps *int `json:",omitempty"`
 	// StatelessAddressAutoConfig is This object shall contain the IPv4 and
 	// IPv6 Stateless Address Automatic Configuration (SLAAC) properties for
 	// this interface.
@@ -361,6 +362,11 @@ func (ethernetinterface *EthernetInterface) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (ethernetinterface *EthernetInterface) Update() error {
+	return ethernetinterface.UpdateWithContext(common.ContextOf(ethernetinterface.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (ethernetinterface *EthernetInterface) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"AutoNeg",
 		"DHCPv4",
@@ -383,18 +389,29 @@ func (ethernetinterface *EthernetInterface) Update() error {
 		"VLAN",
 	}
 
-	return ethernetinterface.UpdateFromRawData(ethernetinterface, ethernetinterface.rawData, readWriteFields)
+	return ethernetinterface.UpdateFromRawDataWithContext(ctx, ethernetinterface, ethernetinterface.rawData, readWriteFields)
 }
 
 // GetEthernetInterface will get a EthernetInterface instance from the service.
-func GetEthernetInterface(c common.Client, uri string) (*EthernetInterface, error) {
-	return common.GetObject[EthernetInterface](c, uri)
+func GetEthernetInterface(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*EthernetInterface, error) {
+	return GetEthernetInterfaceWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetEthernetInterfaceWithContext will get a EthernetInterface instance from the service.
+func GetEthernetInterfaceWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*EthernetInterface, error) {
+	return common.GetObjectWithContext[EthernetInterface](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedEthernetInterfaces gets the collection of EthernetInterface from
 // a provided reference.
-func ListReferencedEthernetInterfaces(c common.Client, link string) ([]*EthernetInterface, error) {
-	return common.GetCollectionObjects[EthernetInterface](c, link)
+func ListReferencedEthernetInterfaces(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return ListReferencedEthernetInterfacesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedEthernetInterfacesWithContext gets the collection of EthernetInterface from
+// a provided reference.
+func ListReferencedEthernetInterfacesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return common.GetCollectionObjectsWithContext[EthernetInterface](ctx, c, link, queryOpts...)
 }
 
 // IPv6AddressPolicyEntry describes and entry in the Address Selection Policy
@@ -402,10 +419,10 @@ func ListReferencedEthernetInterfaces(c common.Client, link string) ([]*Ethernet
 type IPv6AddressPolicyEntry struct {
 	// Label shall contain the IPv6 Label value for this table entry as defined
 	// in RFC 6724 section 2.1.
-	Label int
+	Label *int `json:",omitempty"`
 	// Precedence shall contain the IPv6 Precedence value for this table entry
 	// as defined in RFC 6724 section 2.1.
-	Precedence int
+	Precedence *int `json:",omitempty"`
 	// Prefix shall contain the IPv6 Address Prefix for this table entry as
 	// defined in RFC 6724 section 2.1.
 	Prefix string
@@ -424,44 +441,80 @@ type StatelessAddressAutoConfiguration struct {
 
 // VLAN gets the VLAN for this interface. If this interface supports more than one VLAN, the VLAN call
 // will return nil and the VLANs call should be used instead.
-func (ethernetinterface *EthernetInterface) VLANs() ([]*VLanNetworkInterface, error) {
-	return ListReferencedVLanNetworkInterfaces(ethernetinterface.GetClient(), ethernetinterface.vlans)
+func (ethernetinterface *EthernetInterface) VLANs(queryOpts ...common.QueryGroupOption) ([]*VLanNetworkInterface, error) {
+	return ethernetinterface.VLANsWithContext(common.ContextOf(ethernetinterface.GetClient()), queryOpts...)
+}
+
+// VLAN gets the VLAN for this interface. If this interface supports more than one VLAN, the VLAN call
+// will return nil and the VLANs call should be used instead.
+func (ethernetinterface *EthernetInterface) VLANsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*VLanNetworkInterface, error) {
+	return ListReferencedVLanNetworkInterfacesWithContext(ctx, ethernetinterface.GetClient(), ethernetinterface.vlans, queryOpts...)
 }
 
 // AffiliatedInterfaces gets any ethernet interfaces that are affiliated with this interface.
-func (ethernetinterface *EthernetInterface) AffiliatedInterfaces() ([]*EthernetInterface, error) {
-	return common.GetObjects[EthernetInterface](ethernetinterface.GetClient(), ethernetinterface.affiliatedInterfaces)
+func (ethernetinterface *EthernetInterface) AffiliatedInterfaces(queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return ethernetinterface.AffiliatedInterfacesWithContext(common.ContextOf(ethernetinterface.GetClient()), queryOpts...)
+}
+
+// AffiliatedInterfacesWithContext gets any ethernet interfaces that are affiliated with this interface.
+func (ethernetinterface *EthernetInterface) AffiliatedInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return common.GetObjectsWithContext[EthernetInterface](ctx, ethernetinterface.GetClient(), ethernetinterface.affiliatedInterfaces, queryOpts...)
 }
 
 // Chassis gets the containing chassis.
-func (ethernetinterface *EthernetInterface) Chassis() (*Chassis, error) {
+func (ethernetinterface *EthernetInterface) Chassis(queryOpts ...common.QueryGroupOption) (*Chassis, error) {
+	return ethernetinterface.ChassisWithContext(common.ContextOf(ethernetinterface.GetClient()), queryOpts...)
+}
+
+// ChassisWithContext gets the containing chassis.
+func (ethernetinterface *EthernetInterface) ChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Chassis, error) {
 	if ethernetinterface.chassis == "" {
 		return nil, nil
 	}
 
-	return GetChassis(ethernetinterface.GetClient(), ethernetinterface.chassis)
+	return GetChassisWithContext(ctx, ethernetinterface.GetClient(), ethernetinterface.chassis, queryOpts...)
 }
 
 // Endpoints gets any endpoints associated with this interface.
-func (ethernetinterface *EthernetInterface) Endpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](ethernetinterface.GetClient(), ethernetinterface.endpoints)
+func (ethernetinterface *EthernetInterface) Endpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return ethernetinterface.EndpointsWithContext(common.ContextOf(ethernetinterface.GetClient()), queryOpts...)
+}
+
+// EndpointsWithContext gets any endpoints associated with this interface.
+func (ethernetinterface *EthernetInterface) EndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, ethernetinterface.GetClient(), ethernetinterface.endpoints, queryOpts...)
 }
 
 // HostInterface gets the associated host interface.
-func (ethernetinterface *EthernetInterface) HostInterface() (*HostInterface, error) {
+func (ethernetinterface *EthernetInterface) HostInterface(queryOpts ...common.QueryGroupOption) (*HostInterface, error) {
+	return ethernetinterface.HostInterfaceWithContext(common.ContextOf(ethernetinterface.GetClient()), queryOpts...)
+}
+
+// HostInterfaceWithContext gets the associated host interface.
+func (ethernetinterface *EthernetInterface) HostInterfaceWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*HostInterface, error) {
 	if ethernetinterface.hostInterface == "" {
 		return nil, nil
 	}
 
-	return GetHostInterface(ethernetinterface.GetClient(), ethernetinterface.hostInterface)
+	return GetHostInterfaceWithContext(ctx, ethernetinterface.GetClient(), ethernetinterface.hostInterface, queryOpts...)
 }
 
 // NetworkDeviceFunctions gets any device functions associated with this interface.
-func (ethernetinterface *EthernetInterface) NetworkDeviceFunctions() ([]*NetworkDeviceFunction, error) {
-	return common.GetObjects[NetworkDeviceFunction](ethernetinterface.GetClient(), ethernetinterface.networkDeviceFunctions)
+func (ethernetinterface *EthernetInterface) NetworkDeviceFunctions(queryOpts ...common.QueryGroupOption) ([]*NetworkDeviceFunction, error) {
+	return ethernetinterface.NetworkDeviceFunctionsWithContext(common.ContextOf(ethernetinterface.GetClient()), queryOpts...)
+}
+
+// NetworkDeviceFunctionsWithContext gets any device functions associated with this interface.
+func (ethernetinterface *EthernetInterface) NetworkDeviceFunctionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*NetworkDeviceFunction, error) {
+	return common.GetObjectsWithContext[NetworkDeviceFunction](ctx, ethernetinterface.GetClient(), ethernetinterface.networkDeviceFunctions, queryOpts...)
 }
 
 // Ports gets any ports associated with this interface.
-func (ethernetinterface *EthernetInterface) Ports() ([]*Port, error) {
-	return common.GetObjects[Port](ethernetinterface.GetClient(), ethernetinterface.ports)
+func (ethernetinterface *EthernetInterface) Ports(queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return ethernetinterface.PortsWithContext(common.ContextOf(ethernetinterface.GetClient()), queryOpts...)
+}
+
+// PortsWithContext gets any ports associated with this interface.
+func (ethernetinterface *EthernetInterface) PortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return common.GetObjectsWithContext[Port](ctx, ethernetinterface.GetClient(), ethernetinterface.ports, queryOpts...)
 }

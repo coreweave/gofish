@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -36,7 +37,7 @@ type ContainerImage struct {
 	// string that represents the identifier of this container image.
 	ProgrammaticID string
 	// SizeBytes shall contain the size of this container image in bytes.
-	SizeBytes int
+	SizeBytes *int `json:",omitempty"`
 	// Status shall contain any status or health properties of the resource.
 	Status common.Status
 	// Type shall contain the supported image types for this container engine.
@@ -83,17 +84,33 @@ func (containerimage *ContainerImage) UnmarshalJSON(b []byte) error {
 }
 
 // GetContainerImage will get a ContainerImage instance from the service.
-func GetContainerImage(c common.Client, uri string) (*ContainerImage, error) {
-	return common.GetObject[ContainerImage](c, uri)
+func GetContainerImage(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ContainerImage, error) {
+	return GetContainerImageWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetContainerImageWithContext will get a ContainerImage instance from the service.
+func GetContainerImageWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ContainerImage, error) {
+	return common.GetObjectWithContext[ContainerImage](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedContainerImages gets the collection of ContainerImage from
 // a provided reference.
-func ListReferencedContainerImages(c common.Client, link string) ([]*ContainerImage, error) {
-	return common.GetCollectionObjects[ContainerImage](c, link)
+func ListReferencedContainerImages(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*ContainerImage, error) {
+	return ListReferencedContainerImagesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedContainerImagesWithContext gets the collection of ContainerImage from
+// a provided reference.
+func ListReferencedContainerImagesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*ContainerImage, error) {
+	return common.GetCollectionObjectsWithContext[ContainerImage](ctx, c, link, queryOpts...)
 }
 
 // Containers get the container instances using this container image.
-func (containerimage *ContainerImage) Containers() ([]*Container, error) {
-	return common.GetObjects[Container](containerimage.GetClient(), containerimage.containers)
+func (containerimage *ContainerImage) Containers(queryOpts ...common.QueryGroupOption) ([]*Container, error) {
+	return containerimage.ContainersWithContext(common.ContextOf(containerimage.GetClient()), queryOpts...)
+}
+
+// ContainersWithContext get the container instances using this container image.
+func (containerimage *ContainerImage) ContainersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Container, error) {
+	return common.GetObjectsWithContext[Container](ctx, containerimage.GetClient(), containerimage.containers, queryOpts...)
 }

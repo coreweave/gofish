@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -76,19 +77,34 @@ func (taskService *TaskService) UnmarshalJSON(b []byte) error {
 }
 
 // Tasks gets the collection of tasks of this task service
-func (taskService *TaskService) Tasks() ([]*Task, error) {
-	return ListReferencedTasks(taskService.GetClient(), taskService.tasks)
+func (taskService *TaskService) Tasks(queryOpts ...common.QueryGroupOption) ([]*Task, error) {
+	return taskService.TasksWithContext(common.ContextOf(taskService.GetClient()), queryOpts...)
+}
+
+// TasksWithContext gets the collection of tasks of this task service
+func (taskService *TaskService) TasksWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Task, error) {
+	return ListReferencedTasksWithContext(ctx, taskService.GetClient(), taskService.tasks, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (taskService *TaskService) Update() error {
+	return taskService.UpdateWithContext(common.ContextOf(taskService.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (taskService *TaskService) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{"ServiceEnabled",
 		"TaskAutoDeleteTimeoutMinutes"}
 
-	return taskService.UpdateFromRawData(taskService, taskService.rawData, readWriteFields)
+	return taskService.UpdateFromRawDataWithContext(ctx, taskService, taskService.rawData, readWriteFields)
 }
 
 // GetTaskService will get a TaskService instance from the service.
-func GetTaskService(c common.Client, uri string) (*TaskService, error) {
-	return common.GetObject[TaskService](c, uri)
+func GetTaskService(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*TaskService, error) {
+	return GetTaskServiceWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetTaskServiceWithContext will get a TaskService instance from the service.
+func GetTaskServiceWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*TaskService, error) {
+	return common.GetObjectWithContext[TaskService](ctx, c, uri, queryOpts...)
 }

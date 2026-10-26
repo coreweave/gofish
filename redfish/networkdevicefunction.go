@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -106,7 +107,7 @@ type BootTargets struct {
 	// targets array. Lower numbers shall represent higher priority, with zero being the highest priority.
 	// The BootPriority shall be unique for all entries of the BootTargets
 	// array.
-	BootPriority int
+	BootPriority *int `json:",omitempty"`
 	// LUNID shall contain the logical unit number (LUN) ID from which to boot on the device to which the corresponding
 	// WWPN refers.
 	LUNID string
@@ -126,10 +127,10 @@ type Ethernet struct {
 	MACAddress string
 	// MTUSize The maximum transmission unit (MTU) configured for this network device function. This value serves as a
 	// default for the OS driver when booting. The value only takes effect on boot.
-	MTUSize int
+	MTUSize *int `json:",omitempty"`
 	// MTUSizeMaximum shall contain the largest maximum transmission unit (MTU) size supported for this network device
 	// function.
-	MTUSizeMaximum int
+	MTUSizeMaximum *int `json:",omitempty"`
 	// PermanentMACAddress shall contain the permanent MAC Address of this function. Typically, this value is
 	// programmed during manufacturing. This address is not assignable.
 	PermanentMACAddress string
@@ -182,11 +183,11 @@ type FibreChannel struct {
 	// this value shall be null. When the FCoE link is up this value shall
 	// be either the FCoELocalVLANId property or a VLAN discovered via the
 	// FIP protocol.
-	FCoEActiveVLANID int
+	FCoEActiveVLANID *int `json:",omitempty"`
 	// FCoELocalVLANID is used for FCoE traffic to this network device
 	// function during boot unless AllowFIPVLANDiscovery is true and a valid
 	// FCoE VLAN ID is found via the FIP VLAN Discovery Protocol.
-	FCoELocalVLANID int
+	FCoELocalVLANID *int `json:",omitempty"`
 	// FibreChannelID shall indicate the Fibre Channel Id assigned by the switch
 	// for this interface.
 	FibreChannelID string
@@ -251,18 +252,18 @@ type InfiniBandNetworkDeviceFunction struct {
 type Limit struct {
 	// BurstBytesPerSecond shall contain the maximum number of bytes per second in a burst allowed for this network
 	// device function.
-	BurstBytesPerSecond int
+	BurstBytesPerSecond *int `json:",omitempty"`
 	// BurstPacketsPerSecond shall contain the maximum number of packets per second in a burst allowed for this network
 	// device function.
-	BurstPacketsPerSecond int
+	BurstPacketsPerSecond *int `json:",omitempty"`
 	// Direction shall indicate the direction of the data to which this limit applies for this network device function.
 	Direction DataDirection
 	// SustainedBytesPerSecond shall contain the maximum number of sustained bytes per second allowed for this network
 	// device function.
-	SustainedBytesPerSecond int
+	SustainedBytesPerSecond *int `json:",omitempty"`
 	// SustainedPacketsPerSecond shall contain the maximum number of sustained packets per second allowed for this
 	// network device function.
-	SustainedPacketsPerSecond int
+	SustainedPacketsPerSecond *int `json:",omitempty"`
 }
 
 // NetworkDeviceFunction is A Network Device Function represents a
@@ -316,7 +317,7 @@ type NetworkDeviceFunction struct {
 	Limits []Limit
 	// MaxVirtualFunctions shall be the number of virtual functions (VFs) that
 	// are available for this Network Device Function.
-	MaxVirtualFunctions int
+	MaxVirtualFunctions *int `json:",omitempty"`
 	// Metrics shall contain a link to a resource of type NetworkDeviceFunctionMetrics that contains the metrics
 	// associated with this network function.
 	metrics string
@@ -431,60 +432,106 @@ func (networkdevicefunction *NetworkDeviceFunction) UnmarshalJSON(b []byte) erro
 }
 
 // Endpoints gets the endpoints that are associated with this network device function.
-func (networkdevicefunction *NetworkDeviceFunction) Endpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](networkdevicefunction.GetClient(), networkdevicefunction.endpoints)
+func (networkdevicefunction *NetworkDeviceFunction) Endpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return networkdevicefunction.EndpointsWithContext(common.ContextOf(networkdevicefunction.GetClient()), queryOpts...)
+}
+
+// EndpointsWithContext gets the endpoints that are associated with this network device function.
+func (networkdevicefunction *NetworkDeviceFunction) EndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, networkdevicefunction.GetClient(), networkdevicefunction.endpoints, queryOpts...)
 }
 
 // EthernetInterfaces gets the virtual interfaces that were created when one of the network device function VLANs is
 // represented as a virtual NIC for the purpose of showing the IP address associated with that VLAN.
-func (networkdevicefunction *NetworkDeviceFunction) EthernetInterfaces() ([]*EthernetInterface, error) {
-	return common.GetObjects[EthernetInterface](networkdevicefunction.GetClient(), networkdevicefunction.ethernetInterfaces)
+func (networkdevicefunction *NetworkDeviceFunction) EthernetInterfaces(queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return networkdevicefunction.EthernetInterfacesWithContext(common.ContextOf(networkdevicefunction.GetClient()), queryOpts...)
+}
+
+// EthernetInterfacesWithContext gets the virtual interfaces that were created when one of the network device function VLANs is
+// represented as a virtual NIC for the purpose of showing the IP address associated with that VLAN.
+func (networkdevicefunction *NetworkDeviceFunction) EthernetInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return common.GetObjectsWithContext[EthernetInterface](ctx, networkdevicefunction.GetClient(), networkdevicefunction.ethernetInterfaces, queryOpts...)
 }
 
 // OffloadProcessors gets the processors that performs offload computation for this network function, such as
 // with a SmartNIC. This property shall not be present if OffloadSystem is present.
-func (networkdevicefunction *NetworkDeviceFunction) OffloadProcessors() ([]*Processor, error) {
-	return common.GetObjects[Processor](networkdevicefunction.GetClient(), networkdevicefunction.offloadProcessors)
+func (networkdevicefunction *NetworkDeviceFunction) OffloadProcessors(queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return networkdevicefunction.OffloadProcessorsWithContext(common.ContextOf(networkdevicefunction.GetClient()), queryOpts...)
+}
+
+// OffloadProcessorsWithContext gets the processors that performs offload computation for this network function, such as
+// with a SmartNIC. This property shall not be present if OffloadSystem is present.
+func (networkdevicefunction *NetworkDeviceFunction) OffloadProcessorsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return common.GetObjectsWithContext[Processor](ctx, networkdevicefunction.GetClient(), networkdevicefunction.offloadProcessors, queryOpts...)
 }
 
 // OffloadSystem shall contain a link to a resource of type ComputerSystem that represents the system that performs
 // offload computation for this network function, such as with a SmartNIC. The SystemType property contained in the
 // referenced ComputerSystem resource should contain the value 'DPU'. This property shall not be present if
 // OffloadProcessors is present.
-func (networkdevicefunction *NetworkDeviceFunction) OffloadSystem() (*ComputerSystem, error) {
+func (networkdevicefunction *NetworkDeviceFunction) OffloadSystem(queryOpts ...common.QueryGroupOption) (*ComputerSystem, error) {
+	return networkdevicefunction.OffloadSystemWithContext(common.ContextOf(networkdevicefunction.GetClient()), queryOpts...)
+}
+
+// OffloadSystemWithContext shall contain a link to a resource of type ComputerSystem that represents the system that performs
+// offload computation for this network function, such as with a SmartNIC. The SystemType property contained in the
+// referenced ComputerSystem resource should contain the value 'DPU'. This property shall not be present if
+// OffloadProcessors is present.
+func (networkdevicefunction *NetworkDeviceFunction) OffloadSystemWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*ComputerSystem, error) {
 	if networkdevicefunction.offloadSystem == "" {
 		return nil, nil
 	}
-	return GetComputerSystem(networkdevicefunction.GetClient(), networkdevicefunction.offloadSystem)
+	return GetComputerSystemWithContext(ctx, networkdevicefunction.GetClient(), networkdevicefunction.offloadSystem, queryOpts...)
 }
 
 // PCIeFunction gets the PCIe function associated with this network device function.
-func (networkdevicefunction *NetworkDeviceFunction) PCIeFunction() (*PCIeFunction, error) {
+func (networkdevicefunction *NetworkDeviceFunction) PCIeFunction(queryOpts ...common.QueryGroupOption) (*PCIeFunction, error) {
+	return networkdevicefunction.PCIeFunctionWithContext(common.ContextOf(networkdevicefunction.GetClient()), queryOpts...)
+}
+
+// PCIeFunctionWithContext gets the PCIe function associated with this network device function.
+func (networkdevicefunction *NetworkDeviceFunction) PCIeFunctionWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*PCIeFunction, error) {
 	if networkdevicefunction.pcieFunction == "" {
 		return nil, nil
 	}
-	return GetPCIeFunction(networkdevicefunction.GetClient(), networkdevicefunction.pcieFunction)
+	return GetPCIeFunctionWithContext(ctx, networkdevicefunction.GetClient(), networkdevicefunction.pcieFunction, queryOpts...)
 }
 
 // PhysicalNetworkPortAssignment gets the physical port to which this network device function is currently assigned.
-func (networkdevicefunction *NetworkDeviceFunction) PhysicalNetworkPortAssignment() (*Port, error) {
+func (networkdevicefunction *NetworkDeviceFunction) PhysicalNetworkPortAssignment(queryOpts ...common.QueryGroupOption) (*Port, error) {
+	return networkdevicefunction.PhysicalNetworkPortAssignmentWithContext(common.ContextOf(networkdevicefunction.GetClient()), queryOpts...)
+}
+
+// PhysicalNetworkPortAssignmentWithContext gets the physical port to which this network device function is currently assigned.
+func (networkdevicefunction *NetworkDeviceFunction) PhysicalNetworkPortAssignmentWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Port, error) {
 	if networkdevicefunction.physicalNetworkPortAssignment == "" {
 		return nil, nil
 	}
-	return GetPort(networkdevicefunction.GetClient(), networkdevicefunction.physicalNetworkPortAssignment)
+	return GetPortWithContext(ctx, networkdevicefunction.GetClient(), networkdevicefunction.physicalNetworkPortAssignment, queryOpts...)
 }
 
 // PhysicalPortAssignment gets the physical port to which this network device function is currently assigned.
 // This property has been deprecated in favor of the PhysicalNetworkPortAssignment property.
-func (networkdevicefunction *NetworkDeviceFunction) PhysicalPortAssignment() (*NetworkPort, error) {
+func (networkdevicefunction *NetworkDeviceFunction) PhysicalPortAssignment(queryOpts ...common.QueryGroupOption) (*NetworkPort, error) {
+	return networkdevicefunction.PhysicalPortAssignmentWithContext(common.ContextOf(networkdevicefunction.GetClient()), queryOpts...)
+}
+
+// PhysicalPortAssignmentWithContext gets the physical port to which this network device function is currently assigned.
+// This property has been deprecated in favor of the PhysicalNetworkPortAssignment property.
+func (networkdevicefunction *NetworkDeviceFunction) PhysicalPortAssignmentWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*NetworkPort, error) {
 	if networkdevicefunction.physicalPortAssignment == "" {
 		return nil, nil
 	}
-	return GetNetworkPort(networkdevicefunction.GetClient(), networkdevicefunction.physicalPortAssignment)
+	return GetNetworkPortWithContext(ctx, networkdevicefunction.GetClient(), networkdevicefunction.physicalPortAssignment, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (networkdevicefunction *NetworkDeviceFunction) Update() error {
+	return networkdevicefunction.UpdateWithContext(common.ContextOf(networkdevicefunction.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (networkdevicefunction *NetworkDeviceFunction) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"BootMode",
 		"DeviceEnabled",
@@ -492,18 +539,29 @@ func (networkdevicefunction *NetworkDeviceFunction) Update() error {
 		"SAVIEnabled",
 	}
 
-	return networkdevicefunction.UpdateFromRawData(networkdevicefunction, networkdevicefunction.rawData, readWriteFields)
+	return networkdevicefunction.UpdateFromRawDataWithContext(ctx, networkdevicefunction, networkdevicefunction.rawData, readWriteFields)
 }
 
 // GetNetworkDeviceFunction will get a NetworkDeviceFunction instance from the service.
-func GetNetworkDeviceFunction(c common.Client, uri string) (*NetworkDeviceFunction, error) {
-	return common.GetObject[NetworkDeviceFunction](c, uri)
+func GetNetworkDeviceFunction(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*NetworkDeviceFunction, error) {
+	return GetNetworkDeviceFunctionWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetNetworkDeviceFunctionWithContext will get a NetworkDeviceFunction instance from the service.
+func GetNetworkDeviceFunctionWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*NetworkDeviceFunction, error) {
+	return common.GetObjectWithContext[NetworkDeviceFunction](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedNetworkDeviceFunctions gets the collection of NetworkDeviceFunction from
 // a provided reference.
-func ListReferencedNetworkDeviceFunctions(c common.Client, link string) ([]*NetworkDeviceFunction, error) {
-	return common.GetCollectionObjects[NetworkDeviceFunction](c, link)
+func ListReferencedNetworkDeviceFunctions(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*NetworkDeviceFunction, error) {
+	return ListReferencedNetworkDeviceFunctionsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedNetworkDeviceFunctionsWithContext gets the collection of NetworkDeviceFunction from
+// a provided reference.
+func ListReferencedNetworkDeviceFunctionsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*NetworkDeviceFunction, error) {
+	return common.GetCollectionObjectsWithContext[NetworkDeviceFunction](ctx, c, link, queryOpts...)
 }
 
 // ISCSIBoot shall describe the iSCSI boot capabilities, status, and
@@ -551,7 +609,7 @@ type ISCSIBoot struct {
 	PrimaryDNS string
 	// PrimaryLUN shall be the logical unit
 	// number (LUN) for the primary iSCSI boot target.
-	PrimaryLUN int
+	PrimaryLUN *int `json:",omitempty"`
 	// PrimaryTargetIPAddress shall be the IP
 	// address (IPv6 or IPv4) for the primary iSCSI boot target.
 	PrimaryTargetIPAddress string
@@ -561,12 +619,12 @@ type ISCSIBoot struct {
 	PrimaryTargetName string
 	// PrimaryTargetTCPPort shall be the TCP
 	// port for the primary iSCSI boot target.
-	PrimaryTargetTCPPort int
+	PrimaryTargetTCPPort *int `json:",omitempty"`
 	// PrimaryVLANEnable is used to indicate if this VLAN is enabled for the
 	// primary iSCSI boot target.
 	PrimaryVLANEnable bool
 	// PrimaryVLANID is used if PrimaryVLANEnable is true.
-	PrimaryVLANID int
+	PrimaryVLANID *int `json:",omitempty"`
 	// RouterAdvertisementEnabled shall be a
 	// boolean indicating whether IPv6 router advertisement is enabled for
 	// the iSCSI boot target. This setting shall only apply to IPv6
@@ -577,7 +635,7 @@ type ISCSIBoot struct {
 	SecondaryDNS string
 	// SecondaryLUN shall be the logical unit
 	// number (LUN) for the secondary iSCSI boot target.
-	SecondaryLUN int
+	SecondaryLUN *int `json:",omitempty"`
 	// SecondaryTargetIPAddress shall be the IP
 	// address (IPv6 or IPv4) for the secondary iSCSI boot target.
 	SecondaryTargetIPAddress string
@@ -587,12 +645,12 @@ type ISCSIBoot struct {
 	SecondaryTargetName string
 	// SecondaryTargetTCPPort shall be the TCP
 	// port for the secondary iSCSI boot target.
-	SecondaryTargetTCPPort int
+	SecondaryTargetTCPPort *int `json:",omitempty"`
 	// SecondaryVLANEnable is used to indicate if this VLAN is enabled for
 	// the secondary iSCSI boot target.
 	SecondaryVLANEnable bool
 	// SecondaryVLANID is used if SecondaryVLANEnable is true.
-	SecondaryVLANID int
+	SecondaryVLANID *int `json:",omitempty"`
 	// TargetInfoViaDHCP shall be a boolean
 	// indicating whether the iSCSI boot target name, LUN, IP address, and
 	// netmask should be obtained from DHCP.

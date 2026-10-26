@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -78,37 +79,69 @@ func (networkinterface *NetworkInterface) UnmarshalJSON(b []byte) error {
 }
 
 // GetNetworkInterface will get a NetworkInterface instance from the service.
-func GetNetworkInterface(c common.Client, uri string) (*NetworkInterface, error) {
-	return common.GetObject[NetworkInterface](c, uri)
+func GetNetworkInterface(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*NetworkInterface, error) {
+	return GetNetworkInterfaceWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetNetworkInterfaceWithContext will get a NetworkInterface instance from the service.
+func GetNetworkInterfaceWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*NetworkInterface, error) {
+	return common.GetObjectWithContext[NetworkInterface](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedNetworkInterfaces gets the collection of NetworkInterface from
 // a provided reference.
-func ListReferencedNetworkInterfaces(c common.Client, link string) ([]*NetworkInterface, error) {
-	return common.GetCollectionObjects[NetworkInterface](c, link)
+func ListReferencedNetworkInterfaces(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*NetworkInterface, error) {
+	return ListReferencedNetworkInterfacesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedNetworkInterfacesWithContext gets the collection of NetworkInterface from
+// a provided reference.
+func ListReferencedNetworkInterfacesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*NetworkInterface, error) {
+	return common.GetCollectionObjectsWithContext[NetworkInterface](ctx, c, link, queryOpts...)
 }
 
 // NetworkAdapter gets the NetworkAdapter for this interface.
-func (networkinterface *NetworkInterface) NetworkAdapter() (*NetworkAdapter, error) {
+func (networkinterface *NetworkInterface) NetworkAdapter(queryOpts ...common.QueryGroupOption) (*NetworkAdapter, error) {
+	return networkinterface.NetworkAdapterWithContext(common.ContextOf(networkinterface.GetClient()), queryOpts...)
+}
+
+// NetworkAdapterWithContext gets the NetworkAdapter for this interface.
+func (networkinterface *NetworkInterface) NetworkAdapterWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*NetworkAdapter, error) {
 	if networkinterface.networkAdapter == "" {
 		return nil, nil
 	}
 
-	return GetNetworkAdapter(networkinterface.GetClient(), networkinterface.networkAdapter)
+	return GetNetworkAdapterWithContext(ctx, networkinterface.GetClient(), networkinterface.networkAdapter, queryOpts...)
 }
 
 // NetworkDeviceFunctions gets the collection of NetworkDeviceFunctions of this network interface
-func (networkinterface *NetworkInterface) NetworkDeviceFunctions() ([]*NetworkDeviceFunction, error) {
-	return common.GetObjects[NetworkDeviceFunction](networkinterface.GetClient(), networkinterface.networkDeviceFunctions)
+func (networkinterface *NetworkInterface) NetworkDeviceFunctions(queryOpts ...common.QueryGroupOption) ([]*NetworkDeviceFunction, error) {
+	return networkinterface.NetworkDeviceFunctionsWithContext(common.ContextOf(networkinterface.GetClient()), queryOpts...)
+}
+
+// NetworkDeviceFunctionsWithContext gets the collection of NetworkDeviceFunctions of this network interface
+func (networkinterface *NetworkInterface) NetworkDeviceFunctionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*NetworkDeviceFunction, error) {
+	return common.GetObjectsWithContext[NetworkDeviceFunction](ctx, networkinterface.GetClient(), networkinterface.networkDeviceFunctions, queryOpts...)
 }
 
 // NetworkPorts gets the collection of NetworkPorts of this network interface
 // This property has been deprecated in favor of the Ports property.
-func (networkinterface *NetworkInterface) NetworkPorts() ([]*NetworkPort, error) {
-	return common.GetObjects[NetworkPort](networkinterface.GetClient(), networkinterface.networkPorts)
+func (networkinterface *NetworkInterface) NetworkPorts(queryOpts ...common.QueryGroupOption) ([]*NetworkPort, error) {
+	return networkinterface.NetworkPortsWithContext(common.ContextOf(networkinterface.GetClient()), queryOpts...)
+}
+
+// NetworkPortsWithContext gets the collection of NetworkPorts of this network interface
+// This property has been deprecated in favor of the Ports property.
+func (networkinterface *NetworkInterface) NetworkPortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*NetworkPort, error) {
+	return common.GetObjectsWithContext[NetworkPort](ctx, networkinterface.GetClient(), networkinterface.networkPorts, queryOpts...)
 }
 
 // Ports gets the ports associated with this network interface.
-func (networkinterface *NetworkInterface) Ports() ([]*Port, error) {
-	return common.GetObjects[Port](networkinterface.GetClient(), networkinterface.ports)
+func (networkinterface *NetworkInterface) Ports(queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return networkinterface.PortsWithContext(common.ContextOf(networkinterface.GetClient()), queryOpts...)
+}
+
+// PortsWithContext gets the ports associated with this network interface.
+func (networkinterface *NetworkInterface) PortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return common.GetObjectsWithContext[Port](ctx, networkinterface.GetClient(), networkinterface.ports, queryOpts...)
 }

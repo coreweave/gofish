@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -174,11 +175,16 @@ func (condition *Condition) UnmarshalJSON(b []byte) error {
 }
 
 // LogEntry gets the log entry created for this condition.
-func (condition *Condition) LogEntry(c common.Client) (*LogEntry, error) {
+func (condition *Condition) LogEntry(c common.Client, queryOpts ...common.QueryGroupOption) (*LogEntry, error) {
+	return condition.LogEntryWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// LogEntryWithContext gets the log entry created for this condition.
+func (condition *Condition) LogEntryWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) (*LogEntry, error) {
 	if condition.logEntry == "" {
 		return nil, nil
 	}
-	return GetLogEntry(c, condition.logEntry)
+	return GetLogEntryWithContext(ctx, c, condition.logEntry, queryOpts...)
 }
 
 // ResourceIdentifier shall be unique within the managed ecosystem.
@@ -256,7 +262,7 @@ type Placement struct {
 	// Rack shall contain the name of the rack within a row.
 	Rack string
 	// RackOffset shall be measured from bottom to top, starting with 0.
-	RackOffset int
+	RackOffset *int `json:",omitempty"`
 	// RackOffsetUnits shall contain a RackUnit enumeration literal that indicates the type of rack units in use.
 	RackOffsetUnits RackUnits
 	// Row shall contain the name of the row.
@@ -290,7 +296,7 @@ type PostalAddress struct {
 	Floor string
 	// HouseNumber shall conform to the RFC5139-defined requirements of the HNO field. The numeric portion of the house
 	// number.
-	HouseNumber int
+	HouseNumber *int `json:",omitempty"`
 	// HouseNumberSuffix shall conform to the RFC5139-defined requirements of the HNS field. Provides a suffix to a
 	// house number, (F, B, or 1/2).
 	HouseNumberSuffix string
@@ -369,6 +375,11 @@ func (postaladdress *PostalAddress) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (postaladdress *PostalAddress) Update() error {
+	return postaladdress.UpdateWithContext(common.ContextOf(postaladdress.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (postaladdress *PostalAddress) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{"AdditionalCode",
 		"AdditionalInfo",
 		"Building",
@@ -400,7 +411,7 @@ func (postaladdress *PostalAddress) Update() error {
 		"TrailingStreetSuffix",
 		"Unit"}
 
-	return postaladdress.UpdateFromRawData(postaladdress, postaladdress.rawData, readWriteFields)
+	return postaladdress.UpdateFromRawDataWithContext(ctx, postaladdress, postaladdress.rawData, readWriteFields)
 }
 
 // ReferenceableMember shall contain the location of this element within an item.
@@ -429,14 +440,25 @@ type Resource struct {
 }
 
 // GetResource will get a Resource instance from the service.
-func GetResource(c common.Client, uri string) (*Resource, error) {
-	return common.GetObject[Resource](c, uri)
+func GetResource(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Resource, error) {
+	return GetResourceWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetResourceWithContext will get a Resource instance from the service.
+func GetResourceWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Resource, error) {
+	return common.GetObjectWithContext[Resource](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedResources gets the collection of Resource from
 // a provided reference.
-func ListReferencedResources(c common.Client, link string) ([]*Resource, error) {
-	return common.GetCollectionObjects[Resource](c, link)
+func ListReferencedResources(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Resource, error) {
+	return ListReferencedResourcesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedResourcesWithContext gets the collection of Resource from
+// a provided reference.
+func ListReferencedResourcesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Resource, error) {
+	return common.GetCollectionObjectsWithContext[Resource](ctx, c, link, queryOpts...)
 }
 
 // ResourceCollection

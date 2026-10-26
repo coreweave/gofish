@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -16,10 +17,10 @@ import (
 type JobServiceCapabilities struct {
 	// MaxJobs shall contain the maximum number of jobs supported by the
 	// implementation.
-	MaxJobs int
+	MaxJobs *int `json:",omitempty"`
 	// MaxSteps shall contain the maximum number of steps supported by a
 	// single job instance.
-	MaxSteps int
+	MaxSteps *int `json:",omitempty"`
 	// Scheduling shall indicate whether the Schedule property within the job
 	// supports scheduling of jobs.
 	Scheduling bool
@@ -76,16 +77,31 @@ func (jobservice *JobService) UnmarshalJSON(b []byte) error {
 }
 
 // GetJobService will get a JobService instance from the service.
-func GetJobService(c common.Client, uri string) (*JobService, error) {
-	return common.GetObject[JobService](c, uri)
+func GetJobService(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*JobService, error) {
+	return GetJobServiceWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetJobServiceWithContext will get a JobService instance from the service.
+func GetJobServiceWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*JobService, error) {
+	return common.GetObjectWithContext[JobService](ctx, c, uri, queryOpts...)
 }
 
 // Jobs gets the collection of jobs of this job service
-func (jobservice *JobService) Jobs() ([]*Job, error) {
-	return ListReferencedJobs(jobservice.GetClient(), jobservice.jobs)
+func (jobservice *JobService) Jobs(queryOpts ...common.QueryGroupOption) ([]*Job, error) {
+	return jobservice.JobsWithContext(common.ContextOf(jobservice.GetClient()), queryOpts...)
+}
+
+// JobsWithContext gets the collection of jobs of this job service
+func (jobservice *JobService) JobsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Job, error) {
+	return ListReferencedJobsWithContext(ctx, jobservice.GetClient(), jobservice.jobs, queryOpts...)
 }
 
 // Log gets the LogService instance for this job service
-func (jobservice *JobService) Log() (*LogService, error) {
-	return GetLogService(jobservice.GetClient(), jobservice.log)
+func (jobservice *JobService) Log(queryOpts ...common.QueryGroupOption) (*LogService, error) {
+	return jobservice.LogWithContext(common.ContextOf(jobservice.GetClient()), queryOpts...)
+}
+
+// LogWithContext gets the LogService instance for this job service
+func (jobservice *JobService) LogWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*LogService, error) {
+	return GetLogServiceWithContext(ctx, jobservice.GetClient(), jobservice.log, queryOpts...)
 }

@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -60,12 +61,12 @@ type MeasurementBlock struct {
 	// DSP0274-defined Measurement field of the measurement block.
 	Measurement string
 	// MeasurementIndex shall contain the value of the DSP0274-defined Index field of the measurement block.
-	MeasurementIndex int
+	MeasurementIndex *int `json:",omitempty"`
 	// MeasurementSize shall contain the value of the DSP0274-defined MeasurementSize field of the measurement block.
-	MeasurementSize int
+	MeasurementSize *int `json:",omitempty"`
 	// MeasurementSpecification shall contain the value of the DSP0274-defined MeasurementSpecification field of the
 	// measurement block.
-	MeasurementSpecification int
+	MeasurementSpecification *int `json:",omitempty"`
 }
 
 // SoftwareInventory is a single software component that this Redfish Service manages.
@@ -92,7 +93,7 @@ type SoftwareInventory struct {
 	OEM json.RawMessage
 	// RelatedItem shall contain an array of IDs for pointers consistent with JSON Pointer syntax to the Resource that
 	// is associated with this software inventory item.
-	relatedItem []string
+	RelatedItem common.Links
 	// RelatedItemCount is the number of related items.
 	RelatedItemCount int `json:"RelatedItem@odata.count"`
 	// ReleaseDate is the date of release or
@@ -121,8 +122,8 @@ type SoftwareInventory struct {
 	// image can be overwritten, where a value `true` shall indicate that the
 	// software cannot be altered or overwritten.
 	WriteProtected bool
-	// rawData holds the original serialized JSON so we can compare updates.
-	rawData []byte
+	// RawData holds the original serialized JSON so we can compare updates.
+	RawData []byte
 }
 
 // UnmarshalJSON unmarshals a SoftwareInventory object from the raw JSON.
@@ -130,7 +131,6 @@ func (softwareinventory *SoftwareInventory) UnmarshalJSON(b []byte) error {
 	type temp SoftwareInventory
 	var t struct {
 		temp
-		RelatedItem common.Links
 	}
 
 	err := json.Unmarshal(b, &t)
@@ -140,29 +140,42 @@ func (softwareinventory *SoftwareInventory) UnmarshalJSON(b []byte) error {
 
 	*softwareinventory = SoftwareInventory(t.temp)
 
-	// Extract the links to other entities for later
-	softwareinventory.relatedItem = t.RelatedItem.ToStrings()
-
 	// This is a read/write object, so we need to save the raw object data for later
-	softwareinventory.rawData = b
+	softwareinventory.RawData = b
 
 	return nil
 }
 
 // Update commits updates to this object's properties to the running system.
 func (softwareinventory *SoftwareInventory) Update() error {
+	return softwareinventory.UpdateWithContext(common.ContextOf(softwareinventory.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (softwareinventory *SoftwareInventory) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{"WriteProtected"}
 
-	return softwareinventory.UpdateFromRawData(softwareinventory, softwareinventory.rawData, readWriteFields)
+	return softwareinventory.UpdateFromRawDataWithContext(ctx, softwareinventory, softwareinventory.RawData, readWriteFields)
 }
 
 // GetSoftwareInventory will get a SoftwareInventory instance from the service.
-func GetSoftwareInventory(c common.Client, uri string) (*SoftwareInventory, error) {
-	return common.GetObject[SoftwareInventory](c, uri)
+func GetSoftwareInventory(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*SoftwareInventory, error) {
+	return GetSoftwareInventoryWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetSoftwareInventoryWithContext will get a SoftwareInventory instance from the service.
+func GetSoftwareInventoryWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*SoftwareInventory, error) {
+	return common.GetObjectWithContext[SoftwareInventory](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedSoftwareInventories gets the collection of SoftwareInventory from
 // a provided reference.
-func ListReferencedSoftwareInventories(c common.Client, link string) ([]*SoftwareInventory, error) {
-	return common.GetCollectionObjects[SoftwareInventory](c, link)
+func ListReferencedSoftwareInventories(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*SoftwareInventory, error) {
+	return ListReferencedSoftwareInventoriesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedSoftwareInventoriesWithContext gets the collection of SoftwareInventory from
+// a provided reference.
+func ListReferencedSoftwareInventoriesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*SoftwareInventory, error) {
+	return common.GetCollectionObjectsWithContext[SoftwareInventory](ctx, c, link, queryOpts...)
 }

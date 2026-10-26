@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -295,7 +296,7 @@ type Circuit struct {
 	// The state of the indicator LED, which identifies the circuit.
 	IndicatorLED common.IndicatorLED
 	// An indicator allowing an operator to physically locate this resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// The nominal voltage for this circuit.
 	NominalVoltage NominalVoltage
 	// The number of ungrounded current-carrying conductors (phases)
@@ -316,20 +317,20 @@ type Circuit struct {
 	// The number of seconds to delay power on
 	// after a PowerControl action to cycle power.
 	// Zero seconds indicates no delay.
-	PowerCycleDelaySeconds float32
+	PowerCycleDelaySeconds *float32 `json:",omitempty"`
 	// Indicates if the circuit can be powered.
 	PowerEnabled bool
 	// The power load (percent) for this circuit.
 	PowerLoadPercent SensorExcerpt
 	// The number of seconds to delay power off after a PowerControl action.
 	// Zero seconds indicates no delay to power off.
-	PowerOffDelaySeconds float32
+	PowerOffDelaySeconds *float32 `json:",omitempty"`
 	// The number of seconds to delay power up after a power cycle or
 	// a PowerControl action. Zero seconds indicates no delay to power up.
-	PowerOnDelaySeconds float32
+	PowerOnDelaySeconds *float32 `json:",omitempty"`
 	// The number of seconds to delay power on after power has been restored.
 	// Zero seconds indicates no delay.
-	PowerRestoreDelaySeconds float32
+	PowerRestoreDelaySeconds *float32 `json:",omitempty"`
 	// The desired power state of the circuit
 	// when power is restored after a power loss.
 	PowerRestorePolicy PowerRestorePolicyTypes
@@ -340,7 +341,7 @@ type Circuit struct {
 	// The power (W) for this circuit.
 	PowerWatts SensorPowerExcerpt
 	// The rated maximum current allowed for this circuit.
-	RatedCurrentAmps float32
+	RatedCurrentAmps *float32 `json:",omitempty"`
 	// The status and health of the resource and its subordinate or dependent resources.
 	Status common.Status
 	// The current imbalance (percent) between phases.
@@ -439,12 +440,22 @@ func (circuit *Circuit) UnmarshalJSON(b []byte) error {
 }
 
 // GetCircuit will get a Circuit instance from the Redfish service.
-func GetCircuit(c common.Client, uri string) (*Circuit, error) {
-	return common.GetObject[Circuit](c, uri)
+func GetCircuit(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Circuit, error) {
+	return GetCircuitWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetCircuitWithContext will get a Circuit instance from the Redfish service.
+func GetCircuitWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Circuit, error) {
+	return common.GetObjectWithContext[Circuit](ctx, c, uri, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (circuit *Circuit) Update() error {
+	return circuit.UpdateWithContext(common.ContextOf(circuit.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (circuit *Circuit) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"ConfigurationLocked",
 		"CriticalCircuit",
@@ -462,11 +473,16 @@ func (circuit *Circuit) Update() error {
 		"UserLabel",
 	}
 
-	return circuit.UpdateFromRawData(circuit, circuit.rawData, readWriteFields)
+	return circuit.UpdateFromRawDataWithContext(ctx, circuit, circuit.rawData, readWriteFields)
 }
 
 // This action shall control the state of the circuit breaker or over-current protection device.
 func (circuit *Circuit) BreakerControl(powerState ActionPowerState) error {
+	return circuit.BreakerControlWithContext(common.ContextOf(circuit.GetClient()), powerState)
+}
+
+// This action shall control the state of the circuit breaker or over-current protection device.
+func (circuit *Circuit) BreakerControlWithContext(ctx context.Context, powerState ActionPowerState) error {
 	if circuit.breakerControlTarget == "" {
 		return errors.New("BreakerControl is not supported")
 	}
@@ -475,11 +491,16 @@ func (circuit *Circuit) BreakerControl(powerState ActionPowerState) error {
 		PowerState ActionPowerState
 	}{PowerState: powerState}
 
-	return circuit.Post(circuit.breakerControlTarget, t)
+	return circuit.PostWithContext(ctx, circuit.breakerControlTarget, t)
 }
 
 // This action shall control the power state of the circuit.
 func (circuit *Circuit) PowerControl(powerState ActionPowerState) error {
+	return circuit.PowerControlWithContext(common.ContextOf(circuit.GetClient()), powerState)
+}
+
+// This action shall control the power state of the circuit.
+func (circuit *Circuit) PowerControlWithContext(ctx context.Context, powerState ActionPowerState) error {
 	if circuit.powerControlTarget == "" {
 		return errors.New("PowerControl is not supported")
 	}
@@ -488,37 +509,63 @@ func (circuit *Circuit) PowerControl(powerState ActionPowerState) error {
 		PowerState ActionPowerState
 	}{PowerState: powerState}
 
-	return circuit.Post(circuit.powerControlTarget, t)
+	return circuit.PostWithContext(ctx, circuit.powerControlTarget, t)
 }
 
 // This action shall reset any time intervals or counted values for this circuit.
 func (circuit *Circuit) ResetMetrics() error {
+	return circuit.ResetMetricsWithContext(common.ContextOf(circuit.GetClient()))
+}
+
+// This action shall reset any time intervals or counted values for this circuit.
+func (circuit *Circuit) ResetMetricsWithContext(ctx context.Context) error {
 	if circuit.resetMetricsTarget == "" {
 		return errors.New("ResetMetrics is not supported")
 	}
 
-	return circuit.Post(circuit.resetMetricsTarget, nil)
+	return circuit.PostWithContext(ctx, circuit.resetMetricsTarget, nil)
 }
 
 // ListReferencedCircuits gets the collection of Circuits from
 // a provided reference.
-func ListReferencedCircuits(c common.Client, link string) ([]*Circuit, error) {
-	return common.GetCollectionObjects[Circuit](c, link)
+func ListReferencedCircuits(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return ListReferencedCircuitsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedCircuitsWithContext gets the collection of Circuits from
+// a provided reference.
+func ListReferencedCircuitsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return common.GetCollectionObjectsWithContext[Circuit](ctx, c, link, queryOpts...)
 }
 
 // BranchCircuit gets a resource that represents the branch circuit associated with this circuit.
-func (circuit *Circuit) BranchCircuit() (*Circuit, error) {
-	return GetCircuit(circuit.GetClient(), circuit.branchCircuit)
+func (circuit *Circuit) BranchCircuit(queryOpts ...common.QueryGroupOption) (*Circuit, error) {
+	return circuit.BranchCircuitWithContext(common.ContextOf(circuit.GetClient()), queryOpts...)
+}
+
+// BranchCircuitWithContext gets a resource that represents the branch circuit associated with this circuit.
+func (circuit *Circuit) BranchCircuitWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Circuit, error) {
+	return GetCircuitWithContext(ctx, circuit.GetClient(), circuit.branchCircuit, queryOpts...)
 }
 
 // SourceCircuit gets a resource that represents the circuit that provides power to this circuit.
-func (circuit *Circuit) SourceCircuit() (*Circuit, error) {
-	return GetCircuit(circuit.GetClient(), circuit.sourceCircuit)
+func (circuit *Circuit) SourceCircuit(queryOpts ...common.QueryGroupOption) (*Circuit, error) {
+	return circuit.SourceCircuitWithContext(common.ContextOf(circuit.GetClient()), queryOpts...)
+}
+
+// SourceCircuitWithContext gets a resource that represents the circuit that provides power to this circuit.
+func (circuit *Circuit) SourceCircuitWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Circuit, error) {
+	return GetCircuitWithContext(ctx, circuit.GetClient(), circuit.sourceCircuit, queryOpts...)
 }
 
 // DistributionCircuits gets the collection that contains the circuits powered by this circuit.
-func (circuit *Circuit) DistributionCircuits() ([]*Circuit, error) {
-	return common.GetObjects[Circuit](circuit.GetClient(), circuit.distributionCircuits)
+func (circuit *Circuit) DistributionCircuits(queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return circuit.DistributionCircuitsWithContext(common.ContextOf(circuit.GetClient()), queryOpts...)
+}
+
+// DistributionCircuitsWithContext gets the collection that contains the circuits powered by this circuit.
+func (circuit *Circuit) DistributionCircuitsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Circuit, error) {
+	return common.GetObjectsWithContext[Circuit](ctx, circuit.GetClient(), circuit.distributionCircuits, queryOpts...)
 }
 
 // TODO: outlets, power outlet

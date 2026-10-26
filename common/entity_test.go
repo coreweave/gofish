@@ -5,7 +5,11 @@
 package common
 
 import (
+	"errors"
+	"io"
+	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -445,4 +449,46 @@ func TestGetPatchPayloadFromUpdate_EdgeCases(t *testing.T) {
 			t.Errorf("Expected empty map for different types, got %v", result)
 		}
 	})
+}
+
+func TestGetObjectWithErrorStatus(t *testing.T) {
+	tests := []struct {
+		name   string
+		body   string
+		wantID string
+	}{
+		{
+			name:   "full resource with the error",
+			body:   `{"@odata.id": "/redfish/v1/Managers/bmc", "Id": "bmc", "error": {"code": "Base.1.11.0.InternalError"}}`,
+			wantID: "/redfish/v1/Managers/bmc",
+		},
+		{name: "error only", body: `{"error": {"code": "Base.1.11.0.InternalError"}}`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &TestClient{CustomReturnForActions: map[string][]interface{}{
+				http.MethodGet: {&http.Response{
+					StatusCode: http.StatusInternalServerError,
+					Body:       io.NopCloser(strings.NewReader(tt.body)),
+				}},
+			}}
+
+			entity, err := GetObject[Entity](client, "/redfish/v1/Managers/bmc")
+
+			var rfErr *Error
+			if !errors.As(err, &rfErr) || rfErr.HTTPReturnedStatusCode != http.StatusInternalServerError {
+				t.Fatalf("Expected the 500 error, got %v", err)
+			}
+			if tt.wantID == "" {
+				if entity != nil {
+					t.Errorf("Expected no object, got %+v", entity)
+				}
+				return
+			}
+			if entity == nil || entity.ODataID != tt.wantID || entity.GetClient() != client {
+				t.Errorf("Expected object %s bound to the client, got %+v", tt.wantID, entity)
+			}
+		})
+	}
 }

@@ -146,7 +146,7 @@ func TestFabricAdapter(t *testing.T) {
 		t.Errorf("Unexpected PIDT elements: %#v", result.GenZ.PIDT)
 	}
 
-	if result.PCIeInterface.LanesInUse != 64 {
-		t.Errorf("Unexpected PCIeInterface lanes in use: %d", result.PCIeInterface.LanesInUse)
+	if result.PCIeInterface.LanesInUse == nil || *result.PCIeInterface.LanesInUse != 64 {
+		t.Errorf("Unexpected PCIeInterface lanes in use: %v", result.PCIeInterface.LanesInUse)
 	}
 }

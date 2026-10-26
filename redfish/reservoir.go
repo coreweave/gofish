@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -34,7 +35,7 @@ type Reservoir struct {
 	// Assembly shall contain a link to a resource of type Assembly.
 	assembly string
 	// CapacityLiters shall contain the capacity of the reservoir in liter units.
-	CapacityLiters float64
+	CapacityLiters *float64 `json:",omitempty"`
 	// Coolant shall contain details regarding the coolant contained or used by this unit.
 	Coolant Coolant
 	// Description provides a description of this resource.
@@ -56,7 +57,7 @@ type Reservoir struct {
 	Location common.Location
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// Manufacturer shall contain the name of the organization responsible for producing the reservoir. This
 	// organization may be the entity from whom the reservoir is purchased, but this is not necessarily true.
 	Manufacturer string
@@ -113,33 +114,59 @@ func (reservoir *Reservoir) UnmarshalJSON(b []byte) error {
 }
 
 // Assembly gets the containing assembly for this reservoir.
-func (reservoir *Reservoir) Assembly() (*Assembly, error) {
+func (reservoir *Reservoir) Assembly(queryOpts ...common.QueryGroupOption) (*Assembly, error) {
+	return reservoir.AssemblyWithContext(common.ContextOf(reservoir.GetClient()), queryOpts...)
+}
+
+// AssemblyWithContext gets the containing assembly for this reservoir.
+func (reservoir *Reservoir) AssemblyWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Assembly, error) {
 	if reservoir.assembly == "" {
 		return nil, nil
 	}
-	return GetAssembly(reservoir.GetClient(), reservoir.assembly)
+	return GetAssemblyWithContext(ctx, reservoir.GetClient(), reservoir.assembly, queryOpts...)
 }
 
 // Filters gets a collection of filters.
-func (reservoir *Reservoir) Filters() ([]*Filter, error) {
-	return common.GetObjects[Filter](reservoir.GetClient(), reservoir.filters)
+func (reservoir *Reservoir) Filters(queryOpts ...common.QueryGroupOption) ([]*Filter, error) {
+	return reservoir.FiltersWithContext(common.ContextOf(reservoir.GetClient()), queryOpts...)
+}
+
+// FiltersWithContext gets a collection of filters.
+func (reservoir *Reservoir) FiltersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Filter, error) {
+	return common.GetObjectsWithContext[Filter](ctx, reservoir.GetClient(), reservoir.filters, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
 func (reservoir *Reservoir) Update() error {
+	return reservoir.UpdateWithContext(common.ContextOf(reservoir.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (reservoir *Reservoir) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{"LocationIndicatorActive",
 		"UserLabel"}
 
-	return reservoir.UpdateFromRawData(reservoir, reservoir.rawData, readWriteFields)
+	return reservoir.UpdateFromRawDataWithContext(ctx, reservoir, reservoir.rawData, readWriteFields)
 }
 
 // GetReservoir will get a Reservoir instance from the service.
-func GetReservoir(c common.Client, uri string) (*Reservoir, error) {
-	return common.GetObject[Reservoir](c, uri)
+func GetReservoir(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Reservoir, error) {
+	return GetReservoirWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetReservoirWithContext will get a Reservoir instance from the service.
+func GetReservoirWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Reservoir, error) {
+	return common.GetObjectWithContext[Reservoir](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedReservoirs gets the collection of Reservoir from
 // a provided reference.
-func ListReferencedReservoirs(c common.Client, link string) ([]*Reservoir, error) {
-	return common.GetCollectionObjects[Reservoir](c, link)
+func ListReferencedReservoirs(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Reservoir, error) {
+	return ListReferencedReservoirsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedReservoirsWithContext gets the collection of Reservoir from
+// a provided reference.
+func ListReferencedReservoirsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Reservoir, error) {
+	return common.GetCollectionObjectsWithContext[Reservoir](ctx, c, link, queryOpts...)
 }

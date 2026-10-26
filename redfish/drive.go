@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -196,12 +197,12 @@ type Drive struct {
 	AssetTag string
 	// BlockSizeBytes shall contain size of the smallest addressable unit of the
 	// associated drive.
-	BlockSizeBytes int
+	BlockSizeBytes *int `json:",omitempty"`
 	// CapableSpeedGbs shall contain fastest capable bus speed of the associated
 	// drive.
-	CapableSpeedGbs float32
+	CapableSpeedGbs *float32 `json:",omitempty"`
 	// CapacityBytes shall contain the raw size in bytes of the associated drive.
-	CapacityBytes int64
+	CapacityBytes *int64 `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// DriveFormFactor shall contain the form factor of the drive inserted in this slot.
@@ -256,7 +257,7 @@ type Drive struct {
 	Multipath bool
 	// NegotiatedSpeedGbs shall contain current bus speed of the associated
 	// drive.
-	NegotiatedSpeedGbs float32
+	NegotiatedSpeedGbs *float32 `json:",omitempty"`
 	// Operations shall contain a list of all operations currently running on
 	// the Drive.
 	Operations []common.Operations
@@ -268,7 +269,7 @@ type Drive struct {
 	PhysicalLocation common.Location
 	// PredictedMediaLifeLeftPercent shall contain an indicator of the
 	// percentage of life remaining in the Drive's media.
-	PredictedMediaLifeLeftPercent float32
+	PredictedMediaLifeLeftPercent *float32 `json:",omitempty"`
 	// Protocol shall contain the protocol the associated drive is using to
 	// communicate to the storage controller for this system.
 	Protocol common.Protocol
@@ -278,7 +279,7 @@ type Drive struct {
 	// the associated drive.
 	Revision string
 	// RotationSpeedRPM shall contain rotation speed of the associated drive.
-	RotationSpeedRPM float32
+	RotationSpeedRPM *float32 `json:",omitempty"`
 	// SKU shall be the stock-keeping unit number for this drive.
 	SKU string
 	// SerialNumber is used to identify the drive.
@@ -414,6 +415,11 @@ func (drive *Drive) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (drive *Drive) Update() error {
+	return drive.UpdateWithContext(common.ContextOf(drive.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (drive *Drive) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"AssetTag",
 		"HotspareReplacementMode",
@@ -425,61 +431,103 @@ func (drive *Drive) Update() error {
 		"IndicatorLED",
 	}
 
-	return drive.UpdateFromRawData(drive, drive.RawData, readWriteFields)
+	return drive.UpdateFromRawDataWithContext(ctx, drive, drive.RawData, readWriteFields)
 }
 
 // GetDrive will get a Drive instance from the service.
-func GetDrive(c common.Client, uri string) (*Drive, error) {
-	return common.GetObject[Drive](c, uri)
+func GetDrive(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Drive, error) {
+	return GetDriveWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetDriveWithContext will get a Drive instance from the service.
+func GetDriveWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Drive, error) {
+	return common.GetObjectWithContext[Drive](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedDrives gets the collection of Drives from a provided reference.
-func ListReferencedDrives(c common.Client, link string) ([]*Drive, error) {
-	return common.GetCollectionObjects[Drive](c, link)
+func ListReferencedDrives(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Drive, error) {
+	return ListReferencedDrivesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedDrivesWithContext gets the collection of Drives from a provided reference.
+func ListReferencedDrivesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Drive, error) {
+	return common.GetCollectionObjectsWithContext[Drive](ctx, c, link, queryOpts...)
 }
 
 // Assembly gets the Assembly for this drive.
-func (drive *Drive) Assembly() (*Assembly, error) {
+func (drive *Drive) Assembly(queryOpts ...common.QueryGroupOption) (*Assembly, error) {
+	return drive.AssemblyWithContext(common.ContextOf(drive.GetClient()), queryOpts...)
+}
+
+// AssemblyWithContext gets the Assembly for this drive.
+func (drive *Drive) AssemblyWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Assembly, error) {
 	if drive.assembly == "" {
 		return nil, nil
 	}
 
-	return GetAssembly(drive.GetClient(), drive.assembly)
+	return GetAssemblyWithContext(ctx, drive.GetClient(), drive.assembly, queryOpts...)
 }
 
 // Chassis gets the containing chassis for this drive.
-func (drive *Drive) Chassis() (*Chassis, error) {
+func (drive *Drive) Chassis(queryOpts ...common.QueryGroupOption) (*Chassis, error) {
+	return drive.ChassisWithContext(common.ContextOf(drive.GetClient()), queryOpts...)
+}
+
+// ChassisWithContext gets the containing chassis for this drive.
+func (drive *Drive) ChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Chassis, error) {
 	if drive.chassis == "" {
 		return nil, nil
 	}
 
-	return GetChassis(drive.GetClient(), drive.chassis)
+	return GetChassisWithContext(ctx, drive.GetClient(), drive.chassis, queryOpts...)
 }
 
 // Endpoints references the Endpoints that this drive is associated with.
-func (drive *Drive) Endpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](drive.GetClient(), drive.endpoints)
+func (drive *Drive) Endpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return drive.EndpointsWithContext(common.ContextOf(drive.GetClient()), queryOpts...)
+}
+
+// EndpointsWithContext references the Endpoints that this drive is associated with.
+func (drive *Drive) EndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, drive.GetClient(), drive.endpoints, queryOpts...)
 }
 
 // EnvironmentMetrics gets the environment metrics for this drive.
 // If no metrics are available the EnvironmentMetrics reference will be nil but
 // no error will be returned unless it was due to a problem fetching the data.
-func (drive *Drive) EnvironmentMetrics() (*EnvironmentMetrics, error) {
+func (drive *Drive) EnvironmentMetrics(queryOpts ...common.QueryGroupOption) (*EnvironmentMetrics, error) {
+	return drive.EnvironmentMetricsWithContext(common.ContextOf(drive.GetClient()), queryOpts...)
+}
+
+// EnvironmentMetricsWithContext gets the environment metrics for this drive.
+// If no metrics are available the EnvironmentMetrics reference will be nil but
+// no error will be returned unless it was due to a problem fetching the data.
+func (drive *Drive) EnvironmentMetricsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*EnvironmentMetrics, error) {
 	if drive.environmentMetrics == "" {
 		return nil, nil
 	}
 
-	return GetEnvironmentMetrics(drive.GetClient(), drive.environmentMetrics)
+	return GetEnvironmentMetricsWithContext(ctx, drive.GetClient(), drive.environmentMetrics, queryOpts...)
 }
 
 // Volumes references the Volumes that this drive is associated with.
-func (drive *Drive) Volumes() ([]*Volume, error) {
-	return common.GetObjects[Volume](drive.GetClient(), drive.volumes)
+func (drive *Drive) Volumes(queryOpts ...common.QueryGroupOption) ([]*Volume, error) {
+	return drive.VolumesWithContext(common.ContextOf(drive.GetClient()), queryOpts...)
+}
+
+// VolumesWithContext references the Volumes that this drive is associated with.
+func (drive *Drive) VolumesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Volume, error) {
+	return common.GetObjectsWithContext[Volume](ctx, drive.GetClient(), drive.volumes, queryOpts...)
 }
 
 // PCIeFunctions references the PCIeFunctions that this drive is associated with.
-func (drive *Drive) PCIeFunctions() ([]*PCIeFunction, error) {
-	return common.GetObjects[PCIeFunction](drive.GetClient(), drive.pcieFunctions)
+func (drive *Drive) PCIeFunctions(queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
+	return drive.PCIeFunctionsWithContext(common.ContextOf(drive.GetClient()), queryOpts...)
+}
+
+// PCIeFunctionsWithContext references the PCIeFunctions that this drive is associated with.
+func (drive *Drive) PCIeFunctionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
+	return common.GetObjectsWithContext[PCIeFunction](ctx, drive.GetClient(), drive.pcieFunctions, queryOpts...)
 }
 
 // // StoragePools references the StoragePools that this drive is associated with.
@@ -489,5 +537,10 @@ func (drive *Drive) PCIeFunctions() ([]*PCIeFunction, error) {
 
 // SecureErase shall perform a secure erase of the drive.
 func (drive *Drive) SecureErase() error {
-	return drive.Post(drive.secureEraseTarget, nil)
+	return drive.SecureEraseWithContext(common.ContextOf(drive.GetClient()))
+}
+
+// SecureEraseWithContext shall perform a secure erase of the drive.
+func (drive *Drive) SecureEraseWithContext(ctx context.Context) error {
+	return drive.PostWithContext(ctx, drive.secureEraseTarget, nil)
 }

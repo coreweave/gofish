@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -14,10 +15,10 @@ import (
 type HeaterSummary struct {
 	// TotalPrePowerOnHeatingTimeSeconds shall contain the total number of seconds all the heaters in the thermal
 	// subsystem were active while the respective devices they heat were powered off.
-	TotalPrePowerOnHeatingTimeSeconds int
+	TotalPrePowerOnHeatingTimeSeconds *int `json:",omitempty"`
 	// TotalRuntimeHeatingTimeSeconds shall contain the total number of seconds all the heaters in the thermal
 	// subsystem were active while the respective devices they heat were powered on.
-	TotalRuntimeHeatingTimeSeconds int
+	TotalRuntimeHeatingTimeSeconds *int `json:",omitempty"`
 }
 
 // TemperatureSummary shall contain properties that describe temperature sensor for a subsystem.
@@ -111,16 +112,32 @@ func (thermalmetrics *ThermalMetrics) UnmarshalJSON(b []byte) error {
 
 // ResetMetrics resets the summary metrics related to this equipment.
 func (thermalmetrics *ThermalMetrics) ResetMetrics() error {
-	return thermalmetrics.Post(thermalmetrics.resetMetricsTarget, nil)
+	return thermalmetrics.ResetMetricsWithContext(common.ContextOf(thermalmetrics.GetClient()))
+}
+
+// ResetMetricsWithContext resets the summary metrics related to this equipment.
+func (thermalmetrics *ThermalMetrics) ResetMetricsWithContext(ctx context.Context) error {
+	return thermalmetrics.PostWithContext(ctx, thermalmetrics.resetMetricsTarget, nil)
 }
 
 // GetThermalMetrics will get a ThermalMetrics instance from the service.
-func GetThermalMetrics(c common.Client, uri string) (*ThermalMetrics, error) {
-	return common.GetObject[ThermalMetrics](c, uri)
+func GetThermalMetrics(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ThermalMetrics, error) {
+	return GetThermalMetricsWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetThermalMetricsWithContext will get a ThermalMetrics instance from the service.
+func GetThermalMetricsWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ThermalMetrics, error) {
+	return common.GetObjectWithContext[ThermalMetrics](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedThermalMetricss gets the collection of ThermalMetrics from
 // a provided reference.
-func ListReferencedThermalMetrics(c common.Client, link string) ([]*ThermalMetrics, error) {
-	return common.GetCollectionObjects[ThermalMetrics](c, link)
+func ListReferencedThermalMetrics(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*ThermalMetrics, error) {
+	return ListReferencedThermalMetricsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedThermalMetricss gets the collection of ThermalMetrics from
+// a provided reference.
+func ListReferencedThermalMetricsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*ThermalMetrics, error) {
+	return common.GetCollectionObjectsWithContext[ThermalMetrics](ctx, c, link, queryOpts...)
 }

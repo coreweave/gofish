@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -45,7 +46,7 @@ type Pump struct {
 	Location common.Location
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// Manufacturer shall contain the name of the organization responsible for producing the pump. This organization
 	// may be the entity from whom the pump is purchased, but this is not necessarily true.
 	Manufacturer string
@@ -70,7 +71,7 @@ type Pump struct {
 	// SerialNumber shall contain the serial number as defined by the manufacturer for this pump.
 	SerialNumber string
 	// ServiceHours shall contain the number of hours of service that the pump has been in operation.
-	ServiceHours float64
+	ServiceHours *float64 `json:",omitempty"`
 	// setMode shall contain the action target for setting the mode of this pump.
 	setMode string
 	// SparePartNumber shall contain the spare or replacement part number as defined by the manufacturer for this pump.
@@ -130,45 +131,74 @@ func (pump *Pump) UnmarshalJSON(b []byte) error {
 
 // SetMode sets the mode of the pump.
 func (pump *Pump) SetMode(mode PumpMode) error {
+	return pump.SetModeWithContext(common.ContextOf(pump.GetClient()), mode)
+}
+
+// SetModeWithContext sets the mode of the pump.
+func (pump *Pump) SetModeWithContext(ctx context.Context, mode PumpMode) error {
 	// TODO check if mode is valid
 	properties := map[string]interface{}{
 		"Mode": mode,
 	}
 
-	return pump.Post(pump.setMode, properties)
+	return pump.PostWithContext(ctx, pump.setMode, properties)
 }
 
 // Assembly gets the containing assembly for this pump.
-func (pump *Pump) Assembly() (*Assembly, error) {
+func (pump *Pump) Assembly(queryOpts ...common.QueryGroupOption) (*Assembly, error) {
+	return pump.AssemblyWithContext(common.ContextOf(pump.GetClient()), queryOpts...)
+}
+
+// AssemblyWithContext gets the containing assembly for this pump.
+func (pump *Pump) AssemblyWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Assembly, error) {
 	if pump.assembly == "" {
 		return nil, nil
 	}
-	return GetAssembly(pump.GetClient(), pump.assembly)
+	return GetAssemblyWithContext(ctx, pump.GetClient(), pump.assembly, queryOpts...)
 }
 
 // Filters gets a collection of filters.
-func (pump *Pump) Filters() ([]*Filter, error) {
-	return common.GetObjects[Filter](pump.GetClient(), pump.filters)
+func (pump *Pump) Filters(queryOpts ...common.QueryGroupOption) ([]*Filter, error) {
+	return pump.FiltersWithContext(common.ContextOf(pump.GetClient()), queryOpts...)
+}
+
+// FiltersWithContext gets a collection of filters.
+func (pump *Pump) FiltersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Filter, error) {
+	return common.GetObjectsWithContext[Filter](ctx, pump.GetClient(), pump.filters, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
-func (pump *Pump) Update() error {
+func (pump *Pump) Update() error { return pump.UpdateWithContext(common.ContextOf(pump.GetClient())) }
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (pump *Pump) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{"AssetTag",
 		"LocationIndicatorActive",
 		"ServiceHours",
 		"SpeedControlPercent",
 		"UserLabel"}
 
-	return pump.UpdateFromRawData(pump, pump.rawData, readWriteFields)
+	return pump.UpdateFromRawDataWithContext(ctx, pump, pump.rawData, readWriteFields)
 }
 
 // GetPump will get a Pump instance from the service.
-func GetPump(c common.Client, uri string) (*Pump, error) {
-	return common.GetObject[Pump](c, uri)
+func GetPump(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Pump, error) {
+	return GetPumpWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetPumpWithContext will get a Pump instance from the service.
+func GetPumpWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Pump, error) {
+	return common.GetObjectWithContext[Pump](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedPumps gets the collection of Pump from
 // a provided reference.
-func ListReferencedPumps(c common.Client, link string) ([]*Pump, error) {
-	return common.GetCollectionObjects[Pump](c, link)
+func ListReferencedPumps(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Pump, error) {
+	return ListReferencedPumpsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedPumpsWithContext gets the collection of Pump from
+// a provided reference.
+func ListReferencedPumpsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Pump, error) {
+	return common.GetCollectionObjectsWithContext[Pump](ctx, c, link, queryOpts...)
 }

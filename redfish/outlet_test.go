@@ -101,7 +101,7 @@ func TestOutlet(t *testing.T) {
 	assertEquals(t, "/redfish/v1/PowerEquipment/RackPDUs/1/Sensors/VoltageA1", result.PolyPhaseVoltage.Line1ToNeutral.DataSourceURI)
 	assertEquals(t, "/redfish/v1/PowerEquipment/RackPDUs/1/Branches/A", result.branchCircuit)
 
-	if !result.LocationIndicatorActive {
+	if result.LocationIndicatorActive == nil || !*result.LocationIndicatorActive {
 		t.Error("Expected location indicator to be active")
 	}
 
@@ -109,16 +109,22 @@ func TestOutlet(t *testing.T) {
 		t.Error("Expected power to be enabled")
 	}
 
-	if result.PowerOnDelaySeconds != 4 {
-		t.Errorf("Unexpected PowerOnDelaySeconds value: %.2f", result.PowerOnDelaySeconds)
+	if result.PowerOnDelaySeconds == nil {
+		t.Error("Expected PowerOnDelaySeconds to be set")
+	} else if *result.PowerOnDelaySeconds != 4 {
+		t.Errorf("Unexpected PowerOnDelaySeconds value: %.2f", *result.PowerOnDelaySeconds)
 	}
 
-	if result.PowerOffDelaySeconds != 0 {
-		t.Errorf("Unexpected PowerOffDelaySeconds value: %.2f", result.PowerOffDelaySeconds)
+	if result.PowerOffDelaySeconds == nil {
+		t.Error("Expected PowerOffDelaySeconds to be set")
+	} else if *result.PowerOffDelaySeconds != 0 {
+		t.Errorf("Unexpected PowerOffDelaySeconds value: %.2f", *result.PowerOffDelaySeconds)
 	}
 
-	if result.RatedCurrentAmps != 20 {
-		t.Errorf("Unexpected RatedCurrentAmps value: %.2f", result.RatedCurrentAmps)
+	if result.RatedCurrentAmps == nil {
+		t.Error("Expected RatedCurrentAmps to be set")
+	} else if *result.RatedCurrentAmps != 20 {
+		t.Errorf("Unexpected RatedCurrentAmps value: %.2f", *result.RatedCurrentAmps)
 	}
 
 	if *result.CurrentAmps.Reading != 1.68 {

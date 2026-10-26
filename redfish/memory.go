@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -224,7 +225,7 @@ type MemoryCXL struct {
 type MemoryHealthData struct {
 	// PredictedMediaLifeLeftPercent is the current health of the memory device as a percentage.
 	// This property has been deprecated in favor of PredictedMediaLifeLeftPercent in the MemoryMetrics resource.
-	PredictedMediaLifeLeftPercent int
+	PredictedMediaLifeLeftPercent *int `json:",omitempty"`
 }
 
 // Memory is used to represent the Memory in a Redfish implementation.
@@ -237,10 +238,10 @@ type Memory struct {
 	ODataType string `json:"@odata.type"`
 	// AllocationAlignmentMiB shall be the alignment boundary on which memory
 	// regions are allocated, measured in MiB.
-	AllocationAlignmentMiB int
+	AllocationAlignmentMiB *int `json:",omitempty"`
 	// AllocationIncrementMiB shall be the allocation increment for regions,
 	// measured in MiB.
-	AllocationIncrementMiB int
+	AllocationIncrementMiB *int `json:",omitempty"`
 	// AllowedSpeedsMHz shall be the speed supported by this Memory (in MHz).
 	AllowedSpeedsMHz []int
 	// Assembly shall be a link to a resource of type Assembly.
@@ -248,13 +249,13 @@ type Memory struct {
 	// BaseModuleType shall be the base module type of Memory.
 	BaseModuleType BaseModuleType
 	// BusWidthBits shall be the bus width in bits.
-	BusWidthBits int
+	BusWidthBits *int `json:",omitempty"`
 	// CXL shall contain CXL-specific properties for this memory device.
 	CXL MemoryCXL
 	// CacheSizeMiB shall be the total size of the cache portion memory in MiB.
-	CacheSizeMiB int
+	CacheSizeMiB *int `json:",omitempty"`
 	// CapacityMiB shall be the Memory capacity in MiB.
-	CapacityMiB int
+	CapacityMiB *int `json:",omitempty"`
 	// Certificates shall contain a link to a resource collection of type CertificateCollection that contains
 	// certificates for device identity and attestation.
 	certificates []string
@@ -264,7 +265,7 @@ type Memory struct {
 	// may be altered.
 	ConfigurationLocked bool
 	// DataWidthBits shall be the data width in bits.
-	DataWidthBits int
+	DataWidthBits *int `json:",omitempty"`
 	// Description provides a description of this resource.
 	Description string
 	// DeviceLocator shall be location of the Memory in the platform, typically
@@ -293,11 +294,11 @@ type Memory struct {
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource. A write to this property shall update the value of IndicatorLED in this resource, if supported, to
 	// reflect the implementation of the locating function.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// Log shall contain a link to a resource of type LogService.
 	log string
 	// LogicalSizeMiB shall be the total size of the logical memory in MiB.
-	LogicalSizeMiB int
+	LogicalSizeMiB *int `json:",omitempty"`
 	// Manufacturer shall contain a string which identifies the manufacturer of the Memory.
 	Manufacturer string
 	// MaxTDPMilliWatts shall be the maximum power budgets supported by the
@@ -334,7 +335,7 @@ type Memory struct {
 	// NonVolatileSizeLimitMiB shall contain the total non-volatile memory capacity in mebibytes (MiB).
 	NonVolatileSizeLimitMiB int
 	// NonVolatileSizeMiB shall contain the total size of the non-volatile portion memory in MiB.
-	NonVolatileSizeMiB int
+	NonVolatileSizeMiB *int `json:",omitempty"`
 	// OperatingMemoryModes shall be the memory
 	// modes supported by the Memory.
 	OperatingMemoryModes []OperatingMemoryModes
@@ -347,18 +348,18 @@ type Memory struct {
 	// transfers/second). In any case, the reported value shall match the
 	// conventionally reported values for the technology utilized by the
 	// memory device.
-	OperatingSpeedMhz int
+	OperatingSpeedMhz *int `json:",omitempty"`
 	// PartNumber shall indicate the part number as provided by the manufacturer
 	// of this Memory.
 	PartNumber string
 	// PersistentRegionNumberLimit shall be the total number of persistent
 	// regions this Memory can support.
-	PersistentRegionNumberLimit int
+	PersistentRegionNumberLimit *int `json:",omitempty"`
 	// PersistentRegionSizeLimitMiB shall be the total size of persistent regions in MiB.
-	PersistentRegionSizeLimitMiB int
+	PersistentRegionSizeLimitMiB *int `json:",omitempty"`
 	// PersistentRegionSizeMaxMiB shall be the maximum size of a single persistent
 	// regions in MiB.
-	PersistentRegionSizeMaxMiB int
+	PersistentRegionSizeMaxMiB *int `json:",omitempty"`
 	// PoisonListMaxMediaErrorRecords shall contain the maximum number of media error records this device can track in
 	// its poison list.
 	PoisonListMaxMediaErrorRecords int
@@ -366,7 +367,7 @@ type Memory struct {
 	// management policy for the current resource.
 	PowerManagementPolicy PowerManagementPolicy
 	// RankCount is used for spare or interleave.
-	RankCount int
+	RankCount *int `json:",omitempty"`
 	// Regions shall be the memory region information within the Memory.
 	Regions []RegionSet
 	// SecurityCapabilities shall contain properties which describe the security
@@ -381,7 +382,7 @@ type Memory struct {
 	SerialNumber string
 	// SpareDeviceCount is used spare devices available in the Memory. If
 	// memory devices fails, the spare device could be used.
-	SpareDeviceCount int
+	SpareDeviceCount *int `json:",omitempty"`
 	// SparePartNumber shall contain the spare part number of the memory.
 	SparePartNumber string
 	// Status shall contain any status or health properties
@@ -389,16 +390,16 @@ type Memory struct {
 	Status common.Status
 	// VolatileRegionNumberLimit shall be the total number of volatile regions
 	// this Memory can support.
-	VolatileRegionNumberLimit int
+	VolatileRegionNumberLimit *int `json:",omitempty"`
 	// VolatileRegionSizeLimitMiB shall be the total size of volatile regions in MiB.
-	VolatileRegionSizeLimitMiB int
+	VolatileRegionSizeLimitMiB *int `json:",omitempty"`
 	// VolatileRegionSizeMaxMiB shall be the maximum size of a single volatile
 	// regions in MiB.
-	VolatileRegionSizeMaxMiB int
+	VolatileRegionSizeMaxMiB *int `json:",omitempty"`
 	// VolatileSizeLimitMiB shall contain the total volatile memory capacity in mebibytes (MiB).
 	VolatileSizeLimitMiB int
 	// VolatileSizeMiB shall be the total size of the volatile portion memory in MiB.
-	VolatileSizeMiB int
+	VolatileSizeMiB *int `json:",omitempty"`
 	// rawData holds the original serialized JSON so we can compare updates.
 	rawData []byte
 
@@ -562,6 +563,11 @@ func (memory *Memory) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (memory *Memory) Update() error {
+	return memory.UpdateWithContext(common.ContextOf(memory.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (memory *Memory) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"Enabled",
 		"LocationIndicatorActive",
@@ -572,153 +578,261 @@ func (memory *Memory) Update() error {
 		"VolatileSizeLimitMiB",
 	}
 
-	return memory.UpdateFromRawData(memory, memory.rawData, readWriteFields)
+	return memory.UpdateFromRawDataWithContext(ctx, memory, memory.rawData, readWriteFields)
 }
 
 // GetMemory will get a Memory instance from the service.
-func GetMemory(c common.Client, uri string) (*Memory, error) {
-	return common.GetObject[Memory](c, uri)
+func GetMemory(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Memory, error) {
+	return GetMemoryWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetMemoryWithContext will get a Memory instance from the service.
+func GetMemoryWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Memory, error) {
+	return common.GetObjectWithContext[Memory](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedMemorys gets the collection of Memory from
 // a provided reference.
 func ListReferencedMemorys(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Memory, error) {
-	return common.GetCollectionObjects[Memory](c, link, queryOpts...)
+	return ListReferencedMemorysWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedMemorysWithContext gets the collection of Memory from
+// a provided reference.
+func ListReferencedMemorysWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Memory, error) {
+	return common.GetCollectionObjectsWithContext[Memory](ctx, c, link, queryOpts...)
 }
 
 // Assembly gets this memory's assembly.
-func (memory *Memory) Assembly() (*Assembly, error) {
+func (memory *Memory) Assembly(queryOpts ...common.QueryGroupOption) (*Assembly, error) {
+	return memory.AssemblyWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// AssemblyWithContext gets this memory's assembly.
+func (memory *Memory) AssemblyWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Assembly, error) {
 	if memory.assembly == "" {
 		return nil, nil
 	}
-	return GetAssembly(memory.GetClient(), memory.assembly)
+	return GetAssemblyWithContext(ctx, memory.GetClient(), memory.assembly, queryOpts...)
 }
 
 // Certificates gets certificates for device identity and attestation.
-func (memory *Memory) Certificates() ([]*Certificate, error) {
-	return common.GetObjects[Certificate](memory.GetClient(), memory.certificates)
+func (memory *Memory) Certificates(queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	return memory.CertificatesWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// CertificatesWithContext gets certificates for device identity and attestation.
+func (memory *Memory) CertificatesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	return common.GetObjectsWithContext[Certificate](ctx, memory.GetClient(), memory.certificates, queryOpts...)
 }
 
 // EnvironmentMetrics gets the environment metrics for this memory.
-func (memory *Memory) EnvironmentMetrics() (*EnvironmentMetrics, error) {
+func (memory *Memory) EnvironmentMetrics(queryOpts ...common.QueryGroupOption) (*EnvironmentMetrics, error) {
+	return memory.EnvironmentMetricsWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// EnvironmentMetricsWithContext gets the environment metrics for this memory.
+func (memory *Memory) EnvironmentMetricsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*EnvironmentMetrics, error) {
 	if memory.environmentMetrics == "" {
 		return nil, nil
 	}
-	return GetEnvironmentMetrics(memory.GetClient(), memory.environmentMetrics)
+	return GetEnvironmentMetricsWithContext(ctx, memory.GetClient(), memory.environmentMetrics, queryOpts...)
 }
 
 // Log gets the log service for this memory.
-func (memory *Memory) Log() (*LogService, error) {
+func (memory *Memory) Log(queryOpts ...common.QueryGroupOption) (*LogService, error) {
+	return memory.LogWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// LogWithContext gets the log service for this memory.
+func (memory *Memory) LogWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*LogService, error) {
 	if memory.log == "" {
 		return nil, nil
 	}
-	return GetLogService(memory.GetClient(), memory.log)
+	return GetLogServiceWithContext(ctx, memory.GetClient(), memory.log, queryOpts...)
 }
 
 // Metrics gets the memory metrics.
-func (memory *Memory) Metrics() (*MemoryMetrics, error) {
+func (memory *Memory) Metrics(queryOpts ...common.QueryGroupOption) (*MemoryMetrics, error) {
+	return memory.MetricsWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// MetricsWithContext gets the memory metrics.
+func (memory *Memory) MetricsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*MemoryMetrics, error) {
 	if memory.metrics == nil {
 		return nil, nil
 	}
 	if memory.metrics.ID != "" {
 		return memory.metrics, nil
 	}
-	return GetMemoryMetrics(memory.GetClient(), memory.metrics.ODataID)
+	return GetMemoryMetricsWithContext(ctx, memory.GetClient(), memory.metrics.ODataID, queryOpts...)
 }
 
 // Batteries gets the batteries that provide power to this memory device during
 // a power-loss event, such as with battery-backed NVDIMMs.
-func (memory *Memory) Batteries() ([]*Battery, error) {
-	return common.GetObjects[Battery](memory.GetClient(), memory.batteries)
+func (memory *Memory) Batteries(queryOpts ...common.QueryGroupOption) ([]*Battery, error) {
+	return memory.BatteriesWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// BatteriesWithContext gets the batteries that provide power to this memory device during
+// a power-loss event, such as with battery-backed NVDIMMs.
+func (memory *Memory) BatteriesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Battery, error) {
+	return common.GetObjectsWithContext[Battery](ctx, memory.GetClient(), memory.batteries, queryOpts...)
 }
 
 // Chassis gets the containing chassis of this memory.
-func (memory *Memory) Chassis() (*Chassis, error) {
+func (memory *Memory) Chassis(queryOpts ...common.QueryGroupOption) (*Chassis, error) {
+	return memory.ChassisWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// ChassisWithContext gets the containing chassis of this memory.
+func (memory *Memory) ChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Chassis, error) {
 	if memory.chassis == "" {
 		return nil, nil
 	}
-	return GetChassis(memory.GetClient(), memory.chassis)
+	return GetChassisWithContext(ctx, memory.GetClient(), memory.chassis, queryOpts...)
 }
 
 // Endpoints gets the endpoints associated with this memory.
-func (memory *Memory) Endpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](memory.GetClient(), memory.endpoints)
+func (memory *Memory) Endpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return memory.EndpointsWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// EndpointsWithContext gets the endpoints associated with this memory.
+func (memory *Memory) EndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, memory.GetClient(), memory.endpoints, queryOpts...)
 }
 
 // MemoryMediaSources gets the memory chunks providing media for this memory.
-func (memory *Memory) MemoryMediaSources() ([]*MemoryChunks, error) {
-	return common.GetObjects[MemoryChunks](memory.GetClient(), memory.memoryMediaSources)
+func (memory *Memory) MemoryMediaSources(queryOpts ...common.QueryGroupOption) ([]*MemoryChunks, error) {
+	return memory.MemoryMediaSourcesWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// MemoryMediaSourcesWithContext gets the memory chunks providing media for this memory.
+func (memory *Memory) MemoryMediaSourcesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*MemoryChunks, error) {
+	return common.GetObjectsWithContext[MemoryChunks](ctx, memory.GetClient(), memory.memoryMediaSources, queryOpts...)
 }
 
 // MemoryRegionMediaSources gets the memory regions providing media for this memory.
-func (memory *Memory) MemoryRegionMediaSources() ([]*MemoryRegion, error) {
-	return common.GetObjects[MemoryRegion](memory.GetClient(), memory.memoryRegionMediaSources)
+func (memory *Memory) MemoryRegionMediaSources(queryOpts ...common.QueryGroupOption) ([]*MemoryRegion, error) {
+	return memory.MemoryRegionMediaSourcesWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// MemoryRegionMediaSourcesWithContext gets the memory regions providing media for this memory.
+func (memory *Memory) MemoryRegionMediaSourcesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*MemoryRegion, error) {
+	return common.GetObjectsWithContext[MemoryRegion](ctx, memory.GetClient(), memory.memoryRegionMediaSources, queryOpts...)
 }
 
 // Processors gets the processors associated with this memory device.
-func (memory *Memory) Processors() ([]*Processor, error) {
-	return common.GetObjects[Processor](memory.GetClient(), memory.processors)
+func (memory *Memory) Processors(queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return memory.ProcessorsWithContext(common.ContextOf(memory.GetClient()), queryOpts...)
+}
+
+// ProcessorsWithContext gets the processors associated with this memory device.
+func (memory *Memory) ProcessorsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return common.GetObjectsWithContext[Processor](ctx, memory.GetClient(), memory.processors, queryOpts...)
 }
 
 // DisalbeMasterPassphrase will disable the master passphrase on the supplied
 // region provided the supplied master passphrase matches that of the region.
 func (memory *Memory) DisableMasterPassphrase(passphrase, regionID string) error {
+	return memory.DisableMasterPassphraseWithContext(common.ContextOf(memory.GetClient()), passphrase, regionID)
+}
+
+// DisalbeMasterPassphrase will disable the master passphrase on the supplied
+// region provided the supplied master passphrase matches that of the region.
+func (memory *Memory) DisableMasterPassphraseWithContext(ctx context.Context, passphrase, regionID string) error {
 	param := memoryParams{
 		Passphrase: passphrase,
 		RegionID:   regionID,
 	}
-	return memory.Post(memory.disableMasterPassphraseTarget, param)
+	return memory.PostWithContext(ctx, memory.disableMasterPassphraseTarget, param)
 }
 
 // DisablePassphrase will disable the need for passphrases on the supplied
 // region provided the supplied passphrase matches that of the region.
 func (memory *Memory) DisablePassphrase(passphrase, regionID string) error {
+	return memory.DisablePassphraseWithContext(common.ContextOf(memory.GetClient()), passphrase, regionID)
+}
+
+// DisablePassphraseWithContext will disable the need for passphrases on the supplied
+// region provided the supplied passphrase matches that of the region.
+func (memory *Memory) DisablePassphraseWithContext(ctx context.Context, passphrase, regionID string) error {
 	param := memoryParams{
 		Passphrase: passphrase,
 		RegionID:   regionID,
 	}
-	return memory.Post(memory.disablePassphraseTarget, param)
+	return memory.PostWithContext(ctx, memory.disablePassphraseTarget, param)
 }
 
 // FreezeSecurityState will freeze the security state of the memory device.
 func (memory *Memory) FreezeSecurityState() error {
-	return memory.Post(memory.freezeSecurityStateTarget, nil)
+	return memory.FreezeSecurityStateWithContext(common.ContextOf(memory.GetClient()))
+}
+
+// FreezeSecurityStateWithContext will freeze the security state of the memory device.
+func (memory *Memory) FreezeSecurityStateWithContext(ctx context.Context) error {
+	return memory.PostWithContext(ctx, memory.freezeSecurityStateTarget, nil)
 }
 
 // InjectPersistentPoison will inject poison to a specific persistent memory address
 // in the memory device.
 func (memory *Memory) InjectPersistentPoison(physicalAddress string) error {
+	return memory.InjectPersistentPoisonWithContext(common.ContextOf(memory.GetClient()), physicalAddress)
+}
+
+// InjectPersistentPoisonWithContext will inject poison to a specific persistent memory address
+// in the memory device.
+func (memory *Memory) InjectPersistentPoisonWithContext(ctx context.Context, physicalAddress string) error {
 	param := struct {
 		PhysicalAddress string
 	}{
 		PhysicalAddress: physicalAddress,
 	}
-	return memory.Post(memory.injectPersistentPoisonTarget, param)
+	return memory.PostWithContext(ctx, memory.injectPersistentPoisonTarget, param)
 }
 
 // OverwriteUnit will securely erase the supplied region provided the supplied
 // passphrase matches that of the given region using the NIST SP800-88 Purge: Overwrite.
 // Use the SecureEraseUnit method to perform NIST SP800-88 Purge: Cryptographic Erase.
 func (memory *Memory) OverwriteUnit(passphrase, regionID string) error {
+	return memory.OverwriteUnitWithContext(common.ContextOf(memory.GetClient()), passphrase, regionID)
+}
+
+// OverwriteUnitWithContext will securely erase the supplied region provided the supplied
+// passphrase matches that of the given region using the NIST SP800-88 Purge: Overwrite.
+// Use the SecureEraseUnit method to perform NIST SP800-88 Purge: Cryptographic Erase.
+func (memory *Memory) OverwriteUnitWithContext(ctx context.Context, passphrase, regionID string) error {
 	param := memoryParams{
 		Passphrase: passphrase,
 		RegionID:   regionID,
 	}
-	return memory.Post(memory.overwriteUnitTarget, param)
+	return memory.PostWithContext(ctx, memory.overwriteUnitTarget, param)
 }
 
 // Reset resets this memory device.
 func (memory *Memory) Reset(resetType ResetType) error {
+	return memory.ResetWithContext(common.ContextOf(memory.GetClient()), resetType)
+}
+
+// ResetWithContext resets this memory device.
+func (memory *Memory) ResetWithContext(ctx context.Context, resetType ResetType) error {
 	t := struct {
 		ResetType ResetType
 	}{ResetType: resetType}
-	return memory.Post(memory.resetTarget, t)
+	return memory.PostWithContext(ctx, memory.resetTarget, t)
 }
 
 // ResetToDefaults will reset the values of writable properties in this resource
 // to their default values as specified by the manufacturer.
 func (memory *Memory) ResetToDefaults() error {
-	return memory.Post(memory.resetToDefaultsTarget, nil)
+	return memory.ResetToDefaultsWithContext(common.ContextOf(memory.GetClient()))
+}
+
+// ResetToDefaultsWithContext will reset the values of writable properties in this resource
+// to their default values as specified by the manufacturer.
+func (memory *Memory) ResetToDefaultsWithContext(ctx context.Context) error {
+	return memory.PostWithContext(ctx, memory.resetToDefaultsTarget, nil)
 }
 
 // ScanMedia will scan the media of the memory device.
@@ -726,6 +840,14 @@ func (memory *Memory) ResetToDefaults() error {
 // `noEventLog` is used to indicate whether events related to the media scan are not logged.
 // `physicalAddress` is the starting device physical address to scan as a hex-encoded string.
 func (memory *Memory) ScanMedia(length int, noEventLog bool, physicalAddress string) error {
+	return memory.ScanMediaWithContext(common.ContextOf(memory.GetClient()), length, noEventLog, physicalAddress)
+}
+
+// ScanMediaWithContext will scan the media of the memory device.
+// `length` is the length of the target region to scan in bytes from the physical address.
+// `noEventLog` is used to indicate whether events related to the media scan are not logged.
+// `physicalAddress` is the starting device physical address to scan as a hex-encoded string.
+func (memory *Memory) ScanMediaWithContext(ctx context.Context, length int, noEventLog bool, physicalAddress string) error {
 	param := struct {
 		Length          int
 		NoEventLog      bool
@@ -735,46 +857,69 @@ func (memory *Memory) ScanMedia(length int, noEventLog bool, physicalAddress str
 		NoEventLog:      noEventLog,
 		PhysicalAddress: physicalAddress,
 	}
-	return memory.Post(memory.scanMediaTarget, param)
+	return memory.PostWithContext(ctx, memory.scanMediaTarget, param)
 }
 
 // SecureEraseUnit will securely erase the supplied region provided the supplied passphrase
 // matches that of the given region using the NIST SP800-88 Purge: Cryptographic Erase.
 // Use the OverwriteUnit method to perform NIST SP800-88 Purge: Overwrite.
 func (memory *Memory) SecureEraseUnit(passphrase, regionID string) error {
+	return memory.SecureEraseUnitWithContext(common.ContextOf(memory.GetClient()), passphrase, regionID)
+}
+
+// SecureEraseUnitWithContext will securely erase the supplied region provided the supplied passphrase
+// matches that of the given region using the NIST SP800-88 Purge: Cryptographic Erase.
+// Use the OverwriteUnit method to perform NIST SP800-88 Purge: Overwrite.
+func (memory *Memory) SecureEraseUnitWithContext(ctx context.Context, passphrase, regionID string) error {
 	param := memoryParams{
 		Passphrase: passphrase,
 		RegionID:   regionID,
 	}
-	return memory.Post(memory.secureEraseUnitTarget, param)
+	return memory.PostWithContext(ctx, memory.secureEraseUnitTarget, param)
 }
 
 // SetMasterPassphrase will set the supplied master passphrase to the supplied region.
 func (memory *Memory) SetMasterPassphrase(passphrase, regionID string) error {
+	return memory.SetMasterPassphraseWithContext(common.ContextOf(memory.GetClient()), passphrase, regionID)
+}
+
+// SetMasterPassphraseWithContext will set the supplied master passphrase to the supplied region.
+func (memory *Memory) SetMasterPassphraseWithContext(ctx context.Context, passphrase, regionID string) error {
 	param := memoryParams{
 		Passphrase: passphrase,
 		RegionID:   regionID,
 	}
-	return memory.Post(memory.setMasterPassphraseTarget, param)
+	return memory.PostWithContext(ctx, memory.setMasterPassphraseTarget, param)
 }
 
 // SetPassphrase will apply the supplied passphrase to the supplied region.
 func (memory *Memory) SetPassphrase(passphrase, regionID string) error {
+	return memory.SetPassphraseWithContext(common.ContextOf(memory.GetClient()), passphrase, regionID)
+}
+
+// SetPassphraseWithContext will apply the supplied passphrase to the supplied region.
+func (memory *Memory) SetPassphraseWithContext(ctx context.Context, passphrase, regionID string) error {
 	param := memoryParams{
 		Passphrase: passphrase,
 		RegionID:   regionID,
 	}
-	return memory.Post(memory.setPassphraseTarget, param)
+	return memory.PostWithContext(ctx, memory.setPassphraseTarget, param)
 }
 
 // UnlockUnit will apply the supplied passphrase to the supplied region for the purpose
 // of unlocking the given regions.
 func (memory *Memory) UnlockUnit(passphrase, regionID string) error {
+	return memory.UnlockUnitWithContext(common.ContextOf(memory.GetClient()), passphrase, regionID)
+}
+
+// UnlockUnitWithContext will apply the supplied passphrase to the supplied region for the purpose
+// of unlocking the given regions.
+func (memory *Memory) UnlockUnitWithContext(ctx context.Context, passphrase, regionID string) error {
 	param := memoryParams{
 		Passphrase: passphrase,
 		RegionID:   regionID,
 	}
-	return memory.Post(memory.unlockUnitTarget, param)
+	return memory.PostWithContext(ctx, memory.unlockUnitTarget, param)
 }
 
 type memoryParams struct {
@@ -786,25 +931,25 @@ type memoryParams struct {
 // information to sockets and memory controllers.
 type MemoryLocation struct {
 	// Channel is Channel number in which Memory is connected.
-	Channel int
+	Channel *int `json:",omitempty"`
 	// MemoryController is Memory controller number in which Memory is
 	// connected.
-	MemoryController int
+	MemoryController *int `json:",omitempty"`
 	// Slot is Slot number in which Memory is connected.
-	Slot int
+	Slot *int `json:",omitempty"`
 	// Socket is Socket number in which Memory is connected.
-	Socket int
+	Socket *int `json:",omitempty"`
 }
 
 // PowerManagementPolicy shall contain properties which describe the power
 // management policy for the current resource.
 type PowerManagementPolicy struct {
 	// AveragePowerBudgetMilliWatts is Average power budget in milli watts.
-	AveragePowerBudgetMilliWatts int
+	AveragePowerBudgetMilliWatts *int `json:",omitempty"`
 	// MaxTDPMilliWatts is Maximum TDP in milli watts.
-	MaxTDPMilliWatts int
+	MaxTDPMilliWatts *int `json:",omitempty"`
 	// PeakPowerBudgetMilliWatts is Peak power budget in milli watts.
-	PeakPowerBudgetMilliWatts int
+	PeakPowerBudgetMilliWatts *int `json:",omitempty"`
 	// PolicyEnabled is Power management policy enabled status.
 	PolicyEnabled bool
 }
@@ -818,7 +963,7 @@ type RegionSet struct {
 	MemoryClassification MemoryClassification
 	// OffsetMiB is Offset with in the Memory that corresponds to the
 	// starting of this memory region in MiB.
-	OffsetMiB int
+	OffsetMiB *int `json:",omitempty"`
 	// PassphraseEnabled shall be a boolean
 	// indicating if the passphrase is enabled for this region.
 	PassphraseEnabled bool
@@ -826,7 +971,7 @@ type RegionSet struct {
 	// Memory.
 	RegionID string `json:"RegionId"`
 	// SizeMiB is Size of this memory region in MiB.
-	SizeMiB int
+	SizeMiB *int `json:",omitempty"`
 }
 
 // SecurityCapabilities shall contain properties which describe the security
@@ -840,13 +985,13 @@ type SecurityCapabilities struct {
 	DataLockCapable bool
 	// MaxPassphraseCount is Maximum number of passphrases supported for this
 	// Memory.
-	MaxPassphraseCount int
+	MaxPassphraseCount *int `json:",omitempty"`
 	// PassphraseCapable is Memory passphrase set capability.
 	PassphraseCapable bool
 	// PassphraseLockLimit shall be the maximum number of incorrect passphrase
 	// access attempts allowed before access to data is locked. A value of zero
 	// shall indicate that there is no limit to the number of attempts.
-	PassphraseLockLimit int
+	PassphraseLockLimit *int `json:",omitempty"`
 }
 
 // SecurityStateInfo shall contain the security states of a memory device.

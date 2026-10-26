@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -43,14 +44,14 @@ type Redundancy struct {
 
 	// MaxNumSupported shall contain the maximum number of members allowed in
 	// the redundancy group.
-	MaxNumSupported int
+	MaxNumSupported *int `json:",omitempty"`
 	// MemberID value of this string shall uniquely identify the member within
 	// the collection.
 	MemberID string `json:"MemberId"`
 	// MinNumNeeded shall contain the minimum
 	// number of members allowed in the redundancy group for the current
 	// redundancy mode to still be fault tolerant.
-	MinNumNeeded int
+	MinNumNeeded *int `json:",omitempty"`
 	// Mode shall contain the information about the redundancy mode of this
 	// subsystem.
 	Mode RedundancyMode
@@ -93,23 +94,39 @@ func (redundancy *Redundancy) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (redundancy *Redundancy) Update() error {
+	return redundancy.UpdateWithContext(common.ContextOf(redundancy.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (redundancy *Redundancy) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"Mode",
 		"RedundancyEnabled",
 	}
 
-	return redundancy.UpdateFromRawData(redundancy, redundancy.rawData, readWriteFields)
+	return redundancy.UpdateFromRawDataWithContext(ctx, redundancy, redundancy.rawData, readWriteFields)
 }
 
 // GetRedundancy will get a Redundancy instance from the service.
-func GetRedundancy(c common.Client, uri string) (*Redundancy, error) {
-	return common.GetObject[Redundancy](c, uri)
+func GetRedundancy(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Redundancy, error) {
+	return GetRedundancyWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetRedundancyWithContext will get a Redundancy instance from the service.
+func GetRedundancyWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Redundancy, error) {
+	return common.GetObjectWithContext[Redundancy](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedRedundancies gets the collection of Redundancy from
 // a provided reference.
-func ListReferencedRedundancies(c common.Client, link string) ([]*Redundancy, error) {
-	return common.GetCollectionObjects[Redundancy](c, link)
+func ListReferencedRedundancies(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Redundancy, error) {
+	return ListReferencedRedundanciesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedRedundanciesWithContext gets the collection of Redundancy from
+// a provided reference.
+func ListReferencedRedundanciesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Redundancy, error) {
+	return common.GetCollectionObjectsWithContext[Redundancy](ctx, c, link, queryOpts...)
 }
 
 // The redundancy mode of the group.
@@ -131,9 +148,9 @@ const (
 // The redundancy information for the devices in a redundancy group.
 type RedundantGroup struct {
 	// The maximum number of devices supported in this redundancy group.
-	MaxSupportedInGroup int64
+	MaxSupportedInGroup *int64 `json:",omitempty"`
 	// The minimum number of devices needed for this group to be redundant.
-	MinNeededInGroup int64
+	MinNeededInGroup *int64 `json:",omitempty"`
 	// The links to the devices included in this redundancy group.
 	redundancyGroup []string
 	// RedundancyGroupCount is the number of redundancy groups in this group.

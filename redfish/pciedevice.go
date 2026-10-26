@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -92,7 +93,7 @@ type CXLDevice struct {
 	// Port Congestion' mechanism.
 	EgressPortCongestionSupport bool
 	// MaxNumberLogicalDevices shall contain the maximum number of logical devices supported by this CXL device.
-	MaxNumberLogicalDevices int
+	MaxNumberLogicalDevices *int `json:",omitempty"`
 	// ThroughputReductionSupport shall indicate whether the CXL device supports the CXL Specification-defined
 	// 'Throughput Reduction' mechanism.
 	ThroughputReductionSupport bool
@@ -107,9 +108,9 @@ type CXLDynamicCapacity struct {
 	AddCapacityPoliciesSupported []CXLDynamicCapacityPolicies
 	// MaxDynamicCapacityRegions shall contain the maximum number of dynamic capacity memory regions available per host
 	// from this CXL device.
-	MaxDynamicCapacityRegions int
+	MaxDynamicCapacityRegions *int `json:",omitempty"`
 	// MaxHosts shall contain the maximum number of hosts supported by this CXL device.
-	MaxHosts int
+	MaxHosts *int `json:",omitempty"`
 	// MemoryBlockSizesSupported shall contain the set of memory block sizes supported by memory regions in this CXL
 	// device.
 	MemoryBlockSizesSupported []CXLRegionBlockSizes
@@ -121,7 +122,7 @@ type CXLDynamicCapacity struct {
 	SanitizationOnReleaseSupport []CXLRegionSanitization
 	// TotalDynamicCapacityMiB shall contain the total memory media capacity of the CXL device available for dynamic
 	// assignment in mebibytes (MiB).
-	TotalDynamicCapacityMiB int
+	TotalDynamicCapacityMiB *int `json:",omitempty"`
 }
 
 // CXLRegionBlockSizes shall contain the set of memory block sizes supported by memory region in the dynamic
@@ -130,14 +131,14 @@ type CXLRegionBlockSizes struct {
 	// BlockSizeMiB shall contain the set of memory block sizes supported by this memory region, with units in MiB.
 	BlockSizeMiB []string
 	// RegionNumber shall contain the memory region number.
-	RegionNumber int
+	RegionNumber *int `json:",omitempty"`
 }
 
 // CXLRegionSanitization shall indicate whether the sanitization on capacity release is configurable for the memory
 // region.
 type CXLRegionSanitization struct {
 	// RegionNumber shall contain the memory region number.
-	RegionNumber int
+	RegionNumber *int `json:",omitempty"`
 	// SanitizationOnReleaseSupported shall indicate whether the sanitization on capacity release is configurable for
 	// this memory region.
 	SanitizationOnReleaseSupported bool
@@ -162,32 +163,32 @@ const (
 // PCIeErrors shall contain properties that describe the PCIe errors associated with this device.
 type PCIeErrors struct {
 	// CorrectableErrorCount shall contain the total number of PCIe correctable errors for this device.
-	CorrectableErrorCount int
+	CorrectableErrorCount *int `json:",omitempty"`
 	// FatalErrorCount shall contain the total number of PCIe fatal errors for this device.
-	FatalErrorCount int
+	FatalErrorCount *int `json:",omitempty"`
 	// L0ToRecoveryCount shall contain the total number of times the PCIe link transitioned from L0 to the recovery
 	// state for this device.
-	L0ToRecoveryCount int
+	L0ToRecoveryCount *int `json:",omitempty"`
 	// NAKReceivedCount shall contain the total number of NAKs issued on the PCIe link by the receiver. A NAK is issued
 	// by the receiver when it detects that a TLP from this device was missed. This could be because this device did
 	// not transmit it, or because the receiver could not properly decode the packet.
-	NAKReceivedCount int
+	NAKReceivedCount *int `json:",omitempty"`
 	// NAKSentCount shall contain the total number of NAKs issued on the PCIe link by this device. A NAK is issued by
 	// the device when it detects that a TLP from the receiver was missed. This could be because the receiver did not
 	// transmit it, or because this device could not properly decode the packet.
-	NAKSentCount int
+	NAKSentCount *int `json:",omitempty"`
 	// NonFatalErrorCount shall contain the total number of PCIe non-fatal errors for this device.
-	NonFatalErrorCount int
+	NonFatalErrorCount *int `json:",omitempty"`
 	// ReplayCount shall contain the total number of replays issued on the PCIe link by this device. A replay is a
 	// retransmission of a TLP and occurs because the ACK timer is expired, which means that the receiver did not send
 	// the ACK or this device did not properly decode the ACK.
-	ReplayCount int
+	ReplayCount *int `json:",omitempty"`
 	// ReplayRolloverCount shall contain the total number of replay rollovers issued on the PCIe link by this device. A
 	// replay rollover occurs when consecutive replays failed to resolve the errors on the link, which means that this
 	// device forced the link into the recovery state.
-	ReplayRolloverCount int
+	ReplayRolloverCount *int `json:",omitempty"`
 	// UnsupportedRequestCount shall contain the total number of PCIe unsupported requests received by this device.
-	UnsupportedRequestCount int
+	UnsupportedRequestCount *int `json:",omitempty"`
 }
 
 // PCIeDevice shall represent a PCIe device in a Redfish implementation. It may also represent a location, such as
@@ -220,7 +221,7 @@ type PCIeDevice struct {
 	FirmwareVersion string
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// Manufacturer shall be the name of the organization responsible for
 	// producing the PCIe device. This organization might be the entity from
 	// whom the PCIe device is purchased, but this is not necessarily true.
@@ -333,24 +334,40 @@ func (pciedevice *PCIeDevice) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (pciedevice *PCIeDevice) Update() error {
+	return pciedevice.UpdateWithContext(common.ContextOf(pciedevice.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (pciedevice *PCIeDevice) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"AssetTag",
 		"LocationIndicatorActive",
 		"ReadyToRemove",
 	}
 
-	return pciedevice.UpdateFromRawData(pciedevice, pciedevice.rawData, readWriteFields)
+	return pciedevice.UpdateFromRawDataWithContext(ctx, pciedevice, pciedevice.rawData, readWriteFields)
 }
 
 // GetPCIeDevice will get a PCIeDevice instance from the service.
-func GetPCIeDevice(c common.Client, uri string) (*PCIeDevice, error) {
-	return common.GetObject[PCIeDevice](c, uri)
+func GetPCIeDevice(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PCIeDevice, error) {
+	return GetPCIeDeviceWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetPCIeDeviceWithContext will get a PCIeDevice instance from the service.
+func GetPCIeDeviceWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*PCIeDevice, error) {
+	return common.GetObjectWithContext[PCIeDevice](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedPCIeDevices gets the collection of PCIeDevice from
 // a provided reference.
-func ListReferencedPCIeDevices(c common.Client, link string) ([]*PCIeDevice, error) {
-	return common.GetCollectionObjects[PCIeDevice](c, link)
+func ListReferencedPCIeDevices(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PCIeDevice, error) {
+	return ListReferencedPCIeDevicesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedPCIeDevicesWithContext gets the collection of PCIeDevice from
+// a provided reference.
+func ListReferencedPCIeDevicesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*PCIeDevice, error) {
+	return common.GetCollectionObjectsWithContext[PCIeDevice](ctx, c, link, queryOpts...)
 }
 
 // PCIeInterface properties shall be the definition for a PCIe Interface for a
@@ -358,9 +375,9 @@ func ListReferencedPCIeDevices(c common.Client, link string) ([]*PCIeDevice, err
 type PCIeInterface struct {
 	// LanesInUse shall be the number of PCIe lanes in use by this device, which
 	// shall be equal or less than the value of MaxLanes.
-	LanesInUse int
+	LanesInUse *int
 	// MaxLanes shall be the maximum number of PCIe lanes supported by this device.
-	MaxLanes int
+	MaxLanes *int
 	// MaxPCIeType shall be the maximum PCIe specification that this device supports.
 	MaxPCIeType PCIeTypes
 	// PCIeType shall be the negotiated PCIe interface version in use by this device.
@@ -388,43 +405,76 @@ func (p *PCIeInterface) UnmarshalJSON(b []byte) error {
 }
 
 // Assembly gets the assembly for this device.
-func (pciedevice *PCIeDevice) Assembly() (*Assembly, error) {
+func (pciedevice *PCIeDevice) Assembly(queryOpts ...common.QueryGroupOption) (*Assembly, error) {
+	return pciedevice.AssemblyWithContext(common.ContextOf(pciedevice.GetClient()), queryOpts...)
+}
+
+// AssemblyWithContext gets the assembly for this device.
+func (pciedevice *PCIeDevice) AssemblyWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Assembly, error) {
 	if pciedevice.assembly == "" {
 		return nil, nil
 	}
-	return GetAssembly(pciedevice.GetClient(), pciedevice.assembly)
+	return GetAssemblyWithContext(ctx, pciedevice.GetClient(), pciedevice.assembly, queryOpts...)
 }
 
 // CXLLogicalDevices gets the associated CXLLogicalDevices for this device.
-func (pciedevice *PCIeDevice) CXLLogicalDevices() ([]*CXLLogicalDevice, error) {
+func (pciedevice *PCIeDevice) CXLLogicalDevices(queryOpts ...common.QueryGroupOption) ([]*CXLLogicalDevice, error) {
+	return pciedevice.CXLLogicalDevicesWithContext(common.ContextOf(pciedevice.GetClient()), queryOpts...)
+}
+
+// CXLLogicalDevicesWithContext gets the associated CXLLogicalDevices for this device.
+func (pciedevice *PCIeDevice) CXLLogicalDevicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*CXLLogicalDevice, error) {
 	if pciedevice.cxlLogicalDevices == "" {
 		return []*CXLLogicalDevice{}, nil
 	}
-	return ListReferencedCXLLogicalDevices(pciedevice.GetClient(), pciedevice.cxlLogicalDevices)
+	return ListReferencedCXLLogicalDevicesWithContext(ctx, pciedevice.GetClient(), pciedevice.cxlLogicalDevices, queryOpts...)
 }
 
 // Chassis gets the chassis in which the PCIe device is contained.
-func (pciedevice *PCIeDevice) Chassis() ([]*Chassis, error) {
-	return common.GetObjects[Chassis](pciedevice.GetClient(), pciedevice.chassis)
+func (pciedevice *PCIeDevice) Chassis(queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return pciedevice.ChassisWithContext(common.ContextOf(pciedevice.GetClient()), queryOpts...)
+}
+
+// ChassisWithContext gets the chassis in which the PCIe device is contained.
+func (pciedevice *PCIeDevice) ChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return common.GetObjectsWithContext[Chassis](ctx, pciedevice.GetClient(), pciedevice.chassis, queryOpts...)
 }
 
 // PCIeFunctions get the PCIe functions that this device exposes.
-func (pciedevice *PCIeDevice) PCIeFunctions() ([]*PCIeFunction, error) {
+func (pciedevice *PCIeDevice) PCIeFunctions(queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
+	return pciedevice.PCIeFunctionsWithContext(common.ContextOf(pciedevice.GetClient()), queryOpts...)
+}
+
+// PCIeFunctionsWithContext get the PCIe functions that this device exposes.
+func (pciedevice *PCIeDevice) PCIeFunctionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
 	if len(pciedevice.pcieFunctionsArray) > 0 {
-		return common.GetObjects[PCIeFunction](pciedevice.GetClient(), pciedevice.pcieFunctionsArray)
+		return common.GetObjectsWithContext[PCIeFunction](ctx, pciedevice.GetClient(), pciedevice.pcieFunctionsArray, queryOpts...)
 	}
-	return ListReferencedPCIeFunctions(pciedevice.GetClient(), pciedevice.pcieFunctions)
+	if pciedevice.pcieFunctions == "" {
+		return nil, nil
+	}
+	return ListReferencedPCIeFunctionsWithContext(ctx, pciedevice.GetClient(), pciedevice.pcieFunctions, queryOpts...)
 }
 
 // Switch gets the switch for this device.
-func (pciedevice *PCIeDevice) Switch() (*Switch, error) {
+func (pciedevice *PCIeDevice) Switch(queryOpts ...common.QueryGroupOption) (*Switch, error) {
+	return pciedevice.SwitchWithContext(common.ContextOf(pciedevice.GetClient()), queryOpts...)
+}
+
+// SwitchWithContext gets the switch for this device.
+func (pciedevice *PCIeDevice) SwitchWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Switch, error) {
 	if pciedevice.sw == "" {
 		return nil, nil
 	}
-	return GetSwitch(pciedevice.GetClient(), pciedevice.sw)
+	return GetSwitchWithContext(ctx, pciedevice.GetClient(), pciedevice.sw, queryOpts...)
 }
 
 // Processors gets the processors that are directly connected or directly bridged to this PCIe device.
-func (pciedevice *PCIeDevice) Processors() ([]*Processor, error) {
-	return common.GetObjects[Processor](pciedevice.GetClient(), pciedevice.processors)
+func (pciedevice *PCIeDevice) Processors(queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return pciedevice.ProcessorsWithContext(common.ContextOf(pciedevice.GetClient()), queryOpts...)
+}
+
+// ProcessorsWithContext gets the processors that are directly connected or directly bridged to this PCIe device.
+func (pciedevice *PCIeDevice) ProcessorsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return common.GetObjectsWithContext[Processor](ctx, pciedevice.GetClient(), pciedevice.processors, queryOpts...)
 }

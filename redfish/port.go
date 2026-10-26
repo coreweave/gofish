@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -13,17 +14,17 @@ import (
 
 type Congestion struct {
 	// The CXL Specification-defined 'Backpressure Sample Interval' in nanoseconds.
-	BackpressureSampleInterval int
+	BackpressureSampleInterval *int `json:",omitempty"`
 	// The CXL Specification-defined 'Completion Collection Interval' in nanoseconds.
-	CompletionCollectionInterval int
+	CompletionCollectionInterval *int `json:",omitempty"`
 	// Indicates whether congestion telemetry collection is enabled for this port.
 	CongestionTelemetryEnabled bool
 	// The threshold for moderate egress port congestion as a percentage.
-	EgressModeratePercentage int
+	EgressModeratePercentage *int `json:",omitempty"`
 	// The threshold for severe egress port congestion as a percentage.
-	EgressSeverePercentage int
+	EgressSeverePercentage *int `json:",omitempty"`
 	// The CXL Specification-defined 'ReqCmpBasis'.
-	MaxSustainedRequestCmpBias int
+	MaxSustainedRequestCmpBias *int `json:",omitempty"`
 }
 
 type ConnectedDeviceMode string
@@ -237,7 +238,7 @@ type CXLPort struct {
 	// The current port configuration state.
 	CurrentPortConfigurationState CurrentPortConfigurationState
 	// The maximum number of logical devices supported.
-	MaxLogicalDeviceCount int
+	MaxLogicalDeviceCount *int `json:",omitempty"`
 	// The quality of service telemetry capabilities for this CXL port.
 	QoSTelemetryCapabilities QoSTelemetryCapabilities
 	// Indicates whether temporary throughput reduction is enabled.
@@ -248,10 +249,10 @@ type CXLPort struct {
 type ConfiguredNetworkLink struct {
 	// ConfiguredLinkSpeedGbps shall contain the network link speed per lane this port is configured to allow for
 	// autonegotiation purposes. This value includes overhead associated with the protocol.
-	ConfiguredLinkSpeedGbps float64
+	ConfiguredLinkSpeedGbps *float64 `json:",omitempty"`
 	// ConfiguredWidth shall contain the network link width this port is configured to use for autonegotiation
 	// purposes.
-	ConfiguredWidth int
+	ConfiguredWidth *int `json:",omitempty"`
 }
 
 // EthernetProperties shall contain Ethernet-specific properties for a port.
@@ -288,7 +289,7 @@ type FibreChannelProperties struct {
 	FabricName string
 	// NumberDiscoveredRemotePorts shall contain the number of ports not on this associated device that this port has
 	// discovered.
-	NumberDiscoveredRemotePorts int
+	NumberDiscoveredRemotePorts *int `json:",omitempty"`
 	// PortConnectionType shall contain the connection type for this port.
 	PortConnectionType PortConnectionType
 }
@@ -296,7 +297,7 @@ type FibreChannelProperties struct {
 type FunctionMaxBandwidth struct {
 	// AllocationPercent shall contain the maximum bandwidth percentage allocation, '0' to '100', for the associated
 	// network device function.
-	AllocationPercent int
+	AllocationPercent *int `json:",omitempty"`
 	// NetworkDeviceFunction shall contain a link to a resource of type NetworkDeviceFunction that represents the
 	// network device function associated with this bandwidth setting of this network port.
 	networkDeviceFunction common.Link //nolint:unused
@@ -307,7 +308,7 @@ type FunctionMaxBandwidth struct {
 type FunctionMinBandwidth struct {
 	// AllocationPercent shall contain the minimum bandwidth percentage allocation, '0' to '100', for the associated
 	// network device function. The sum of all minimum percentages shall not exceed '100'.
-	AllocationPercent int
+	AllocationPercent *int `json:",omitempty"`
 	// NetworkDeviceFunction shall contain a link to a resource of type NetworkDeviceFunction that represents the
 	// network device function associated with this bandwidth setting of this network port.
 	networkDeviceFunction common.Link //nolint:unused
@@ -348,7 +349,7 @@ type LLDPReceive struct {
 	ManagementAddressMAC string
 	// ManagementVlanID shall contain the management VLAN ID received from the remote partner across this link. If no
 	// such management VLAN ID has been received, this property should not be present.
-	ManagementVlanID int
+	ManagementVlanID *int `json:",omitempty"`
 	// PortID shall contain a colon-delimited string of hexadecimal octets identifying the port received from the
 	// remote partner across this link. If no such port ID has been received, this property should not be present.
 	PortID string
@@ -386,7 +387,7 @@ type LLDPTransmit struct {
 	ManagementAddressMAC string
 	// ManagementVlanID shall contain the management VLAN ID to be transmitted from this endpoint. If no such port ID
 	// is to be transmitted, this value shall be '4095'.
-	ManagementVlanID int
+	ManagementVlanID *int `json:",omitempty"`
 	// PortID shall contain a colon-delimited string of hexadecimal octets identifying the port for an LLDP endpoint.
 	// If no such port ID is to be transmitted, this value shall be an empty string.
 	PortID string
@@ -682,7 +683,7 @@ type Port struct {
 	// The protocol version being sent over this port.
 	CurrentProtocolVersion string
 	// The current speed of this port.
-	CurrentSpeedGbps float32
+	CurrentSpeedGbps *float32 `json:",omitempty"`
 	// CXL properties for this port.
 	CXL CXLPort
 	// Description provides a description of this resource.
@@ -725,11 +726,11 @@ type Port struct {
 	// The location of the port.
 	Location common.Location
 	// An indicator allowing an operator to physically locate this resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// The maximum frame size supported by the port (bytes).
-	MaxFrameSize int
+	MaxFrameSize *int `json:",omitempty"`
 	// The maximum speed of this port as currently configured.
-	MaxSpeedGbps float32
+	MaxSpeedGbps *float32 `json:",omitempty"`
 	// The link to the metrics associated with this port.
 	metrics string
 	// The label of this port on the physical package for this port.
@@ -749,7 +750,7 @@ type Port struct {
 	// The status and health of the resource and its subordinate or dependent resources.
 	Status common.Status
 	// The number of lanes, phys, or other physical transport links that this port contains.
-	Width int
+	Width *int `json:",omitempty"`
 
 	associatedEndpoints []string
 	// AssociatedEndpointsCount gets the number of endpoints on the other end of the link.
@@ -874,68 +875,126 @@ func (port *Port) UnmarshalJSON(b []byte) error {
 }
 
 // EnvironmentMetrics gets the environment metrics for this port or any attached small form-factor pluggable (SFP) device.
-func (port *Port) EnvironmentMetrics() (*EnvironmentMetrics, error) {
+func (port *Port) EnvironmentMetrics(queryOpts ...common.QueryGroupOption) (*EnvironmentMetrics, error) {
+	return port.EnvironmentMetricsWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// EnvironmentMetricsWithContext gets the environment metrics for this port or any attached small form-factor pluggable (SFP) device.
+func (port *Port) EnvironmentMetricsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*EnvironmentMetrics, error) {
 	if port.environmentMetrics == "" {
 		return nil, nil
 	}
-	return GetEnvironmentMetrics(port.GetClient(), port.environmentMetrics)
+	return GetEnvironmentMetricsWithContext(ctx, port.GetClient(), port.environmentMetrics, queryOpts...)
 }
 
 // Metrics gets the metrics for this port.
-func (port *Port) Metrics() (*PortMetrics, error) {
+func (port *Port) Metrics(queryOpts ...common.QueryGroupOption) (*PortMetrics, error) {
+	return port.MetricsWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// MetricsWithContext gets the metrics for this port.
+func (port *Port) MetricsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*PortMetrics, error) {
 	if port.metrics == "" {
 		return nil, nil
 	}
-	return GetPortMetrics(port.GetClient(), port.metrics)
+	return GetPortMetricsWithContext(ctx, port.GetClient(), port.metrics, queryOpts...)
 }
 
 // AssociatedEndpoints gets the endpoints at the other end of the link.
-func (port *Port) AssociatedEndpoints() ([]*Endpoint, error) {
-	return common.GetObjects[Endpoint](port.GetClient(), port.associatedEndpoints)
+func (port *Port) AssociatedEndpoints(queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return port.AssociatedEndpointsWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// AssociatedEndpointsWithContext gets the endpoints at the other end of the link.
+func (port *Port) AssociatedEndpointsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Endpoint, error) {
+	return common.GetObjectsWithContext[Endpoint](ctx, port.GetClient(), port.associatedEndpoints, queryOpts...)
 }
 
 // Cables gets the cables connected to this port.
-func (port *Port) Cables() ([]*Cable, error) {
-	return common.GetObjects[Cable](port.GetClient(), port.cables)
+func (port *Port) Cables(queryOpts ...common.QueryGroupOption) ([]*Cable, error) {
+	return port.CablesWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// CablesWithContext gets the cables connected to this port.
+func (port *Port) CablesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Cable, error) {
+	return common.GetObjectsWithContext[Cable](ctx, port.GetClient(), port.cables, queryOpts...)
 }
 
 // ConnectedPorts gets the remote device ports connected to the other end of the link.
-func (port *Port) ConnectedPorts() ([]*Port, error) {
-	return common.GetObjects[Port](port.GetClient(), port.connectedPorts)
+func (port *Port) ConnectedPorts(queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return port.ConnectedPortsWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// ConnectedPortsWithContext gets the remote device ports connected to the other end of the link.
+func (port *Port) ConnectedPortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return common.GetObjectsWithContext[Port](ctx, port.GetClient(), port.connectedPorts, queryOpts...)
 }
 
 // ConnectedSwitchPorts gets the switch ports connected to the other end of the link.
-func (port *Port) ConnectedSwitchPorts() ([]*Port, error) {
-	return common.GetObjects[Port](port.GetClient(), port.connectedSwitchPorts)
+func (port *Port) ConnectedSwitchPorts(queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return port.ConnectedSwitchPortsWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// ConnectedSwitchPortsWithContext gets the switch ports connected to the other end of the link.
+func (port *Port) ConnectedSwitchPortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return common.GetObjectsWithContext[Port](ctx, port.GetClient(), port.connectedSwitchPorts, queryOpts...)
 }
 
 // ConnectedSwitches gets the switches connected to the other end of the link.
-func (port *Port) ConnectedSwitches() ([]*Switch, error) {
-	return common.GetObjects[Switch](port.GetClient(), port.connectedSwitches)
+func (port *Port) ConnectedSwitches(queryOpts ...common.QueryGroupOption) ([]*Switch, error) {
+	return port.ConnectedSwitchesWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// ConnectedSwitchesWithContext gets the switches connected to the other end of the link.
+func (port *Port) ConnectedSwitchesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Switch, error) {
+	return common.GetObjectsWithContext[Switch](ctx, port.GetClient(), port.connectedSwitches, queryOpts...)
 }
 
 // EthernetInterfaces gets the Ethernet interfaces this port provides.
-func (port *Port) EthernetInterfaces() ([]*EthernetInterface, error) {
-	return common.GetObjects[EthernetInterface](port.GetClient(), port.ethernetInterfaces)
+func (port *Port) EthernetInterfaces(queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return port.EthernetInterfacesWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// EthernetInterfacesWithContext gets the Ethernet interfaces this port provides.
+func (port *Port) EthernetInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return common.GetObjectsWithContext[EthernetInterface](ctx, port.GetClient(), port.ethernetInterfaces, queryOpts...)
 }
 
 // GenZLPRT gets the Gen-Z Core Specification-defined Linear Packet Relay Table for this port.
-func (port *Port) GenZLPRT() ([]*RouteEntry, error) {
-	return common.GetObjects[RouteEntry](port.GetClient(), port.genZLPRT)
+func (port *Port) GenZLPRT(queryOpts ...common.QueryGroupOption) ([]*RouteEntry, error) {
+	return port.GenZLPRTWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// GenZLPRTWithContext gets the Gen-Z Core Specification-defined Linear Packet Relay Table for this port.
+func (port *Port) GenZLPRTWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*RouteEntry, error) {
+	return common.GetObjectsWithContext[RouteEntry](ctx, port.GetClient(), port.genZLPRT, queryOpts...)
 }
 
 // GenZMPRT gets the Gen-Z Core Specification-defined Multi-subnet Packet Relay Table for this port.
-func (port *Port) GenZMPRT() ([]*RouteEntry, error) {
-	return common.GetObjects[RouteEntry](port.GetClient(), port.genZMPRT)
+func (port *Port) GenZMPRT(queryOpts ...common.QueryGroupOption) ([]*RouteEntry, error) {
+	return port.GenZMPRTWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// GenZMPRTWithContext gets the Gen-Z Core Specification-defined Multi-subnet Packet Relay Table for this port.
+func (port *Port) GenZMPRTWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*RouteEntry, error) {
+	return common.GetObjectsWithContext[RouteEntry](ctx, port.GetClient(), port.genZMPRT, queryOpts...)
 }
 
 // GenZVCAT gets the Gen-Z Virtual Channel Action Table for the port.
-func (port *Port) GenZVCAT() ([]*VCATEntry, error) {
-	return common.GetObjects[VCATEntry](port.GetClient(), port.genZVCAT)
+func (port *Port) GenZVCAT(queryOpts ...common.QueryGroupOption) ([]*VCATEntry, error) {
+	return port.GenZVCATWithContext(common.ContextOf(port.GetClient()), queryOpts...)
+}
+
+// GenZVCATWithContext gets the Gen-Z Virtual Channel Action Table for the port.
+func (port *Port) GenZVCATWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*VCATEntry, error) {
+	return common.GetObjectsWithContext[VCATEntry](ctx, port.GetClient(), port.genZVCAT, queryOpts...)
 }
 
 // Update commits updates to this object's properties to the running system.
-func (port *Port) Update() error {
+func (port *Port) Update() error { return port.UpdateWithContext(common.ContextOf(port.GetClient())) }
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (port *Port) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"BackpressureSampleInterval",
 		"CompletionCollectionInterval",
@@ -970,22 +1029,38 @@ func (port *Port) Update() error {
 		"LocationIndicatorActive",
 	}
 
-	return port.UpdateFromRawData(port, port.rawData, readWriteFields)
+	return port.UpdateFromRawDataWithContext(ctx, port, port.rawData, readWriteFields)
 }
 
 // GetPort will get a Port instance from the service.
-func GetPort(c common.Client, uri string) (*Port, error) {
-	return common.GetObject[Port](c, uri)
+func GetPort(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Port, error) {
+	return GetPortWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetPortWithContext will get a Port instance from the service.
+func GetPortWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Port, error) {
+	return common.GetObjectWithContext[Port](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedPorts gets the collection of Port from
 // a provided reference.
-func ListReferencedPorts(c common.Client, link string) ([]*Port, error) {
-	return common.GetCollectionObjects[Port](c, link)
+func ListReferencedPorts(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return ListReferencedPortsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedPortsWithContext gets the collection of Port from
+// a provided reference.
+func ListReferencedPortsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return common.GetCollectionObjectsWithContext[Port](ctx, c, link, queryOpts...)
 }
 
 // ResetPort resets this port.
 func (port *Port) ResetPort(resetType ResetType) error {
+	return port.ResetPortWithContext(common.ContextOf(port.GetClient()), resetType)
+}
+
+// ResetPortWithContext resets this port.
+func (port *Port) ResetPortWithContext(ctx context.Context, resetType ResetType) error {
 	if port.resetTarget == "" {
 		return fmt.Errorf("ResetPort action is not supported")
 	}
@@ -995,14 +1070,19 @@ func (port *Port) ResetPort(resetType ResetType) error {
 	}{
 		ResetType: resetType,
 	}
-	return port.Post(port.resetTarget, t)
+	return port.PostWithContext(ctx, port.resetTarget, t)
 }
 
 // ResetPPB resets the PCI-to-PCI bridge (PPB) for this port.
 func (port *Port) ResetPPB() error {
+	return port.ResetPPBWithContext(common.ContextOf(port.GetClient()))
+}
+
+// ResetPPBWithContext resets the PCI-to-PCI bridge (PPB) for this port.
+func (port *Port) ResetPPBWithContext(ctx context.Context) error {
 	if port.resetPPBTarget == "" {
 		return fmt.Errorf("ResetPPB action is not supported")
 	}
 
-	return port.Post(port.resetPPBTarget, nil)
+	return port.PostWithContext(ctx, port.resetPPBTarget, nil)
 }

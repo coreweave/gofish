@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -48,14 +49,14 @@ type InterleaveSet struct {
 	// Memory shall contain the memory device to which these settings apply.
 	memory string
 	// MemoryLevel shall contain the level of this interleave set for multi-level tiered memory.
-	MemoryLevel int
+	MemoryLevel *int `json:",omitempty"`
 	// OffsetMiB shall contain the offset within the DIMM that corresponds to the start of this memory region, with
 	// units in MiB.
-	OffsetMiB int
+	OffsetMiB *int `json:",omitempty"`
 	// RegionID shall contain the DIMM region identifier.
 	RegionID string
 	// SizeMiB shall contain the size of this memory region, with units in MiB.
-	SizeMiB int
+	SizeMiB *int `json:",omitempty"`
 }
 
 // UnmarshalJSON unmarshals a InterleaveSet object from the raw JSON.
@@ -80,11 +81,16 @@ func (interleaveset *InterleaveSet) UnmarshalJSON(b []byte) error {
 }
 
 // Memory gets the associated memory device.
-func (interleaveset *InterleaveSet) Memory(c common.Client) (*Memory, error) {
+func (interleaveset *InterleaveSet) Memory(c common.Client, queryOpts ...common.QueryGroupOption) (*Memory, error) {
+	return interleaveset.MemoryWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// MemoryWithContext gets the associated memory device.
+func (interleaveset *InterleaveSet) MemoryWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) (*Memory, error) {
 	if interleaveset.memory == "" {
 		return nil, nil
 	}
-	return GetMemory(c, interleaveset.memory)
+	return GetMemoryWithContext(ctx, c, interleaveset.memory, queryOpts...)
 }
 
 // MemoryChunks shall represent memory chunks and interleave sets in a Redfish implementation.
@@ -95,7 +101,7 @@ type MemoryChunks struct {
 	// ODataType is the odata type.
 	ODataType string `json:"@odata.type"`
 	// AddressRangeOffsetMiB shall be the offset of the memory chunk in the address range in MiB.
-	AddressRangeOffsetMiB int
+	AddressRangeOffsetMiB *int `json:",omitempty"`
 	// AddressRangeType shall contain the type of memory chunk.
 	AddressRangeType AddressRangeType
 	// Description provides a description of this resource.
@@ -112,7 +118,7 @@ type MemoryChunks struct {
 	// MediaLocation shall contain the location of the memory media for this memory chunk.
 	MediaLocation MediaLocation
 	// MemoryChunkSizeMiB shall contain the size of the memory chunk in MiB.
-	MemoryChunkSizeMiB int
+	MemoryChunkSizeMiB *int `json:",omitempty"`
 	// RequestedOperationalState shall contain the requested operational state of this memory chunk.
 	RequestedOperationalState OperationalState
 	// Status shall contain any status or health properties of the resource.
@@ -175,22 +181,38 @@ func (memorychunks *MemoryChunks) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (memorychunks *MemoryChunks) Update() error {
+	return memorychunks.UpdateWithContext(common.ContextOf(memorychunks.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (memorychunks *MemoryChunks) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"DisplayName",
 		"MediaLocation",
 		"RequestedOperationalState",
 	}
 
-	return memorychunks.UpdateFromRawData(memorychunks, memorychunks.rawData, readWriteFields)
+	return memorychunks.UpdateFromRawDataWithContext(ctx, memorychunks, memorychunks.rawData, readWriteFields)
 }
 
 // GetMemoryChunks will get a MemoryChunks instance from the service.
-func GetMemoryChunks(c common.Client, uri string) (*MemoryChunks, error) {
-	return common.GetObject[MemoryChunks](c, uri)
+func GetMemoryChunks(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*MemoryChunks, error) {
+	return GetMemoryChunksWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetMemoryChunksWithContext will get a MemoryChunks instance from the service.
+func GetMemoryChunksWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*MemoryChunks, error) {
+	return common.GetObjectWithContext[MemoryChunks](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedMemoryChunks gets the collection of MemoryChunks from
 // a provided reference.
-func ListReferencedMemoryChunks(c common.Client, link string) ([]*MemoryChunks, error) {
-	return common.GetCollectionObjects[MemoryChunks](c, link)
+func ListReferencedMemoryChunks(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*MemoryChunks, error) {
+	return ListReferencedMemoryChunksWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedMemoryChunksWithContext gets the collection of MemoryChunks from
+// a provided reference.
+func ListReferencedMemoryChunksWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*MemoryChunks, error) {
+	return common.GetCollectionObjectsWithContext[MemoryChunks](ctx, c, link, queryOpts...)
 }

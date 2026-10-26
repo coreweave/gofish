@@ -5,6 +5,7 @@
 package smc
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -23,13 +24,23 @@ type ComputerSystem struct {
 }
 
 // NodeManager gets the NodeManager for the system.
-func (cs *ComputerSystem) NodeManager() (*NodeManager, error) {
-	return GetNodeManager(cs.GetClient(), cs.nodeManager)
+func (cs *ComputerSystem) NodeManager(queryOpts ...common.QueryGroupOption) (*NodeManager, error) {
+	return cs.NodeManagerWithContext(common.ContextOf(cs.GetClient()), queryOpts...)
+}
+
+// NodeManagerWithContext gets the NodeManager for the system.
+func (cs *ComputerSystem) NodeManagerWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*NodeManager, error) {
+	return GetNodeManagerWithContext(ctx, cs.GetClient(), cs.nodeManager, queryOpts...)
 }
 
 // FixedBootOrder gets the FixedBootOrder instance for the system.
-func (cs *ComputerSystem) FixedBootOrder() (*FixedBootOrder, error) {
-	return GetFixedBootOrder(cs.GetClient(), cs.fixedBootOrder)
+func (cs *ComputerSystem) FixedBootOrder(queryOpts ...common.QueryGroupOption) (*FixedBootOrder, error) {
+	return cs.FixedBootOrderWithContext(common.ContextOf(cs.GetClient()), queryOpts...)
+}
+
+// FixedBootOrderWithContext gets the FixedBootOrder instance for the system.
+func (cs *ComputerSystem) FixedBootOrderWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*FixedBootOrder, error) {
+	return GetFixedBootOrderWithContext(ctx, cs.GetClient(), cs.fixedBootOrder, queryOpts...)
 }
 
 // FromComputerSystem converts a standard ComputerSystem object to the OEM implementation.

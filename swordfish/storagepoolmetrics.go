@@ -5,6 +5,7 @@
 package swordfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -46,12 +47,23 @@ type StoragePoolMetrics struct {
 }
 
 // GetStoragePoolMetrics will get a StoragePoolMetrics instance from the service.
-func GetStoragePoolMetrics(c common.Client, uri string) (*StoragePoolMetrics, error) {
-	return common.GetObject[StoragePoolMetrics](c, uri)
+func GetStoragePoolMetrics(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*StoragePoolMetrics, error) {
+	return GetStoragePoolMetricsWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetStoragePoolMetricsWithContext will get a StoragePoolMetrics instance from the service.
+func GetStoragePoolMetricsWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*StoragePoolMetrics, error) {
+	return common.GetObjectWithContext[StoragePoolMetrics](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedStoragePoolMetricss gets the collection of StoragePoolMetrics from
 // a provided reference.
-func ListReferencedStoragePoolMetricss(c common.Client, link string) ([]*StoragePoolMetrics, error) {
-	return common.GetCollectionObjects[StoragePoolMetrics](c, link)
+func ListReferencedStoragePoolMetricss(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*StoragePoolMetrics, error) {
+	return ListReferencedStoragePoolMetricssWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedStoragePoolMetricssWithContext gets the collection of StoragePoolMetrics from
+// a provided reference.
+func ListReferencedStoragePoolMetricssWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*StoragePoolMetrics, error) {
+	return common.GetCollectionObjectsWithContext[StoragePoolMetrics](ctx, c, link, queryOpts...)
 }

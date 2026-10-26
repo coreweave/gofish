@@ -5,6 +5,7 @@
 package swordfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -46,12 +47,23 @@ type NVMeFirmwareImage struct {
 }
 
 // GetNVMeFirmwareImage will get a NVMeFirmwareImage instance from the service.
-func GetNVMeFirmwareImage(c common.Client, uri string) (*NVMeFirmwareImage, error) {
-	return common.GetObject[NVMeFirmwareImage](c, uri)
+func GetNVMeFirmwareImage(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*NVMeFirmwareImage, error) {
+	return GetNVMeFirmwareImageWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetNVMeFirmwareImageWithContext will get a NVMeFirmwareImage instance from the service.
+func GetNVMeFirmwareImageWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*NVMeFirmwareImage, error) {
+	return common.GetObjectWithContext[NVMeFirmwareImage](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedNVMeFirmwareImages gets the collection of NVMeFirmwareImage from
 // a provided reference.
-func ListReferencedNVMeFirmwareImages(c common.Client, link string) ([]*NVMeFirmwareImage, error) {
-	return common.GetCollectionObjects[NVMeFirmwareImage](c, link)
+func ListReferencedNVMeFirmwareImages(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*NVMeFirmwareImage, error) {
+	return ListReferencedNVMeFirmwareImagesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedNVMeFirmwareImagesWithContext gets the collection of NVMeFirmwareImage from
+// a provided reference.
+func ListReferencedNVMeFirmwareImagesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*NVMeFirmwareImage, error) {
+	return common.GetCollectionObjectsWithContext[NVMeFirmwareImage](ctx, c, link, queryOpts...)
 }

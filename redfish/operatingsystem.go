@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -149,7 +150,7 @@ type OperatingSystem struct {
 	// Type shall contain the type for this operating system.
 	Type OperatingSystemTypes
 	// UptimeSeconds shall contain the wall-clock time this operating system has been running in seconds.
-	UptimeSeconds int
+	UptimeSeconds *int `json:",omitempty"`
 	// VirtualMachineEngines shall contain the virtual machine engines running in this operating system.
 	VirtualMachineEngines []VirtualMachineEngine
 
@@ -188,37 +189,68 @@ func (operatingsystem *OperatingSystem) UnmarshalJSON(b []byte) error {
 }
 
 // SoftwareImage gets the software image from which this operating system runs.
-func (operatingsystem *OperatingSystem) SoftwareImage() (*SoftwareInventory, error) {
+func (operatingsystem *OperatingSystem) SoftwareImage(queryOpts ...common.QueryGroupOption) (*SoftwareInventory, error) {
+	return operatingsystem.SoftwareImageWithContext(common.ContextOf(operatingsystem.GetClient()), queryOpts...)
+}
+
+// SoftwareImageWithContext gets the software image from which this operating system runs.
+func (operatingsystem *OperatingSystem) SoftwareImageWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*SoftwareInventory, error) {
 	if operatingsystem.softwareImage == "" {
 		return nil, nil
 	}
-	return GetSoftwareInventory(operatingsystem.GetClient(), operatingsystem.softwareImage)
+	return GetSoftwareInventoryWithContext(ctx, operatingsystem.GetClient(), operatingsystem.softwareImage, queryOpts...)
 }
 
 // Applications gets the applications running under this operating system.
-func (operatingsystem *OperatingSystem) Applications() ([]*Application, error) {
-	return ListReferencedApplications(operatingsystem.GetClient(), operatingsystem.applications)
+func (operatingsystem *OperatingSystem) Applications(queryOpts ...common.QueryGroupOption) ([]*Application, error) {
+	return operatingsystem.ApplicationsWithContext(common.ContextOf(operatingsystem.GetClient()), queryOpts...)
+}
+
+// ApplicationsWithContext gets the applications running under this operating system.
+func (operatingsystem *OperatingSystem) ApplicationsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Application, error) {
+	return ListReferencedApplicationsWithContext(ctx, operatingsystem.GetClient(), operatingsystem.applications, queryOpts...)
 }
 
 // ContainerImages gets the container images available to container engines on this operating system.
-func (operatingsystem *OperatingSystem) ContainerImages() ([]*ContainerImage, error) {
-	return ListReferencedContainerImages(operatingsystem.GetClient(), operatingsystem.containerImages)
+func (operatingsystem *OperatingSystem) ContainerImages(queryOpts ...common.QueryGroupOption) ([]*ContainerImage, error) {
+	return operatingsystem.ContainerImagesWithContext(common.ContextOf(operatingsystem.GetClient()), queryOpts...)
+}
+
+// ContainerImagesWithContext gets the container images available to container engines on this operating system.
+func (operatingsystem *OperatingSystem) ContainerImagesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*ContainerImage, error) {
+	return ListReferencedContainerImagesWithContext(ctx, operatingsystem.GetClient(), operatingsystem.containerImages, queryOpts...)
 }
 
 // Containers gets the containers running under this operating system.
-func (operatingsystem *OperatingSystem) Containers() ([]*Container, error) {
-	return ListReferencedContainers(operatingsystem.GetClient(), operatingsystem.containers)
+func (operatingsystem *OperatingSystem) Containers(queryOpts ...common.QueryGroupOption) ([]*Container, error) {
+	return operatingsystem.ContainersWithContext(common.ContextOf(operatingsystem.GetClient()), queryOpts...)
+}
+
+// ContainersWithContext gets the containers running under this operating system.
+func (operatingsystem *OperatingSystem) ContainersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Container, error) {
+	return ListReferencedContainersWithContext(ctx, operatingsystem.GetClient(), operatingsystem.containers, queryOpts...)
 }
 
 // GetOperatingSystem will get a OperatingSystem instance from the service.
-func GetOperatingSystem(c common.Client, uri string) (*OperatingSystem, error) {
-	return common.GetObject[OperatingSystem](c, uri)
+func GetOperatingSystem(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*OperatingSystem, error) {
+	return GetOperatingSystemWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetOperatingSystemWithContext will get a OperatingSystem instance from the service.
+func GetOperatingSystemWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*OperatingSystem, error) {
+	return common.GetObjectWithContext[OperatingSystem](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedOperatingSystems gets the collection of OperatingSystem from
 // a provided reference.
-func ListReferencedOperatingSystems(c common.Client, link string) ([]*OperatingSystem, error) {
-	return common.GetCollectionObjects[OperatingSystem](c, link)
+func ListReferencedOperatingSystems(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*OperatingSystem, error) {
+	return ListReferencedOperatingSystemsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedOperatingSystemsWithContext gets the collection of OperatingSystem from
+// a provided reference.
+func ListReferencedOperatingSystemsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*OperatingSystem, error) {
+	return common.GetCollectionObjectsWithContext[OperatingSystem](ctx, c, link, queryOpts...)
 }
 
 // VirtualMachineEngine shall contain a virtual machine engine running in an operating system.

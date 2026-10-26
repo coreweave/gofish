@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -425,7 +426,7 @@ type HostGraphicalConsole struct {
 	// supports.
 	MaxConcurrentSessions int
 	// Port shall contain the port assigned to the service.
-	Port int
+	Port *int `json:",omitempty"`
 	// ServiceEnabled shall indicate whether the protocol for the service is enabled.
 	ServiceEnabled bool
 }
@@ -435,29 +436,8 @@ type HostedServices struct {
 	// Oem shall contain the OEM extensions. All values for properties contained in this object shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
-	// StorageServices shall contain a link to a resource collection of type HostedStorageServices.
-	storageServices string
-}
-
-// UnmarshalJSON unmarshals a HostedServices object from the raw JSON.
-func (hostedservices *HostedServices) UnmarshalJSON(b []byte) error {
-	type temp HostedServices
-	var t struct {
-		temp
-		StorageServices common.Link
-	}
-
-	err := json.Unmarshal(b, &t)
-	if err != nil {
-		return err
-	}
-
-	*hostedservices = HostedServices(t.temp)
-
-	// Extract the links to other entities for later
-	hostedservices.storageServices = t.StorageServices.String()
-
-	return nil
+	// StorageServicesLink shall contain a link to a resource collection of type HostedStorageServices.
+	StorageServicesLink common.Link `json:"StorageServices"`
 }
 
 // Boot contains properties which describe boot information for a system.
@@ -468,7 +448,7 @@ type Boot struct {
 	AliasBootOrder []string `json:",omitempty"`
 	// AutomaticRetryAttempts is the number of attempts the system will automatically retry
 	// booting in the event the system enters an error state on boot.
-	AutomaticRetryAttempts int `json:",omitempty"`
+	AutomaticRetryAttempts *int `json:",omitempty"`
 	// AutomaticRetryConfig is how the system retries booting automatically.
 	AutomaticRetryConfig AutomaticRetryConfig `json:",omitempty"`
 	// BootNext shall contain the BootOptionReference of the UEFI boot option for one time boot, as defined by the UEFI
@@ -476,9 +456,9 @@ type Boot struct {
 	// BootSourceOverrideEnabled set to 'Continuous' is not supported for BootSourceOverrideTarget set to
 	// 'UefiBootNext' because this setting is defined in UEFI as a one-time boot setting.
 	BootNext string `json:",omitempty"`
-	// bootOptions is a link to the collection of the UEFI boot options
+	// BootOptions is a link to the collection of the UEFI boot options
 	// associated with this computer system.
-	bootOptions string
+	BootOptionsLink common.Link `json:"BootOptions,omitempty"`
 	// BootOrder shall be an ordered array of
 	// BootOptionReference strings representing the persistent Boot Order of
 	// this computer system. For UEFI systems, this is the UEFI BootOrder as
@@ -514,14 +494,14 @@ type Boot struct {
 	BootSourceOverrideTarget                BootSourceOverrideTarget   `json:",omitempty"`
 	AllowableBootSourceOverrideTargetValues []BootSourceOverrideTarget `json:"BootSourceOverrideTarget@Redfish.AllowableValues,omitempty"`
 	// The link to a collection of certificates used for booting through HTTPS by this computer system.
-	certificates string
+	CertificatesLink common.Link `json:"Certificates,omitempty"`
 	// The URI to boot from when BootSourceOverrideTarget is set to UefiHttp.
 	HTTPBootURI string `json:"HttpBootUri,omitempty"`
 	// RemainingAutomaticRetryAttempts shall contain the number of attempts remaining the system will retry booting in
 	// the event the system enters an error state on boot. If '0', the system has no remaining automatic boot retry
 	// attempts and shall not automatically retry booting if the system enters an error state. This property shall be
 	// reset to the value of AutomaticRetryAttempts upon a successful boot attempt.
-	RemainingAutomaticRetryAttempts int `json:",omitempty"`
+	RemainingAutomaticRetryAttempts *int `json:",omitempty"`
 	// StopBootOnFault shall contain the setting if the boot should stop on a fault.
 	StopBootOnFault StopBootOnFault `json:",omitempty"`
 	// TrustedModuleRequiredToBoot shall contain the Trusted Module boot requirement.
@@ -537,36 +517,13 @@ type Boot struct {
 	AllowableUefiTargetBootSourceOverrideValues []string `json:"UefiTargetBootSourceOverride@Redfish.AllowableValues,omitempty"`
 }
 
-// UnmarshalJSON unmarshals a Boot object from the raw JSON.
-func (boot *Boot) UnmarshalJSON(b []byte) error {
-	type temp Boot
-	var t struct {
-		temp
-		BootOptions  common.Link
-		Certificates common.Link
-	}
-
-	err := json.Unmarshal(b, &t)
-	if err != nil {
-		return err
-	}
-
-	*boot = Boot(t.temp)
-
-	// Extract the links to other entities for later
-	boot.bootOptions = t.BootOptions.String()
-	boot.certificates = t.Certificates.String()
-
-	return nil
-}
-
 // BootProgress shall contain the last boot progress state and time.
 type BootProgress struct {
 	// LastBootTimeSeconds shall contain the number of seconds that elapsed between system reset or power on and
 	// LastState transitioning to 'OSRunning'. If LastState contains 'OSRunning', this property shall contain the most
 	// recent boot time. For other values of LastState, this property shall contain the boot time for the previous
 	// boot.
-	LastBootTimeSeconds float64
+	LastBootTimeSeconds *float64 `json:",omitempty"`
 	// LastState shall contain the last boot progress state.
 	LastState BootProgressTypes
 	// LastStateTime shall contain the date and time when the last boot state was updated.
@@ -588,12 +545,8 @@ type Composition struct {
 // BootOption represents the properties of a bootable device available in the
 // system.
 type BootOption struct {
-	common.Entity
+	common.Resource
 
-	// ODataContext is the odata context.
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the odata type.
-	ODataType string `json:"@odata.type"`
 	// Alias is the alias of this boot source if one exists.
 	Alias BootSourceOverrideTarget
 	// BootOptionEnabled is an indication of whether the boot option is
@@ -610,12 +563,18 @@ type BootOption struct {
 	// UefiDevicePath is the UEFI device path to access this UEFI boot
 	// option.
 	UefiDevicePath string
+	RelatedItem    common.Links
 }
 
 // GetBootOption will get a BootOption instance from the service.
 func GetBootOption(c common.Client, uri string) (*BootOption, error) {
+	return GetBootOptionWithContext(common.ContextOf(c), c, uri)
+}
+
+// GetBootOptionWithContext will get a BootOption instance from the service.
+func GetBootOptionWithContext(ctx context.Context, c common.Client, uri string) (*BootOption, error) {
 	var bootoption BootOption
-	return &bootoption, bootoption.Get(c, uri, &bootoption)
+	return &bootoption, bootoption.GetWithContext(ctx, c, uri, &bootoption)
 }
 
 // ResetType describe the type off reset to be issue by the resource
@@ -662,7 +621,7 @@ type SerialConsoleProtocol struct {
 	// to exit the serial console session, or, if shared with a manager CLI, to return to the CLI.
 	HotKeySequenceDisplay string
 	// Port shall contain the port assigned to the protocol.
-	Port int
+	Port *int `json:",omitempty"`
 	// ServiceEnabled shall indicate whether the protocol for the service is enabled.
 	ServiceEnabled bool
 	// SharedWithManagerCLI shall indicate whether the serial console service is shared with access to the manager's
@@ -690,18 +649,18 @@ type IdlePowerSaver struct {
 	Enabled bool
 	// EnterDwellTimeSeconds shall contain the duration in seconds the computer system is below the
 	// EnterUtilizationPercent value before the idle power save is activated.
-	EnterDwellTimeSeconds int
+	EnterDwellTimeSeconds *int `json:",omitempty"`
 	// EnterUtilizationPercent shall contain the percentage of utilization, typically '0' to '100', when the computer
 	// system enters idle power save. If the computer system's utilization goes below this value for the duration
 	// specified by EnterDwellTimeSeconds, it shall enter idle power save.
-	EnterUtilizationPercent int
+	EnterUtilizationPercent *int `json:",omitempty"`
 	// ExitDwellTimeSeconds shall contain the duration in seconds the computer system is above the
 	// ExitUtilizationPercent value before the idle power save is stopped.
-	ExitDwellTimeSeconds int
+	ExitDwellTimeSeconds *int `json:",omitempty"`
 	// ExitUtilizationPercent shall contain the percentage of utilization, typically '0' to '100', when the computer
 	// system exits idle power save. If the computer system's utilization goes above this value for the duration
 	// specified by ExitDwellTimeSeconds, it shall exit idle power save.
-	ExitUtilizationPercent int
+	ExitUtilizationPercent *int `json:",omitempty"`
 }
 
 // KMIPServer shall contain the KMIP server settings for a computer system.
@@ -715,7 +674,7 @@ type KMIPServer struct {
 	// Password shall contain the password to access the KMIP server. The value shall be 'null' in responses.
 	Password string
 	// Port shall contain the KMIP server port.
-	Port int
+	Port *int `json:",omitempty"`
 	// Username shall contain the username to access the KMIP server.
 	Username string
 }
@@ -750,46 +709,82 @@ func (keymanagement *KeyManagement) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// ComputerSystemActions contains the actions supported by a computer system.
+type ComputerSystemActions struct {
+	AddResourceBlock    common.ActionTarget `json:"#ComputerSystem.AddResourceBlock"`
+	Decommission        common.ActionTarget `json:"#ComputerSystem.Decommission"`
+	RemoveResourceBlock common.ActionTarget `json:"#ComputerSystem.RemoveResourceBlock"`
+	Reset               struct {
+		common.ActionTarget
+		AllowedResetTypes []ResetType `json:"ResetType@Redfish.AllowableValues"`
+	} `json:"#ComputerSystem.Reset"`
+	SetDefaultBootOrder common.ActionTarget `json:"#ComputerSystem.SetDefaultBootOrder"`
+}
+
+type IPMIHostInterface struct {
+	ServiceEnabled bool `json:"ServiceEnabled"`
+}
+
+type LastResetCause string
+
+const (
+	LastResetCauseManagementCommand  LastResetCause = "ManagementCommand"
+	LastResetCauseOSSoftRestart      LastResetCause = "OSSoftRestart"
+	LastResetCausePowerButtonPress   LastResetCause = "PowerButtonPress"
+	LastResetCausePowerEvent         LastResetCause = "PowerEvent"
+	LastResetCausePowerRestorePolicy LastResetCause = "PowerRestorePolicy"
+	LastResetCauseRTCWakeup          LastResetCause = "RTCWakeup"
+	LastResetCauseSystemCrash        LastResetCause = "SystemCrash"
+	LastResetCauseThermalEvent       LastResetCause = "ThermalEvent"
+	LastResetCauseUnknown            LastResetCause = "Unknown"
+	LastResetCauseWatchdogExpiration LastResetCause = "WatchdogExpiration"
+)
+
+type CSVirtualMediaConfig struct {
+	Port           int
+	ServiceEnabled bool
+}
+
 // ComputerSystem is used to represent resources that represent a
 // computing system in the Redfish specification.
 type ComputerSystem struct {
-	common.Entity
+	common.Resource
 
-	// ODataContext is the @odata.context
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the @odata.type
-	ODataType string `json:"@odata.type"`
-
+	// Actions contains the actions advertised by the service.
+	Actions ComputerSystemActions
 	// AssetTag shall contain the value of the asset tag of the system.
 	AssetTag string
 	// bios shall be a link to a resource of
 	// type Bios that lists the Bios settings for this system.
-	bios string
+	BiosLink common.Link `json:"Bios"`
 	// BIOSVersion shall be the version string
 	// of the currently installed and running BIOS (for x86 systems). For
 	// other systems, the value may contain a version string representing the
 	// primary system firmware.
 	BIOSVersion string `json:"BiosVersion"`
 	// Boot describes boot information for the current resource.
-	Boot Boot
+	Boot             Boot
+	BootImagePushURI string `json:"BootImagePushURI,omitempty"`
 	// BootProgress shall contain the last boot progress state and time.
 	BootProgress BootProgress
 	// Certificates shall contain a link to a resource collection of type CertificateCollection that contains
 	// certificates for device identity and attestation.
-	certificates string
+	CertificatesLink common.Link `json:"Certificates"`
 	// Composition shall contain information about the composition capabilities and state of the computer system.
 	Composition Composition
-	// Description is the resource description.
-	Description string
 	// EthernetInterfaces shall be a link to a collection of type EthernetInterfaceCollection.
-	ethernetInterfaces string
+	EthernetInterfacesLink common.Link `json:"EthernetInterfaces"`
 	// FabricAdapters shall contain a link to a resource collection of type FabricAdapterCollection.
-	fabricAdapters string
+	FabricAdaptersLink common.Link `json:"FabricAdapters"`
 	// GraphicalConsole shall contain the information about the graphical console (KVM-IP) service of this system.
 	GraphicalConsole HostGraphicalConsole
 	// GraphicsControllers shall contain a link to a resource collection of type GraphicsControllerCollection that
 	// contains graphics controllers that can output video for this system.
-	graphicsControllers string
+	GraphicsControllersLink common.Link `json:"GraphicsControllers"`
+	// HostedServices shall describe services that this computer system supports.
+	HostedServices HostedServices
+	// HostingRoles shall be the hosting roles supported by this computer system.
+	HostingRoles []string
 	// HostName shall be the host name for this
 	// system, as reported by the operating system or hypervisor. This value
 	// is typically provided to the Manager by a service running in the host
@@ -799,70 +794,70 @@ type ComputerSystem struct {
 	// describe the host watchdog timer functionality for this
 	// ComputerSystem.
 	HostWatchdogTimer WatchdogTimer
-	// HostedServices shall describe services that this computer system supports.
-	HostedServices HostedServices
-	// HostingRoles shall be the hosting roles supported by this computer system.
-	HostingRoles []string
 	// IdlePowerSaver shall contain the idle power saver settings of the computer system.
 	IdlePowerSaver IdlePowerSaver
-	// KeyManagement shall contain the key management settings of the computer system.
-	KeyManagement KeyManagement
-	// LastResetTime shall contain the date and time when the system last came out of a reset or was rebooted.
-	LastResetTime string
 	// IndicatorLED shall contain the indicator
 	// light state for the indicator light associated with this system.
 	IndicatorLED common.IndicatorLED
+	// TODO: temporarily removed
+	// IPMIHostInterface *IPMIHostInterface `json:"IPMIHostInterface,omitzero"`
+	// KeyManagement shall contain the key management settings of the computer system.
+	KeyManagement  KeyManagement
+	LastResetCause LastResetCause
+	// LastResetTime shall contain the date and time when the system last came out of a reset or was rebooted.
+	LastResetTime string
+	// Links contains references to related resources.
+	Links CSLinks
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource. A write to this property shall update the value of IndicatorLED in this resource, if supported, to
 	// reflect the implementation of the locating function. Modifying this property may modify the
 	// LocationIndicatorActive in the containing Chassis resource.
-	LocationIndicatorActive bool
+	LocationIndicatorActive *bool
 	// logServices shall be a link to a collection of type LogServiceCollection.
-	logServices string
+	LogServicesLink common.Link `json:"LogServices"`
 	// Manufacturer shall contain a value that represents the manufacturer of the system.
-	Manufacturer string
-	// Memory shall be a link to a collection of type MemoryCollection.
-	memory string
+	Manufacturer      string
+	ManufacturingMode *bool
 	// memoryDomains shall be a link to a collection of type MemoryDomainCollection.
-	memoryDomains string
+	MemoryDomainsLink common.Link `json:"MemoryDomains"`
+	// Memory shall be a link to a collection of type MemoryCollection.
+	MemoryLink common.Link `json:"Memory"`
 	// MemorySummary is This object shall contain properties which describe
 	// the central memory for the current resource.
 	MemorySummary MemorySummary
 	// Model shall contain the information
 	// about how the manufacturer references this system. This is typically
 	// the product name, without the manufacturer name.
-	Model string
+	Model                               string
+	MultipartImportConfigurationPushURI string
 	// networkInterfaces shall be a link to a collection of type
 	// NetworkInterfaceCollection.
-	networkInterfaces string
-	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
-	// Redfish Specification-described requirements.
-	OEM json.RawMessage `json:"Oem"`
+	NetworkInterfacesLink common.Link `json:"NetworkInterfaces"`
 	// OperatingSystem shall contain a link to a resource of type OperatingSystem that contains operating system
 	// information for this system.
-	operatingSystem string
-	// PCIeDevices shall be an array of references of type PCIeDevice.
-	pcieDevices []string
-	// PCIeDevicesCount is the number of PCIeDevices.
-	PCIeDevicesCount int `json:"PCIeDevices@odata.count"`
-	// PCIeFunctions shall be an array of references of type PCIeFunction.
-	pcieFunctions []string
-	// PCIeFunctionsCount is the number of PCIeFunctions.
-	PCIeFunctionsCount int `json:"PCIeFunctions@odata.count"`
+	OperatingSystemLink common.Link `json:"OperatingSystem"`
 	// PartNumber shall contain the part number
 	// for the system as defined by the manufacturer.
 	PartNumber string
+	// PCIeDevicesCount is the number of PCIeDevices.
+	PCIeDevicesCount int `json:"PCIeDevices@odata.count"`
+	// PCIeDevices shall be an array of references of type PCIeDevice.
+	PCIeDevicesLink common.Links `json:"PCIeDevices"`
+	// PCIeFunctionsCount is the number of PCIeFunctions.
+	PCIeFunctionsCount int `json:"PCIeFunctions@odata.count"`
+	// PCIeFunctions shall be an array of references of type PCIeFunction.
+	PCIeFunctionsLink common.Links `json:"PCIeFunctions"`
 	// PowerCycleDelaySeconds shall contain the number of seconds to delay power on after a 'Reset' action requesting
 	// 'PowerCycle'. The value '0' shall indicate no delay to power on.
-	PowerCycleDelaySeconds float64
+	PowerCycleDelaySeconds *float64 `json:",omitempty"`
 	// PowerMode shall contain the computer system power mode setting.
 	PowerMode PowerMode
 	// PowerOffDelaySeconds shall contain the number of seconds to delay power off during a reset. The value '0' shall
 	// indicate no delay to power off.
-	PowerOffDelaySeconds float64
+	PowerOffDelaySeconds *float64 `json:",omitempty"`
 	// PowerOnDelaySeconds shall contain the number of seconds to delay power on after a power cycle or during a reset.
 	// The value '0' shall indicate no delay to power on.
-	PowerOnDelaySeconds float64
+	PowerOnDelaySeconds *float64 `json:",omitempty"`
 	// PowerRestorePolicy is the desired
 	// PowerState of the system when power is applied to the system. A value
 	// of 'LastState' shall return the system to the PowerState it was in
@@ -870,178 +865,87 @@ type ComputerSystem struct {
 	PowerRestorePolicy PowerState
 	// PowerState shall contain the power state of the system.
 	PowerState PowerState
+	// Processors shall be a link to a collection of type ProcessorCollection.
+	ProcessorsLink common.Link `json:"Processors"`
 	// ProcessorSummary shall contain properties which
 	// describe the central processors for the current resource.
 	ProcessorSummary ProcessorSummary
-	// Processors shall be a link to a collection of type ProcessorCollection.
-	processors string
+	ProductionDate   string
+	// RawData holds the original serialized JSON so we can compare updates.
+	RawData []byte
+	// RedundancyCount is the number of Redundancy objects.
+	RedundancyCount string `json:"Redundancy@odata.count"`
 	// Redundancy references a redundancy
 	// entity that specifies a kind and level of redundancy and a collection
 	// (RedundancySet) of other ComputerSystems that provide the specified
 	// redundancy to this ComputerSystem.
-	redundancy string
-	// RedundancyCount is the number of Redundancy objects.
-	RedundancyCount string `json:"Redundancy@odata.count"`
-	// SKU shall contain the Stock Keeping Unit (SKU) for the system.
-	SKU string
+	RedundancyLink common.Link `json:"Redundancy"`
 	// secureBoot shall be a link to a resource of type SecureBoot.
-	secureBoot string
+	SecureBootLink common.Link `json:"SecureBoot"`
 	// SerialConsole shall contain information about the serial console services of this system.
 	SerialConsole HostSerialConsole
 	// SerialNumber shall contain the serial number for the system.
 	SerialNumber string
+	// Settings contains the settings resource information advertised by the service.
+	Settings common.Settings `json:"@Redfish.Settings"`
 	// SimpleStorage shall be a link to a collection of type SimpleStorageCollection.
-	simpleStorage string
+	SimpleStorageLink common.Link `json:"SimpleStorage"`
+	// SKU shall contain the Stock Keeping Unit (SKU) for the system.
+	SKU string
 	// Status shall contain any status or health properties
 	// of the resource.
 	Status common.Status
 	// storage shall be a link to a collection
 	// of type StorageCollection.
-	storage string
+	StorageLink common.Link `json:"Storage"`
 	// SubModel shall contain the information about the sub-model (or configuration) of the system. This shall not
 	// include the model/product name or the manufacturer name.
 	SubModel string
+	// SupportedResetTypes caches supported reset types for existing callers.
+	SupportedResetTypes []ResetType `json:"-"`
 	// SystemType An enumeration that indicates the kind of system that this resource represents.
 	SystemType SystemType
+	// TrustedModules shall contain an array of objects with
+	// properties which describe the trusted modules for the current resource.
+	// This property has been deprecated in favor of the TrustedComponents property in Links.
+	TrustedModules []TrustedModules
 	// USBControllers shall contain a link to a resource collection of type USBControllerCollection that contains USB
 	// controllers for this system.
-	usbControllers string
+	USBControllersLink common.Link `json:"USBControllers"`
 	// UUID shall contain the universally unique identifier number for this system. RFC4122 describes methods to create
 	// this value. The value should be considered to be opaque. Client software should only treat the overall value as
 	// a UUID and should not interpret any subfields within the UUID. If the system supports SMBIOS, the property value
 	// should follow the SMBIOS 2.6 and later recommendation for converting the SMBIOS 16-byte UUID structure into the
 	// Redfish canonical 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' string format, so that the property value matches the
 	// byte order presented by current OS APIs, such as WMI and dmidecode.
-	UUID string
+	UUID           string
+	Virtualization common.Link
 	// virtualMedia shall contain a reference to a collection of type
 	// VirtualMediaCollection which are for the use of this system.
-	virtualMedia string
-	// TrustedModules shall contain an array of objects with
-	// properties which describe the trusted modules for the current resource.
-	// This property has been deprecated in favor of the TrustedComponents property in Links.
-	TrustedModules []TrustedModules
-
-	// Chassis is an array of references to the chassis in which this system is contained.
-	chassis []string
-	// SupportedResetTypes, if provided, is the reset types this system supports.
-	SupportedResetTypes []ResetType
-	// settingsApplyTimes is a set of allowed settings update apply times. If none
-	// are specified, then the system does not provide that information.
-	settingsApplyTimes []common.ApplyTime
-	managedBy          []string
-
-	// addResourceBlockTarget is the internal URL for the AddResourceBlock action.
-	addResourceBlockTarget string
-	// decommissionTarget is the URL for the Decommission action.
-	decommissionTarget string
-	// removeResourceBlockTarget is the URL for the RemoveResourceBlock action.
-	removeResourceBlockTarget string
-	// resetTarget is the internal URL to send reset targets to.
-	resetTarget string
-	// resetActionInfoTarget is the URL to check what values are supported
-	resetActionInfoTarget string
-	// setDefaultBootOrderTarget is the URL to send SetDefaultBootOrder actions to.
-	setDefaultBootOrderTarget string
-	settingsTarget            string
-	// RawData holds the original serialized JSON so we can compare updates.
-	RawData []byte
+	VirtualMediaLink   common.Link `json:"VirtualMedia"`
+	VirtualMediaConfig *CSVirtualMediaConfig
 }
 
 // UnmarshalJSON unmarshals a ComputerSystem object from the raw JSON.
 func (computersystem *ComputerSystem) UnmarshalJSON(b []byte) error {
-	type CSActions struct {
-		AddResourceBlock    common.ActionTarget `json:"#ComputerSystem.AddResourceBlock"`
-		Decommission        common.ActionTarget `json:"#ComputerSystem.Decommission"`
-		RemoveResourceBlock common.ActionTarget `json:"#ComputerSystem.RemoveResourceBlock"`
-		Reset               struct {
-			common.ActionTarget
-			AllowedResetTypes []ResetType `json:"ResetType@Redfish.AllowableValues"`
-		} `json:"#ComputerSystem.Reset"`
-		SetDefaultBootOrder common.ActionTarget `json:"#ComputerSystem.SetDefaultBootOrder"`
-	}
-
 	type temp ComputerSystem
-	var t struct {
-		temp
-		Actions             CSActions
-		Bios                common.Link
-		Certificates        common.Link
-		EthernetInterfaces  common.Link
-		FabricAdapters      common.Link
-		GraphicsControllers common.Link
-		Processors          common.Link
-		Redundancy          common.Link
-		Memory              common.Link
-		OperatingSystem     common.Link
-		SimpleStorage       common.Link
-		SecureBoot          common.Link
-		Storage             common.Link
-		NetworkInterfaces   common.Link
-		LogServices         common.Link
-		MemoryDomains       common.Link
-		PCIeDevices         common.Links
-		PCIeFunctions       common.Links
-		USBControllers      common.Link
-		VirtualMedia        common.Link
-		Links               CSLinks
-		Settings            common.Settings `json:"@Redfish.Settings"`
-	}
-
-	err := json.Unmarshal(b, &t)
-	if err != nil {
+	var t temp
+	if err := json.Unmarshal(b, &t); err != nil {
 		return err
 	}
-
-	*computersystem = ComputerSystem(t.temp)
-
-	// Extract the links to other entities for later
-	computersystem.bios = t.Bios.String()
-	computersystem.certificates = t.Certificates.String()
-	computersystem.ethernetInterfaces = t.EthernetInterfaces.String()
-	computersystem.fabricAdapters = t.FabricAdapters.String()
-	computersystem.graphicsControllers = t.GraphicsControllers.String()
-	computersystem.logServices = t.LogServices.String()
-	computersystem.pcieDevices = t.PCIeDevices.ToStrings()
-	computersystem.pcieFunctions = t.PCIeFunctions.ToStrings()
-	computersystem.processors = t.Processors.String()
-	computersystem.memory = t.Memory.String()
-	computersystem.memoryDomains = t.MemoryDomains.String()
-	computersystem.networkInterfaces = t.NetworkInterfaces.String()
-	computersystem.operatingSystem = t.OperatingSystem.String()
-	computersystem.redundancy = t.Redundancy.String()
-	computersystem.secureBoot = t.SecureBoot.String()
-	computersystem.simpleStorage = t.SimpleStorage.String()
-	computersystem.storage = t.Storage.String()
-	computersystem.usbControllers = t.USBControllers.String()
-	computersystem.virtualMedia = t.VirtualMedia.String()
-
-	computersystem.addResourceBlockTarget = t.Actions.AddResourceBlock.Target
-	computersystem.decommissionTarget = t.Actions.Decommission.Target
-	computersystem.removeResourceBlockTarget = t.Actions.RemoveResourceBlock.Target
-	computersystem.resetTarget = t.Actions.Reset.Target
-	computersystem.resetActionInfoTarget = t.Actions.Reset.ActionInfoTarget
-	computersystem.SupportedResetTypes = t.Actions.Reset.AllowedResetTypes
-	computersystem.setDefaultBootOrderTarget = t.Actions.SetDefaultBootOrder.Target
-
-	computersystem.chassis = t.Links.Chassis.ToStrings()
-	computersystem.managedBy = t.Links.ManagedBy.ToStrings()
-	computersystem.settingsApplyTimes = t.Settings.SupportedApplyTimes
-
-	// Some implementations use a @Redfish.Settings object to direct settings updates to a
-	// different URL than the object being updated. Others don't, so handle both.
-	computersystem.settingsTarget = t.Settings.SettingsObject.String()
-	if computersystem.settingsTarget == "" {
-		computersystem.settingsTarget = computersystem.ODataID
-	}
-
-	// This is a read/write object, so we need to save the raw object data for later
+	*computersystem = ComputerSystem(t)
+	computersystem.SupportedResetTypes = computersystem.Actions.Reset.AllowedResetTypes
 	computersystem.RawData = b
-
 	return nil
 }
 
 // Update commits updates to this object's properties to the running system.
 func (computersystem *ComputerSystem) Update() error {
+	return computersystem.UpdateWithContext(common.ContextOf(computersystem.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (computersystem *ComputerSystem) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"AssetTag",
 		"HostName",
@@ -1054,105 +958,198 @@ func (computersystem *ComputerSystem) Update() error {
 		"IndicatorLED",
 	}
 
-	return computersystem.UpdateFromRawData(computersystem, computersystem.RawData, readWriteFields)
+	return computersystem.UpdateFromRawDataWithContext(ctx, computersystem, computersystem.RawData, readWriteFields)
 }
 
 // GetComputerSystem will get a ComputerSystem instance from the service.
-func GetComputerSystem(c common.Client, uri string) (*ComputerSystem, error) {
-	return common.GetObject[ComputerSystem](c, uri)
+func GetComputerSystem(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ComputerSystem, error) {
+	return GetComputerSystemWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetComputerSystemWithContext will get a ComputerSystem instance from the service.
+func GetComputerSystemWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*ComputerSystem, error) {
+	return common.GetObjectWithContext[ComputerSystem](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedComputerSystems gets the collection of ComputerSystem from
 // a provided reference.
-func ListReferencedComputerSystems(c common.Client, link string) ([]*ComputerSystem, error) {
-	return common.GetCollectionObjects[ComputerSystem](c, link)
+func ListReferencedComputerSystems(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*ComputerSystem, error) {
+	return ListReferencedComputerSystemsWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedComputerSystemsWithContext gets the collection of ComputerSystem from
+// a provided reference.
+func ListReferencedComputerSystemsWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*ComputerSystem, error) {
+	return common.GetCollectionObjectsWithContext[ComputerSystem](ctx, c, link, queryOpts...)
 }
 
 // Bios gets the Bios information for this ComputerSystem.
-func (computersystem *ComputerSystem) Bios() (*Bios, error) {
-	if computersystem.bios == "" {
+func (computersystem *ComputerSystem) Bios(queryOpts ...common.QueryGroupOption) (*Bios, error) {
+	return computersystem.BiosWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// BiosWithContext gets the Bios information for this ComputerSystem.
+func (computersystem *ComputerSystem) BiosWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Bios, error) {
+	if computersystem.BiosLink.IsZero() {
 		return nil, nil
 	}
 
-	return GetBios(computersystem.GetClient(), computersystem.bios)
+	return GetBiosWithContext(ctx, computersystem.GetClient(), computersystem.BiosLink.String(), queryOpts...)
 }
 
 // BootOptions gets all BootOption items for this system.
-func (computersystem *ComputerSystem) BootOptions() ([]*BootOption, error) {
-	return common.GetCollectionObjects[BootOption](
-		computersystem.GetClient(),
-		computersystem.Boot.bootOptions)
+func (computersystem *ComputerSystem) BootOptions(queryOpts ...common.QueryGroupOption) ([]*BootOption, error) {
+	return computersystem.BootOptionsWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
 }
 
-func (computersystem *ComputerSystem) BootCertificates() ([]*Certificate, error) {
-	return ListReferencedCertificates(computersystem.GetClient(), computersystem.Boot.certificates)
+// BootOptionsWithContext gets all BootOption items for this system.
+func (computersystem *ComputerSystem) BootOptionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*BootOption, error) {
+	if computersystem.Boot.BootOptionsLink.IsZero() {
+		return nil, nil
+	}
+
+	return common.GetCollectionObjectsWithContext[BootOption](ctx,
+		computersystem.GetClient(),
+		computersystem.Boot.BootOptionsLink.String(), queryOpts...)
+}
+
+func (computersystem *ComputerSystem) BootCertificates(queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	return computersystem.BootCertificatesWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+func (computersystem *ComputerSystem) BootCertificatesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
+	if computersystem.Boot.CertificatesLink.IsZero() {
+		return nil, nil
+	}
+
+	return ListReferencedCertificatesWithContext(ctx, computersystem.GetClient(), computersystem.Boot.CertificatesLink.String(), queryOpts...)
 }
 
 // EthernetInterfaces get this system's ethernet interfaces.
-func (computersystem *ComputerSystem) EthernetInterfaces() ([]*EthernetInterface, error) {
-	return ListReferencedEthernetInterfaces(computersystem.GetClient(), computersystem.ethernetInterfaces)
+func (computersystem *ComputerSystem) EthernetInterfaces(queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return computersystem.EthernetInterfacesWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// EthernetInterfacesWithContext get this system's ethernet interfaces.
+func (computersystem *ComputerSystem) EthernetInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return ListReferencedEthernetInterfacesWithContext(ctx, computersystem.GetClient(), computersystem.EthernetInterfacesLink.String(), queryOpts...)
 }
 
 // LogServices get this system's log services.
-func (computersystem *ComputerSystem) LogServices() ([]*LogService, error) {
-	return ListReferencedLogServices(computersystem.GetClient(), computersystem.logServices)
+func (computersystem *ComputerSystem) LogServices(queryOpts ...common.QueryGroupOption) ([]*LogService, error) {
+	return computersystem.LogServicesWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// LogServicesWithContext get this system's log services.
+func (computersystem *ComputerSystem) LogServicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*LogService, error) {
+	return ListReferencedLogServicesWithContext(ctx, computersystem.GetClient(), computersystem.LogServicesLink.String(), queryOpts...)
 }
 
 // ManagedBy gets all Managers for this system.
-func (computersystem *ComputerSystem) ManagedBy() ([]*Manager, error) {
-	return common.GetObjects[Manager](computersystem.GetClient(), computersystem.managedBy)
+func (computersystem *ComputerSystem) ManagedBy(queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return computersystem.ManagedByWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// ManagedByWithContext gets all Managers for this system.
+func (computersystem *ComputerSystem) ManagedByWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return common.GetObjectsWithContext[Manager](ctx, computersystem.GetClient(), computersystem.Links.ManagedBy.ToStrings(), queryOpts...)
 }
 
 // Memory gets this system's memory.
 func (computersystem *ComputerSystem) Memory(queryOpts ...common.QueryGroupOption) ([]*Memory, error) {
-	return ListReferencedMemorys(computersystem.GetClient(), computersystem.memory, queryOpts...)
+	return computersystem.MemoryWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// MemoryWithContext gets this system's memory.
+func (computersystem *ComputerSystem) MemoryWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Memory, error) {
+	return ListReferencedMemorysWithContext(ctx, computersystem.GetClient(), computersystem.MemoryLink.String(), queryOpts...)
 }
 
 // MemoryDomains gets this system's memory domains.
-func (computersystem *ComputerSystem) MemoryDomains() ([]*MemoryDomain, error) {
-	return ListReferencedMemoryDomains(computersystem.GetClient(), computersystem.memoryDomains)
+func (computersystem *ComputerSystem) MemoryDomains(queryOpts ...common.QueryGroupOption) ([]*MemoryDomain, error) {
+	return computersystem.MemoryDomainsWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// MemoryDomainsWithContext gets this system's memory domains.
+func (computersystem *ComputerSystem) MemoryDomainsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*MemoryDomain, error) {
+	return ListReferencedMemoryDomainsWithContext(ctx, computersystem.GetClient(), computersystem.MemoryDomainsLink.String(), queryOpts...)
 }
 
 // NetworkInterfaces returns a collection of network interfaces in this system.
-func (computersystem *ComputerSystem) NetworkInterfaces() ([]*NetworkInterface, error) {
-	return ListReferencedNetworkInterfaces(computersystem.GetClient(), computersystem.networkInterfaces)
+func (computersystem *ComputerSystem) NetworkInterfaces(queryOpts ...common.QueryGroupOption) ([]*NetworkInterface, error) {
+	return computersystem.NetworkInterfacesWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// NetworkInterfacesWithContext returns a collection of network interfaces in this system.
+func (computersystem *ComputerSystem) NetworkInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*NetworkInterface, error) {
+	return ListReferencedNetworkInterfacesWithContext(ctx, computersystem.GetClient(), computersystem.NetworkInterfacesLink.String(), queryOpts...)
 }
 
 // OperatingSystem gets this system's operating system.
-func (computersystem *ComputerSystem) OperatingSystem() (*OperatingSystem, error) {
-	return GetOperatingSystem(computersystem.GetClient(), computersystem.operatingSystem)
+func (computersystem *ComputerSystem) OperatingSystem(queryOpts ...common.QueryGroupOption) (*OperatingSystem, error) {
+	return computersystem.OperatingSystemWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// OperatingSystemWithContext gets this system's operating system.
+func (computersystem *ComputerSystem) OperatingSystemWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*OperatingSystem, error) {
+	return GetOperatingSystemWithContext(ctx, computersystem.GetClient(), computersystem.OperatingSystemLink.String(), queryOpts...)
 }
 
 // PCIeDevices gets all PCIeDevices for this system.
-func (computersystem *ComputerSystem) PCIeDevices() ([]*PCIeDevice, error) {
-	return common.GetObjects[PCIeDevice](computersystem.GetClient(), computersystem.pcieDevices)
+func (computersystem *ComputerSystem) PCIeDevices(queryOpts ...common.QueryGroupOption) ([]*PCIeDevice, error) {
+	return computersystem.PCIeDevicesWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// PCIeDevicesWithContext gets all PCIeDevices for this system.
+func (computersystem *ComputerSystem) PCIeDevicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PCIeDevice, error) {
+	return common.GetObjectsWithContext[PCIeDevice](ctx, computersystem.GetClient(), computersystem.PCIeDevicesLink.ToStrings(), queryOpts...)
 }
 
 // PCIeFunctions gets all PCIeFunctions for this system.
-func (computersystem *ComputerSystem) PCIeFunctions() ([]*PCIeFunction, error) {
-	return common.GetObjects[PCIeFunction](computersystem.GetClient(), computersystem.pcieFunctions)
+func (computersystem *ComputerSystem) PCIeFunctions(queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
+	return computersystem.PCIeFunctionsWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// PCIeFunctionsWithContext gets all PCIeFunctions for this system.
+func (computersystem *ComputerSystem) PCIeFunctionsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PCIeFunction, error) {
+	return common.GetObjectsWithContext[PCIeFunction](ctx, computersystem.GetClient(), computersystem.PCIeFunctionsLink.ToStrings(), queryOpts...)
 }
 
 // Processors returns a collection of processors from this system
-func (computersystem *ComputerSystem) Processors() ([]*Processor, error) {
-	return ListReferencedProcessors(computersystem.GetClient(), computersystem.processors)
+func (computersystem *ComputerSystem) Processors(queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return computersystem.ProcessorsWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// ProcessorsWithContext returns a collection of processors from this system
+func (computersystem *ComputerSystem) ProcessorsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Processor, error) {
+	return ListReferencedProcessorsWithContext(ctx, computersystem.GetClient(), computersystem.ProcessorsLink.String(), queryOpts...)
 }
 
 // SecureBoot gets the secure boot information for the system.
-func (computersystem *ComputerSystem) SecureBoot() (*SecureBoot, error) {
-	if computersystem.secureBoot == "" {
+func (computersystem *ComputerSystem) SecureBoot(queryOpts ...common.QueryGroupOption) (*SecureBoot, error) {
+	return computersystem.SecureBootWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// SecureBootWithContext gets the secure boot information for the system.
+func (computersystem *ComputerSystem) SecureBootWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*SecureBoot, error) {
+	if computersystem.SecureBootLink.IsZero() {
 		return nil, nil
 	}
 
-	return GetSecureBoot(computersystem.GetClient(), computersystem.secureBoot)
+	return GetSecureBootWithContext(ctx, computersystem.GetClient(), computersystem.SecureBootLink.String(), queryOpts...)
 }
 
 // SetBoot set a boot object based on a payload request
 func (computersystem *ComputerSystem) SetBoot(b Boot) error { //nolint
+	return computersystem.SetBootWithContext(common.ContextOf(computersystem.GetClient()), b)
+}
+
+// SetBootWithContext set a boot object based on a payload request
+func (computersystem *ComputerSystem) SetBootWithContext(ctx context.Context, b Boot) error { //nolint
 	t := struct {
 		Boot Boot
 	}{Boot: b}
-	return computersystem.Patch(computersystem.ODataID, t)
+	return computersystem.PatchWithContext(ctx, computersystem.ODataID, t)
 }
 
 // Reset shall perform a reset of the ComputerSystem. For systems which implement
@@ -1162,6 +1159,16 @@ func (computersystem *ComputerSystem) SetBoot(b Boot) error { //nolint
 // 4-second hold of the Power Button). The ForceRestart value shall perform a
 // ForceOff action followed by a On action.
 func (computersystem *ComputerSystem) Reset(resetType ResetType) error {
+	return computersystem.ResetWithContext(common.ContextOf(computersystem.GetClient()), resetType)
+}
+
+// ResetWithContext shall perform a reset of the ComputerSystem. For systems which implement
+// ACPI Power Button functionality, the PushPowerButton value shall perform or
+// emulate an ACPI Power Button push. The ForceOff value shall remove power from
+// the system or perform an ACPI Power Button Override (commonly known as a
+// 4-second hold of the Power Button). The ForceRestart value shall perform a
+// ForceOff action followed by a On action.
+func (computersystem *ComputerSystem) ResetWithContext(ctx context.Context, resetType ResetType) error {
 	// Make sure the requested reset type is supported by the system
 	valid := false
 	if len(computersystem.SupportedResetTypes) > 0 {
@@ -1185,19 +1192,25 @@ func (computersystem *ComputerSystem) Reset(resetType ResetType) error {
 		ResetType ResetType
 	}{ResetType: resetType}
 
-	return computersystem.Post(computersystem.resetTarget, t)
+	return computersystem.PostWithContext(ctx, computersystem.Actions.Reset.Target, t)
 }
 
 // GetSupportedResetTypes returns any reset types that the ComputerSystem declares as supported
 // via either ActionInfo or AllowableValues.
 func (computersystem *ComputerSystem) GetSupportedResetTypes() ([]ResetType, error) {
+	return computersystem.GetSupportedResetTypesWithContext(common.ContextOf(computersystem.GetClient()))
+}
+
+// GetSupportedResetTypesWithContext returns any reset types that the ComputerSystem declares as supported
+// via either ActionInfo or AllowableValues.
+func (computersystem *ComputerSystem) GetSupportedResetTypesWithContext(ctx context.Context) ([]ResetType, error) {
 	if len(computersystem.SupportedResetTypes) > 0 {
 		return computersystem.SupportedResetTypes, nil
 	}
 
 	// if we don't have ResetTypes, try to get from ActionInfo
-	if computersystem.resetActionInfoTarget != "" {
-		resetActionInfo, err := computersystem.ResetActionInfo()
+	if computersystem.Actions.Reset.ActionInfoTarget != "" {
+		resetActionInfo, err := computersystem.ResetActionInfoWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -1217,15 +1230,25 @@ func (computersystem *ComputerSystem) GetSupportedResetTypes() ([]ResetType, err
 
 // ResetActionInfo returns the ActionInfo for the ComputerSystem reset action if supported
 func (computersystem *ComputerSystem) ResetActionInfo() (*ActionInfo, error) {
-	if computersystem.resetActionInfoTarget == "" {
+	return computersystem.ResetActionInfoWithContext(common.ContextOf(computersystem.GetClient()))
+}
+
+// ResetActionInfoWithContext returns the ActionInfo for the ComputerSystem reset action if supported
+func (computersystem *ComputerSystem) ResetActionInfoWithContext(ctx context.Context) (*ActionInfo, error) {
+	if computersystem.Actions.Reset.ActionInfoTarget == "" {
 		return nil, errors.New("ComputerSystem Reset ActionInfo not supported")
 	}
 
-	return common.GetObject[ActionInfo](computersystem.GetClient(), computersystem.resetActionInfoTarget)
+	return common.GetObjectWithContext[ActionInfo](ctx, computersystem.GetClient(), computersystem.Actions.Reset.ActionInfoTarget)
 }
 
 // UpdateBootAttributesApplyAt is used to update attribute values and set apply time together
 func (computersystem *ComputerSystem) UpdateBootAttributesApplyAt(attrs SettingsAttributes, applyTime common.ApplyTime) error {
+	return computersystem.UpdateBootAttributesApplyAtWithContext(common.ContextOf(computersystem.GetClient()), attrs, applyTime)
+}
+
+// UpdateBootAttributesApplyAtWithContext is used to update attribute values and set apply time together
+func (computersystem *ComputerSystem) UpdateBootAttributesApplyAtWithContext(ctx context.Context, attrs SettingsAttributes, applyTime common.ApplyTime) error {
 	payload := make(map[string]interface{})
 
 	// Get a representation of the object's original state so we can find what
@@ -1243,7 +1266,11 @@ func (computersystem *ComputerSystem) UpdateBootAttributesApplyAt(attrs Settings
 		}
 	}
 
-	resp, err := computersystem.GetClient().Get(computersystem.settingsTarget)
+	target := computersystem.Settings.SettingsObject.String()
+	if target == "" {
+		target = computersystem.ODataID
+	}
+	resp, err := computersystem.GetClient().GetWithContext(ctx, target)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil {
 		return err
@@ -1257,12 +1284,12 @@ func (computersystem *ComputerSystem) UpdateBootAttributesApplyAt(attrs Settings
 			data["@Redfish.SettingsApplyTime"] = map[string]string{"ApplyTime": string(applyTime)}
 		}
 
-		var header = make(map[string]string)
+		header := make(map[string]string)
 		if resp.Header["Etag"] != nil {
 			header["If-Match"] = resp.Header["Etag"][0]
 		}
 
-		resp, err = computersystem.GetClient().PatchWithHeaders(computersystem.settingsTarget, data, header)
+		resp, err = computersystem.GetClient().PatchWithHeadersWithContext(ctx, target, data, header)
 		defer common.DeferredCleanupHTTPResponse(resp)
 		if err != nil {
 			return err
@@ -1274,37 +1301,67 @@ func (computersystem *ComputerSystem) UpdateBootAttributesApplyAt(attrs Settings
 
 // UpdateBootAttributes is used to update attribute values.
 func (computersystem *ComputerSystem) UpdateBootAttributes(attrs SettingsAttributes) error {
-	return computersystem.UpdateBootAttributesApplyAt(attrs, "")
+	return computersystem.UpdateBootAttributesWithContext(common.ContextOf(computersystem.GetClient()), attrs)
+}
+
+// UpdateBootAttributesWithContext is used to update attribute values.
+func (computersystem *ComputerSystem) UpdateBootAttributesWithContext(ctx context.Context, attrs SettingsAttributes) error {
+	return computersystem.UpdateBootAttributesApplyAtWithContext(ctx, attrs, "")
 }
 
 // SetDefaultBootOrder shall set the BootOrder array to the default settings.
 func (computersystem *ComputerSystem) SetDefaultBootOrder() error {
+	return computersystem.SetDefaultBootOrderWithContext(common.ContextOf(computersystem.GetClient()))
+}
+
+// SetDefaultBootOrderWithContext shall set the BootOrder array to the default settings.
+func (computersystem *ComputerSystem) SetDefaultBootOrderWithContext(ctx context.Context) error {
 	// This action wasn't added until 1.5.0, make sure this is supported.
-	if computersystem.setDefaultBootOrderTarget == "" {
+	if computersystem.Actions.SetDefaultBootOrder.Target == "" {
 		return fmt.Errorf("SetDefaultBootOrder is not supported by this system")
 	}
 
-	return computersystem.Post(computersystem.setDefaultBootOrderTarget, nil)
+	return computersystem.PostWithContext(ctx, computersystem.Actions.SetDefaultBootOrder.Target, nil)
 }
 
 // SimpleStorages gets all simple storage services of this system.
-func (computersystem *ComputerSystem) SimpleStorages() ([]*SimpleStorage, error) {
-	return ListReferencedSimpleStorages(computersystem.GetClient(), computersystem.simpleStorage)
+func (computersystem *ComputerSystem) SimpleStorages(queryOpts ...common.QueryGroupOption) ([]*SimpleStorage, error) {
+	return computersystem.SimpleStoragesWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// SimpleStoragesWithContext gets all simple storage services of this system.
+func (computersystem *ComputerSystem) SimpleStoragesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*SimpleStorage, error) {
+	return ListReferencedSimpleStoragesWithContext(ctx, computersystem.GetClient(), computersystem.SimpleStorageLink.String(), queryOpts...)
 }
 
 // Storage gets the storage associated with this system.
-func (computersystem *ComputerSystem) Storage() ([]*Storage, error) {
-	return ListReferencedStorages(computersystem.GetClient(), computersystem.storage)
+func (computersystem *ComputerSystem) Storage(queryOpts ...common.QueryGroupOption) ([]*Storage, error) {
+	return computersystem.StorageWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// StorageWithContext gets the storage associated with this system.
+func (computersystem *ComputerSystem) StorageWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Storage, error) {
+	return ListReferencedStoragesWithContext(ctx, computersystem.GetClient(), computersystem.StorageLink.String(), queryOpts...)
 }
 
 // VirtualMedia gets the virtual media associated with this system.
-func (computersystem *ComputerSystem) VirtualMedia() ([]*VirtualMedia, error) {
-	return ListReferencedVirtualMedias(computersystem.GetClient(), computersystem.virtualMedia)
+func (computersystem *ComputerSystem) VirtualMedia(queryOpts ...common.QueryGroupOption) ([]*VirtualMedia, error) {
+	return computersystem.VirtualMediaWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// VirtualMediaWithContext gets the virtual media associated with this system.
+func (computersystem *ComputerSystem) VirtualMediaWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*VirtualMedia, error) {
+	return ListReferencedVirtualMediasWithContext(ctx, computersystem.GetClient(), computersystem.VirtualMediaLink.String(), queryOpts...)
 }
 
 // USBControllers gets the USB controllers associated with this system.
-func (computersystem *ComputerSystem) USBControllers() ([]*USBController, error) {
-	return ListReferencedUSBControllers(computersystem.GetClient(), computersystem.usbControllers)
+func (computersystem *ComputerSystem) USBControllers(queryOpts ...common.QueryGroupOption) ([]*USBController, error) {
+	return computersystem.USBControllersWithContext(common.ContextOf(computersystem.GetClient()), queryOpts...)
+}
+
+// USBControllersWithContext gets the USB controllers associated with this system.
+func (computersystem *ComputerSystem) USBControllersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*USBController, error) {
+	return ListReferencedUSBControllersWithContext(ctx, computersystem.GetClient(), computersystem.USBControllersLink.String(), queryOpts...)
 }
 
 // CSLinks are references to resources that are related to, but not contained
@@ -1369,10 +1426,10 @@ type MemorySummary struct {
 	Status common.Status
 	// TotalSystemMemoryGiB is the amount of configured system general purpose
 	// volatile (RAM) memory as measured in gibibytes.
-	TotalSystemMemoryGiB float32
+	TotalSystemMemoryGiB *float32 `json:",omitempty"`
 	// TotalSystemPersistentMemoryGiB is the total amount of configured
 	// persistent memory available to the system as measured in gibibytes.
-	TotalSystemPersistentMemoryGiB float32
+	TotalSystemPersistentMemoryGiB *float32 `json:",omitempty"`
 }
 
 func (memorySummary *MemorySummary) UnmarshalJSON(b []byte) error {
@@ -1396,20 +1453,25 @@ func (memorySummary *MemorySummary) UnmarshalJSON(b []byte) error {
 }
 
 // Metrics gets the memory summary metrics
-func (memorySummary *MemorySummary) Metrics(c common.Client) (*MemoryMetrics, error) {
+func (memorySummary *MemorySummary) Metrics(c common.Client, queryOpts ...common.QueryGroupOption) (*MemoryMetrics, error) {
+	return memorySummary.MetricsWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// MetricsWithContext gets the memory summary metrics
+func (memorySummary *MemorySummary) MetricsWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) (*MemoryMetrics, error) {
 	if memorySummary.metrics == "" {
 		return nil, nil
 	}
-	return GetMemoryMetrics(c, memorySummary.metrics)
+	return GetMemoryMetricsWithContext(ctx, c, memorySummary.metrics, queryOpts...)
 }
 
 // ProcessorSummary is This type shall contain properties which describe
 // the central processors for a system.
 type ProcessorSummary struct {
 	// Count is the number of physical central processors in the system.
-	Count int
+	Count *int `json:",omitempty"`
 	// LogicalProcessorCount is the number of logical central processors in the system.
-	LogicalProcessorCount int
+	LogicalProcessorCount *int `json:",omitempty"`
 	// Metrics shall be a reference to the Metrics
 	// associated with this ProcessorSummary.
 	metrics string
@@ -1443,11 +1505,16 @@ func (processorSummary *ProcessorSummary) UnmarshalJSON(b []byte) error {
 }
 
 // Metrics gets the processor summary metrics
-func (processorSummary *ProcessorSummary) Metrics(c common.Client) (*ProcessorMetrics, error) {
+func (processorSummary *ProcessorSummary) Metrics(c common.Client, queryOpts ...common.QueryGroupOption) (*ProcessorMetrics, error) {
+	return processorSummary.MetricsWithContext(common.ContextOf(c), c, queryOpts...)
+}
+
+// MetricsWithContext gets the processor summary metrics
+func (processorSummary *ProcessorSummary) MetricsWithContext(ctx context.Context, c common.Client, queryOpts ...common.QueryGroupOption) (*ProcessorMetrics, error) {
 	if processorSummary.metrics == "" {
 		return nil, nil
 	}
-	return GetProcessorMetrics(c, processorSummary.metrics)
+	return GetProcessorMetricsWithContext(ctx, c, processorSummary.metrics, queryOpts...)
 }
 
 // TrustedModules is This type shall describe a trusted module for a system.

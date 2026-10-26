@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -83,7 +84,7 @@ type Schedule struct {
 	// Lifetime shall contain a Redfish Duration that describes the time after provisioning when the schedule expires.
 	Lifetime string
 	// MaxOccurrences shall contain the maximum number of scheduled occurrences.
-	MaxOccurrences int
+	MaxOccurrences *int `json:",omitempty"`
 	// RecurrenceInterval shall contain the duration between consecutive occurrences.
 	RecurrenceInterval string
 	// rawData holds the original serialized JSON so we can compare updates.
@@ -114,6 +115,11 @@ func (schedule *Schedule) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (schedule *Schedule) Update() error {
+	return schedule.UpdateWithContext(common.ContextOf(schedule.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (schedule *Schedule) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{"EnabledDaysOfMonth",
 		"EnabledDaysOfWeek",
 		"EnabledIntervals",
@@ -123,16 +129,27 @@ func (schedule *Schedule) Update() error {
 		"MaxOccurrences",
 		"RecurrenceInterval"}
 
-	return schedule.UpdateFromRawData(schedule, schedule.rawData, readWriteFields)
+	return schedule.UpdateFromRawDataWithContext(ctx, schedule, schedule.rawData, readWriteFields)
 }
 
 // GetSchedule will get a Schedule instance from the service.
-func GetSchedule(c common.Client, uri string) (*Schedule, error) {
-	return common.GetObject[Schedule](c, uri)
+func GetSchedule(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Schedule, error) {
+	return GetScheduleWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetScheduleWithContext will get a Schedule instance from the service.
+func GetScheduleWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Schedule, error) {
+	return common.GetObjectWithContext[Schedule](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedSchedules gets the collection of Schedule from
 // a provided reference.
-func ListReferencedSchedules(c common.Client, link string) ([]*Schedule, error) {
-	return common.GetCollectionObjects[Schedule](c, link)
+func ListReferencedSchedules(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Schedule, error) {
+	return ListReferencedSchedulesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedSchedulesWithContext gets the collection of Schedule from
+// a provided reference.
+func ListReferencedSchedulesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Schedule, error) {
+	return common.GetCollectionObjectsWithContext[Schedule](ctx, c, link, queryOpts...)
 }

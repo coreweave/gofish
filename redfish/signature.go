@@ -5,6 +5,7 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/coreweave/gofish/common"
@@ -45,12 +46,23 @@ type Signature struct {
 }
 
 // GetSignature will get a Signature instance from the service.
-func GetSignature(c common.Client, uri string) (*Signature, error) {
-	return common.GetObject[Signature](c, uri)
+func GetSignature(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Signature, error) {
+	return GetSignatureWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetSignatureWithContext will get a Signature instance from the service.
+func GetSignatureWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Signature, error) {
+	return common.GetObjectWithContext[Signature](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedSignatures gets the collection of Signature from
 // a provided reference.
-func ListReferencedSignatures(c common.Client, link string) ([]*Signature, error) {
-	return common.GetCollectionObjects[Signature](c, link)
+func ListReferencedSignatures(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Signature, error) {
+	return ListReferencedSignaturesWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedSignaturesWithContext gets the collection of Signature from
+// a provided reference.
+func ListReferencedSignaturesWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Signature, error) {
+	return common.GetCollectionObjectsWithContext[Signature](ctx, c, link, queryOpts...)
 }

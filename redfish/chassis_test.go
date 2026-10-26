@@ -7,6 +7,7 @@ package redfish
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -27,6 +28,7 @@ var chassisBody = `{
 		"Name": "Computer System Chassis",
 		"ChassisType": "RackMount",
 		"Manufacturer": "Redfish Computers",
+		"MaxPowerWatts": 1200,
 		"Model": "3500RX",
 		"SKU": "8675309",
 		"SerialNumber": "437XR1138R2",
@@ -192,6 +194,12 @@ func TestChassis(t *testing.T) {
 		t.Errorf("Received invalid chassis type: %s", result.ChassisType)
 	}
 
+	if result.MaxPowerWatts == nil {
+		t.Error("Expected max power watts to be set")
+	} else if *result.MaxPowerWatts != 1200 {
+		t.Errorf("Received invalid max power watts: %v", *result.MaxPowerWatts)
+	}
+
 	if result.Status.Health != common.OKHealth {
 		t.Errorf("Received invalid health status: %s", result.Status.Health)
 	}
@@ -284,6 +292,62 @@ func TestMinimumChassis(t *testing.T) {
 
 	if result.ChassisType != EnclosureChassisType {
 		t.Errorf("Received invalid chassis type: %s", result.ChassisType)
+	}
+
+	if result.MaxPowerWatts != nil {
+		t.Errorf("Expected nil max power watts when absent, got %v", *result.MaxPowerWatts)
+	}
+}
+
+// TestChassisOptionalNumerics ensures an absent field decodes to nil and a reported 0 stays distinct from it.
+func TestChassisOptionalNumerics(t *testing.T) {
+	fields := map[string]func(*Chassis) *float64{
+		"DepthMm":       func(c *Chassis) *float64 { return c.DepthMm },
+		"HeightMm":      func(c *Chassis) *float64 { return c.HeightMm },
+		"MaxPowerWatts": func(c *Chassis) *float64 { return c.MaxPowerWatts },
+		"MinPowerWatts": func(c *Chassis) *float64 { return c.MinPowerWatts },
+		"WeightKg":      func(c *Chassis) *float64 { return c.WeightKg },
+		"WidthMm":       func(c *Chassis) *float64 { return c.WidthMm },
+	}
+
+	for name, field := range fields {
+		for _, tc := range []struct {
+			body string
+			want *float64
+		}{
+			{body: `{"Id": "1"}`},
+			{body: fmt.Sprintf(`{"Id": "1", %q: 0}`, name), want: new(float64)},
+			{body: fmt.Sprintf(`{"Id": "1", %q: 12.5}`, name), want: func() *float64 { v := 12.5; return &v }()},
+		} {
+			var result Chassis
+			if err := json.NewDecoder(strings.NewReader(tc.body)).Decode(&result); err != nil {
+				t.Fatalf("Error decoding JSON %s: %s", tc.body, err)
+			}
+
+			got := field(&result)
+			switch {
+			case tc.want == nil && got != nil:
+				t.Errorf("%s: expected nil when absent, got %v", name, *got)
+			case tc.want != nil && got == nil:
+				t.Errorf("%s: expected %v, got nil", name, *tc.want)
+			case tc.want != nil && *got != *tc.want:
+				t.Errorf("%s: expected %v, got %v", name, *tc.want, *got)
+			}
+		}
+	}
+}
+
+// TestChassisOptionalNumericsOmitted ensures marshaling leaves absent fields out instead of writing null.
+func TestChassisOptionalNumericsOmitted(t *testing.T) {
+	out, err := json.Marshal(Chassis{})
+	if err != nil {
+		t.Fatalf("Error marshaling: %s", err)
+	}
+
+	for _, name := range []string{"DepthMm", "HeightMm", "MaxPowerWatts", "MinPowerWatts", "WeightKg", "WidthMm"} {
+		if bytes.Contains(out, []byte(`"`+name+`"`)) {
+			t.Errorf("Expected %s to be omitted, got %s", name, out)
+		}
 	}
 }
 
@@ -382,6 +446,116 @@ func TestChassisDrives(t *testing.T) {
 
 	if len(drives) != 1 {
 		t.Errorf("Expected 1 drive to be returned, got %d", len(drives))
+	}
+}
+
+// decodeChassis decodes the shared chassis fixture and attaches a client.
+func decodeChassis(t *testing.T, client common.Client) *Chassis {
+	t.Helper()
+	var chassis Chassis
+	if err := json.NewDecoder(strings.NewReader(chassisBody)).Decode(&chassis); err != nil {
+		t.Fatalf("Error decoding JSON: %s", err)
+	}
+	chassis.SetClient(client)
+	return &chassis
+}
+
+// expandDefaultOptions is the client-wide default that ClientConfig.AutoExpand
+// installs when the service advertises support for $expand.
+func expandDefaultOptions() []common.QueryGroupOption {
+	return []common.QueryGroupOption{
+		common.WithCollectionQueryOpts(
+			common.WithExpand(common.ExpandOptionPeriod),
+			common.WithExpandFallback(true)),
+	}
+}
+
+// driveClient returns a client that answers pairs of drive collection/member GETs.
+func driveClient(defaults []common.QueryGroupOption, walks int) *common.TestClient {
+	responses := make([]interface{}, 0, walks*2)
+	for i := 0; i < walks; i++ {
+		responses = append(responses, getCall(driveCollection), getCall(driveBody))
+	}
+	return &common.TestClient{
+		Settings:               common.ClientSettings{DefaultQueryOptions: defaults},
+		CustomReturnForActions: map[string][]interface{}{http.MethodGet: responses},
+	}
+}
+
+// TestChassisDrivesExpandClientDefault tests that a client-wide $expand default
+// is applied to a call that does not ask for anything.
+func TestChassisDrivesExpandClientDefault(t *testing.T) {
+	testClient := driveClient(expandDefaultOptions(), 1)
+
+	if _, err := decodeChassis(t, testClient).Drives(); err != nil {
+		t.Errorf("Error getting drives: %s", err)
+	}
+
+	calls := testClient.CapturedCalls()
+	if !strings.Contains(calls[0].URL, "$expand=.") {
+		t.Errorf("Expected the collection GET to carry $expand, got: %s", calls[0].URL)
+	}
+}
+
+// TestChassisDrivesWithoutExpand tests that a single call can disable $expand
+// even when the client has it enabled by default.
+func TestChassisDrivesWithoutExpand(t *testing.T) {
+	testClient := driveClient(expandDefaultOptions(), 1)
+
+	drives, err := decodeChassis(t, testClient).Drives(common.WithoutExpand())
+	if err != nil {
+		t.Errorf("Error getting drives: %s", err)
+	}
+	if len(drives) != 1 {
+		t.Errorf("Expected 1 drive to be returned, got %d", len(drives))
+	}
+
+	for _, call := range testClient.CapturedCalls() {
+		if strings.Contains(call.URL, "$expand") {
+			t.Errorf("Expected no $expand on any request, got: %s", call.URL)
+		}
+	}
+}
+
+// TestChassisDrivesExpandOptIn tests that a single call can enable $expand when
+// the client has no default.
+func TestChassisDrivesExpandOptIn(t *testing.T) {
+	testClient := driveClient(nil, 1)
+
+	_, err := decodeChassis(t, testClient).Drives(
+		common.WithCollectionQueryOpts(common.WithExpand(common.ExpandOptionPeriod)))
+	if err != nil {
+		t.Errorf("Error getting drives: %s", err)
+	}
+
+	calls := testClient.CapturedCalls()
+	if !strings.Contains(calls[0].URL, "$expand=.") {
+		t.Errorf("Expected the collection GET to carry $expand, got: %s", calls[0].URL)
+	}
+}
+
+// TestChassisDrivesExpandDoesNotLeak tests that options given to one call do not
+// affect the next call made through the same client.
+func TestChassisDrivesExpandDoesNotLeak(t *testing.T) {
+	testClient := driveClient(expandDefaultOptions(), 2)
+	chassis := decodeChassis(t, testClient)
+
+	if _, err := chassis.Drives(common.WithoutExpand()); err != nil {
+		t.Errorf("Error getting drives: %s", err)
+	}
+	firstWalk := len(testClient.CapturedCalls())
+
+	if _, err := chassis.Drives(); err != nil {
+		t.Errorf("Error getting drives: %s", err)
+	}
+
+	calls := testClient.CapturedCalls()
+	if strings.Contains(calls[0].URL, "$expand") {
+		t.Errorf("First call should not have been expanded: %s", calls[0].URL)
+	}
+	if !strings.Contains(calls[firstWalk].URL, "$expand=.") {
+		t.Errorf("Second call should have fallen back to the client default: %s",
+			calls[firstWalk].URL)
 	}
 }
 

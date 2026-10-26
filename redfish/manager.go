@@ -5,8 +5,8 @@
 package redfish
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/coreweave/gofish/common"
@@ -184,11 +184,48 @@ type GraphicalConsole struct {
 	ServiceEnabled bool
 }
 
+type ManagerActions struct {
+	ForceFailover       common.ActionTarget `json:"#Manager.ForceFailover"`
+	ModifyRedundancySet common.ActionTarget `json:"#Manager.ModifyRedundancySet"`
+	Reset               struct {
+		common.ActionTarget
+		AllowedResetTypes []ResetType `json:"ResetType@Redfish.AllowableValues"`
+	} `json:"#Manager.Reset"`
+	ResetToDefaults struct {
+		common.ActionTarget
+		AllowedResetTypes []ResetToDefaultsType `json:"ResetType@Redfish.AllowableValues"`
+	} `json:"#Manager.ResetToDefaults"`
+
+	Oem json.RawMessage
+}
+
+type ManagerLinks struct {
+	ActiveSoftwareImage     common.Link
+	ManagedBy               common.Links
+	ManagedByCount          int `json:"ManagedBy@odata.count"`
+	ManagerForChassis       common.Links
+	ManagerForChassisCount  int `json:"ManagerForChassis@odata.count"`
+	ManagerForManagers      common.Links
+	ManagerForManagersCount int `json:"ManagerForManagers@odata.count"`
+	ManagerForServers       common.Links
+	ManagerForServersCount  int `json:"ManagerForServers@odata.count"`
+	ManagerForSwitches      common.Links
+	ManagerForSwitchesCount int `json:"ManagerForSwitches@odata.count"`
+	ManagerInChassis        common.Link
+	OEM                     json.RawMessage `json:"Oem"`
+	SelectedNetworkPort     common.Link
+	SoftwareImages          common.Links
+	SoftwareImagesCount     int `json:"SoftwareImages@odata.count"`
+}
+
 // Manager is a management subsystem. Examples of managers are BMCs, Enclosure
 // Managers, Management Controllers and other subsystems assigned manageability
 // functions.
 type Manager struct {
 	common.Entity
+
+	Actions ManagerActions `json:"Actions"`
+	Links   ManagerLinks   `json:"Links"`
 
 	// ODataContext is the odata context.
 	ODataContext string `json:"@odata.context"`
@@ -211,23 +248,23 @@ type Manager struct {
 	DateTimeSource string
 	// DaylightSavingTime shall contain the daylight saving time settings for this manager.
 	DaylightSavingTime DaylightSavingTime
-	// DedicatedNetworkPorts shall contain a link to a resource collection of type PortCollection that represent the
+	// DedicatedNetworkPortsLink shall contain a link to a resource collection of type PortCollection that represent the
 	// dedicated network ports of the manager.
-	dedicatedNetworkPorts string
+	DedicatedNetworkPortsLink common.Link `json:"DedicatedNetworkPorts"`
 	// Description provides a description of this resource.
 	Description string
-	// ethernetInterfaces shall be a link to a collection of type
+	// EthernetInterfacesLink shall be a link to a collection of type
 	// EthernetInterfaceCollection.
-	ethernetInterfaces string
+	EthernetInterfacesLink common.Link `json:"EthernetInterfaces"`
 	// FirmwareVersion shall contain the firmware version as defined by the
 	// manufacturer for the associated manager.
 	FirmwareVersion string
 	// GraphicalConsole shall contain the information about the Graphical
 	// Console (KVM-IP) service of this manager.
 	GraphicalConsole GraphicalConsole
-	// hostInterfaces shall be a link to a collection of type
+	// HostInterfacesLink shall be a link to a collection of type
 	// HostInterfaceCollection.
-	hostInterfaces string
+	HostInterfacesLink common.Link `json:"HostInterfaces"`
 	// LastResetTime last BMC reset time
 	LastResetTime string `json:"LastResetTime,omitempty"`
 	// Location shall contain the location information of the associated manager.
@@ -235,13 +272,13 @@ type Manager struct {
 	// LocationIndicatorActive shall contain the state of the indicator used to physically identify or locate this
 	// resource. A write to this property shall update the value of IndicatorLED in this resource, if supported, to
 	// reflect the implementation of the locating function.
-	LocationIndicatorActive bool
-	// logServices shall contain a reference to a collection of type
+	LocationIndicatorActive *bool
+	// LogServicesLink shall contain a reference to a collection of type
 	// LogServiceCollection which are for the use of this manager.
-	logServices string
-	// ManagerDiagnosticData shall contain a link to a resource of type ManagerDiagnosticData that represents the
+	LogServicesLink common.Link `json:"LogServices"`
+	// ManagerDiagnosticDataLink shall contain a link to a resource of type ManagerDiagnosticData that represents the
 	// diagnostic data for this manager.
-	managerDiagnosticData string
+	ManagerDiagnosticDataLink common.Link `json:"ManagerDiagnosticData"`
 	// ManagerType shall describe the function of this manager. The 'ManagementController' value shall be used if none
 	// of the other enumerations apply.
 	// ManagerType is used if this manager controls one or more services
@@ -257,16 +294,12 @@ type Manager struct {
 	// Model shall contain the information about how the manufacturer references
 	// this manager.
 	Model string
-	// networkProtocol shall contain a reference to a resource of type
+	// NetworkProtocolLink shall contain a reference to a resource of type
 	// ManagerNetworkProtocol which represents the network services for this
 	// manager.
-	networkProtocol string
-	// OemActions contains all the vendor specific actions. It is vendor responsibility to parse this field accordingly
-	OemActions json.RawMessage
+	NetworkProtocolLink common.Link `json:"NetworkProtocol"`
 	// Oem are all OEM data under top level manager section
 	Oem json.RawMessage
-	// OEMLinks are all OEM data under link section
-	OemLinks json.RawMessage
 	// PartNumber shall contain a part number assigned by the organization that
 	// is responsible for producing or manufacturing the manager.
 	PartNumber string
@@ -277,11 +310,11 @@ type Manager struct {
 	Redundancy []Redundancy
 	// RedundancyCount is the number of Redundancy objects.
 	RedundancyCount int `json:"Redundancy@odata.count"`
-	// remoteAccountService shall contain a reference to the
+	// RemoteAccountServiceLink shall contain a reference to the
 	// AccountService resource for the remote Manager represented by this
 	// resource. This property shall only be present when providing
 	// aggregation of Redfish services.
-	remoteAccountService string
+	RemoteAccountServiceLink common.Link `json:"RemoteAccountService"`
 	// RemoteRedfishServiceURI shall contain the URI of the
 	// Redfish Service Root for the remote Manager represented by this
 	// resource. This property shall only be present when providing
@@ -290,9 +323,9 @@ type Manager struct {
 	// SerialConsole shall contain information about the Serial Console service
 	// of this manager.
 	SerialConsole SerialConsole
-	// serialInterfaces shall be a link to a collection of type
+	// SerialInterfacesLink shall be a link to a collection of type
 	// SerialInterfaceCollection which are for the use of this manager.
-	serialInterfaces string
+	SerialInterfacesLink common.Link `json:"SerialInterfaces"`
 	// SerialNumber shall contain a manufacturer-allocated number that
 	// identifies the manager.
 	SerialNumber string
@@ -309,10 +342,10 @@ type Manager struct {
 	// in conjunction with the Product and Vendor properties in ServiceRoot to match user credentials or other a priori
 	// product instance information necessary for initial deployment to the correct, matching Redfish service.
 	ServiceIdentification string
-	// SharedNetworkPorts shall contain a link to a resource collection of type PortCollection that represent the
+	// SharedNetworkPortsLink shall contain a link to a resource collection of type PortCollection that represent the
 	// shared network ports of the manager. The members of this collection shall reference Port resources subordinate
 	// to NetworkAdapter resources.
-	sharedNetworkPorts string
+	SharedNetworkPortsLink common.Link `json:"SharedNetworkPorts"`
 	// SparePartNumber shall contain the spare part number of the manager.
 	SparePartNumber string
 	// Status shall contain any status or health properties
@@ -324,70 +357,19 @@ type Manager struct {
 	// consistency between the DateTimeOffset property and this property. Therefore, to specify the correct time zone
 	// offset, see the DateTimeOffset property.
 	TimeZoneName string
-	// USBPorts shall contain a link to a resource collection of type PortCollection that represent the USB ports of
+	// USBPortsLink shall contain a link to a resource collection of type PortCollection that represent the USB ports of
 	// the manager.
-	usbPorts string
+	USBPortsLink common.Link `json:"USBPorts"`
 	// UUID shall contain the universal unique
 	// identifier number for the manager.
 	UUID string
 	// Version shall contain the hardware version of this manager as determined by the vendor or supplier.
 	Version string
-	// virtualMedia shall contain a reference to a collection of type
+	// VirtualMediaLink shall contain a reference to a collection of type
 	// VirtualMediaCollection which are for the use of this manager.
 	// This property has been deprecated in favor of the VirtualMedia property in the ComputerSystem resource.
-	virtualMedia string
+	VirtualMediaLink common.Link `json:"VirtualMedia"`
 
-	// ActiveSoftwareImage shall contain a link to a resource of type SoftwareInventory that represents the active
-	// firmware image for this manager.
-	activeSoftwareImage string
-	// ManagedBy shall contain an array of links to resources of type Manager that represent the managers for this
-	// manager.
-	managedBy []string
-	// ManagedByCount is the number of managers for this manager.
-	ManagedByCount int
-	// managerForChassis shall contain an array of references to Chassis
-	// resources of which this Manager instance has control.
-	managerForChassis []string
-	// ManagerForChassisCount is the number of Chassis being managed.
-	ManagerForChassisCount int
-	// ManagerForManagers shall contain an array of links to resources of type Manager that represent the managers
-	// being managed by this manager.
-	managerForManagers []string
-	// ManagerForManagersCount is the number of managers being managed by this manager.
-	ManagerForManagersCount int
-	// managerForServers shall contain an array of references to ComputerSystem
-	// resources of which this Manager instance has control.
-	managerForServers []string
-	// ManagerForServersCount is the number of Servers being managed.
-	ManagerForServersCount int
-	// managerForSwitches shall contain an array of references to Switch
-	// resources of which this Manager instance has control.
-	managerForSwitches []string
-	// ManagerForSwitchesCount is the number of Switches being managed.
-	ManagerForSwitchesCount int
-	// managerInChassis shall contain a reference to the chassis that this
-	// manager is located in.
-	managerInChassis string
-	// SelectedNetworkPort shall contain a link to a resource of type Port that represents the current network port
-	// used by this manager.
-	selectedNetworkPort string
-	// SoftwareImages shall contain an array of links to resources of type SoftwareInventory that represent the
-	// firmware images that apply to this manager.
-	softwareImages []string
-	// SoftwareImagesCount is the number of firmware images that apply to this manager.
-	SoftwareImagesCount int
-
-	forceFailoverTarget       string
-	modifyRedundancySetTarget string
-	// resetTarget is the internal URL to send reset targets to.
-	resetTarget string
-	// resetInfo contains URI for an ActionInfo Resource that describes this action.
-	actionInfo string
-	// SupportedResetTypes, if provided, is the reset types this system supports.
-	SupportedResetTypes             []ResetType
-	resetToDefaultsTarget           string
-	resetToDefaultsActionInfoTarget string
-	SupportedResetToDefaultsTypes   []ResetToDefaultsType
 	// RawData holds the original serialized JSON so we can compare updates.
 	RawData []byte
 }
@@ -395,55 +377,7 @@ type Manager struct {
 // UnmarshalJSON unmarshals a Manager object from the raw JSON.
 func (manager *Manager) UnmarshalJSON(b []byte) error {
 	type temp Manager
-	type actions struct {
-		ForceFailover       common.ActionTarget `json:"#Manager.ForceFailover"`
-		ModifyRedundancySet common.ActionTarget `json:"#Manager.ModifyRedundancySet"`
-		Reset               struct {
-			common.ActionTarget
-			AllowedResetTypes []ResetType `json:"ResetType@Redfish.AllowableValues"`
-		} `json:"#Manager.Reset"`
-		ResetToDefaults struct {
-			common.ActionTarget
-			AllowedResetTypes []ResetToDefaultsType `json:"ResetType@Redfish.AllowableValues"`
-		} `json:"#Manager.ResetToDefaults"`
-
-		Oem json.RawMessage
-	}
-	type linkReference struct {
-		ActiveSoftwareImage     common.Link
-		ManagedBy               common.Links
-		ManagedByCount          int `json:"ManagedBy@odata.count"`
-		ManagerForChassis       common.Links
-		ManagerForChassisCount  int `json:"ManagerForChassis@odata.count"`
-		ManagerForManagers      common.Links
-		ManagerForManagersCount int `json:"ManagerForManagers@odata.count"`
-		ManagerForServers       common.Links
-		ManagerForServersCount  int `json:"ManagerForServers@odata.count"`
-		ManagerForSwitches      common.Links
-		ManagerForSwitchesCount int `json:"ManagerForSwitches@odata.count"`
-		ManagerInChassis        common.Link
-		OEM                     json.RawMessage `json:"Oem"`
-		SelectedNetworkPort     common.Link
-		SoftwareImages          common.Links
-		SoftwareImagesCount     int `json:"SoftwareImages@odata.count"`
-	}
-	var t struct {
-		temp
-		DedicatedNetworkPorts common.Link
-		EthernetInterfaces    common.Link
-		HostInterfaces        common.Link
-		LogServices           common.Link
-		NetworkProtocol       common.Link
-		ManagerDiagnosticData common.Link
-		RemoteAccountService  common.Link
-		SharedNetworkPorts    common.Link
-		SerialInterfaces      common.Link
-		USBPorts              common.Link
-		VirtualMedia          common.Link
-		Links                 linkReference
-		Actions               actions
-		Oem                   json.RawMessage
-	}
+	var t temp
 
 	err := json.Unmarshal(b, &t)
 	if err != nil {
@@ -451,47 +385,7 @@ func (manager *Manager) UnmarshalJSON(b []byte) error {
 	}
 
 	// Extract the links to other entities
-	*manager = Manager(t.temp)
-	manager.dedicatedNetworkPorts = t.DedicatedNetworkPorts.String()
-	manager.ethernetInterfaces = t.EthernetInterfaces.String()
-	manager.hostInterfaces = t.HostInterfaces.String()
-	manager.logServices = t.LogServices.String()
-	manager.managerDiagnosticData = t.ManagerDiagnosticData.String()
-	manager.networkProtocol = t.NetworkProtocol.String()
-	manager.OemActions = t.Actions.Oem
-	manager.Oem = t.Oem
-	manager.remoteAccountService = t.RemoteAccountService.String()
-	manager.sharedNetworkPorts = t.SharedNetworkPorts.String()
-	manager.serialInterfaces = t.SerialInterfaces.String()
-	manager.usbPorts = t.USBPorts.String()
-	manager.virtualMedia = t.VirtualMedia.String()
-
-	manager.activeSoftwareImage = t.Links.ActiveSoftwareImage.String()
-	manager.managedBy = t.Links.ManagedBy.ToStrings()
-	manager.ManagedByCount = t.Links.ManagedByCount
-	manager.managerForChassis = t.Links.ManagerForChassis.ToStrings()
-	manager.ManagerForChassisCount = t.Links.ManagerForChassisCount
-	manager.managerForManagers = t.Links.ManagerForManagers.ToStrings()
-	manager.ManagerForManagersCount = t.Links.ManagerForManagersCount
-	manager.managerForServers = t.Links.ManagerForServers.ToStrings()
-	manager.ManagerForServersCount = t.Links.ManagerForServersCount
-	manager.ManagerForSwitchesCount = t.Links.ManagerForSwitchesCount
-	manager.managerForSwitches = t.Links.ManagerForSwitches.ToStrings()
-	manager.managerInChassis = t.Links.ManagerInChassis.String()
-	manager.OemLinks = t.Links.OEM
-	manager.selectedNetworkPort = t.Links.SelectedNetworkPort.String()
-	manager.softwareImages = t.Links.SoftwareImages.ToStrings()
-	manager.SoftwareImagesCount = t.Links.SoftwareImagesCount
-
-	manager.forceFailoverTarget = t.Actions.ForceFailover.Target
-	manager.modifyRedundancySetTarget = t.Actions.ModifyRedundancySet.Target
-	manager.SupportedResetTypes = t.Actions.Reset.AllowedResetTypes
-	manager.resetTarget = t.Actions.Reset.Target
-	manager.SupportedResetToDefaultsTypes = t.Actions.ResetToDefaults.AllowedResetTypes
-	manager.resetToDefaultsTarget = t.Actions.ResetToDefaults.Target
-	manager.resetToDefaultsActionInfoTarget = t.Actions.ResetToDefaults.ActionInfoTarget
-	manager.actionInfo = t.Actions.Reset.ActionInfoTarget
-
+	*manager = Manager(t)
 	// This is a read/write object, so we need to save the raw object data for later
 	manager.RawData = b
 
@@ -500,6 +394,11 @@ func (manager *Manager) UnmarshalJSON(b []byte) error {
 
 // Update commits updates to this object's properties to the running system.
 func (manager *Manager) Update() error {
+	return manager.UpdateWithContext(common.ContextOf(manager.GetClient()))
+}
+
+// UpdateWithContext commits updates to this object's properties to the running system.
+func (manager *Manager) UpdateWithContext(ctx context.Context) error {
 	readWriteFields := []string{
 		"AutoDSTEnabled",
 		"DateTime",
@@ -510,30 +409,60 @@ func (manager *Manager) Update() error {
 		"TimeZoneName",
 	}
 
-	return manager.UpdateFromRawData(manager, manager.RawData, readWriteFields)
+	return manager.UpdateFromRawDataWithContext(ctx, manager, manager.RawData, readWriteFields)
 }
 
 // GetManager will get a Manager instance from the Swordfish service.
-func GetManager(c common.Client, uri string) (*Manager, error) {
-	return common.GetObject[Manager](c, uri)
+func GetManager(c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Manager, error) {
+	return GetManagerWithContext(common.ContextOf(c), c, uri, queryOpts...)
+}
+
+// GetManagerWithContext will get a Manager instance from the Swordfish service.
+func GetManagerWithContext(ctx context.Context, c common.Client, uri string, queryOpts ...common.QueryGroupOption) (*Manager, error) {
+	return common.GetObjectWithContext[Manager](ctx, c, uri, queryOpts...)
 }
 
 // ListReferencedManagers gets the collection of Managers
-func ListReferencedManagers(c common.Client, link string) ([]*Manager, error) {
-	return common.GetCollectionObjects[Manager](c, link)
+func ListReferencedManagers(c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return ListReferencedManagersWithContext(common.ContextOf(c), c, link, queryOpts...)
+}
+
+// ListReferencedManagersWithContext gets the collection of Managers
+func ListReferencedManagersWithContext(ctx context.Context, c common.Client, link string, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return common.GetCollectionObjectsWithContext[Manager](ctx, c, link, queryOpts...)
 }
 
 // ForceFailover forces a failover to the specified manager.
 // **Need to test.** Spec calls for the Manager as a parameter, but it may actually
 // be the Manager.ODataID.
 func (manager *Manager) ForceFailover(newManager *Manager) error {
-	return manager.Post(manager.forceFailoverTarget, newManager)
+	return manager.ForceFailoverWithContext(common.ContextOf(manager.GetClient()), newManager)
+}
+
+// ForceFailoverWithContext forces a failover to the specified manager.
+// **Need to test.** Spec calls for the Manager as a parameter, but it may actually
+// be the Manager.ODataID.
+func (manager *Manager) ForceFailoverWithContext(ctx context.Context, newManager *Manager) error {
+	if manager.Actions.ForceFailover.Target == "" {
+		return ErrActionNotSupported
+	}
+	return manager.PostWithContext(ctx, manager.Actions.ForceFailover.Target, newManager)
 }
 
 // ModifyRedundancySet adds members to or removes members from a redundant group of managers.
 // **Need to test.** Spec calls for the Manager as a parameter, but it may actually
 // be the Manager.ODataID.
 func (manager *Manager) ModifyRedundancySet(addManagers, removeManagers []*Manager) error {
+	return manager.ModifyRedundancySetWithContext(common.ContextOf(manager.GetClient()), addManagers, removeManagers)
+}
+
+// ModifyRedundancySetWithContext adds members to or removes members from a redundant group of managers.
+// **Need to test.** Spec calls for the Manager as a parameter, but it may actually
+// be the Manager.ODataID.
+func (manager *Manager) ModifyRedundancySetWithContext(ctx context.Context, addManagers, removeManagers []*Manager) error {
+	if manager.Actions.ModifyRedundancySet.Target == "" {
+		return ErrActionNotSupported
+	}
 	parameters := struct {
 		Add    []*Manager
 		Remove []*Manager
@@ -541,19 +470,25 @@ func (manager *Manager) ModifyRedundancySet(addManagers, removeManagers []*Manag
 		Add:    addManagers,
 		Remove: removeManagers,
 	}
-	return manager.Post(manager.modifyRedundancySetTarget, parameters)
+	return manager.PostWithContext(ctx, manager.Actions.ModifyRedundancySet.Target, parameters)
 }
 
 // GetSupportedResetTypes returns any reset types that the Manager declares as supported
 // via either ActionInfo or AllowableValues.
 func (manager *Manager) GetSupportedResetTypes() ([]ResetType, error) {
-	if len(manager.SupportedResetTypes) > 0 {
-		return manager.SupportedResetTypes, nil
+	return manager.GetSupportedResetTypesWithContext(common.ContextOf(manager.GetClient()))
+}
+
+// GetSupportedResetTypesWithContext returns any reset types that the Manager declares as supported
+// via either ActionInfo or AllowableValues.
+func (manager *Manager) GetSupportedResetTypesWithContext(ctx context.Context) ([]ResetType, error) {
+	if len(manager.Actions.Reset.AllowedResetTypes) > 0 {
+		return manager.Actions.Reset.AllowedResetTypes, nil
 	}
 
 	// if we don't have ResetTypes, try to get from ActionInfo
-	if manager.actionInfo != "" {
-		resetActionInfo, err := manager.ResetActionInfo()
+	if manager.Actions.Reset.ActionInfoTarget != "" {
+		resetActionInfo, err := manager.ResetActionInfoWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -564,39 +499,52 @@ func (manager *Manager) GetSupportedResetTypes() ([]ResetType, error) {
 		}
 
 		for _, val := range vals {
-			manager.SupportedResetTypes = append(manager.SupportedResetTypes, ResetType(val))
+			manager.Actions.Reset.AllowedResetTypes = append(manager.Actions.Reset.AllowedResetTypes, ResetType(val))
 		}
 	}
 
-	return manager.SupportedResetTypes, nil
+	return manager.Actions.Reset.AllowedResetTypes, nil
 }
 
 // ResetActionInfo returns the ActionInfo for the Manager reset action if supported
-func (manager *Manager) ResetActionInfo() (*ActionInfo, error) {
-	if manager.actionInfo == "" {
-		return nil, errors.New("Manager Reset ActionInfo not supported")
+func (manager *Manager) ResetActionInfo(queryOpts ...common.QueryGroupOption) (*ActionInfo, error) {
+	return manager.ResetActionInfoWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// ResetActionInfoWithContext returns the ActionInfo for the Manager reset action if supported
+func (manager *Manager) ResetActionInfoWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*ActionInfo, error) {
+	if manager.Actions.Reset.ActionInfoTarget == "" {
+		return nil, ErrActionNotSupported
 	}
 
-	return common.GetObject[ActionInfo](manager.GetClient(), manager.actionInfo)
+	return common.GetObjectWithContext[ActionInfo](ctx, manager.GetClient(), manager.Actions.Reset.ActionInfoTarget, queryOpts...)
 }
 
 // Reset shall perform a reset of the manager.
 func (manager *Manager) Reset(resetType ResetType) error {
-	if len(manager.SupportedResetTypes) == 0 {
-		if manager.actionInfo != "" {
+	return manager.ResetWithContext(common.ContextOf(manager.GetClient()), resetType)
+}
+
+// ResetWithContext shall perform a reset of the manager.
+func (manager *Manager) ResetWithContext(ctx context.Context, resetType ResetType) error {
+	resetTarget := manager.Actions.Reset.Target
+	supportedResetTypes := manager.Actions.Reset.AllowedResetTypes
+
+	if len(supportedResetTypes) == 0 {
+		if manager.Actions.Reset.ActionInfoTarget != "" {
 			// reset without confirming the type is supported by the manager.
 			// done to minimize overhead though technically not as correct as first checking the supported reset types
 			t := struct {
 				ResetType ResetType
 			}{ResetType: resetType}
-			return manager.Post(manager.resetTarget, t)
+			return manager.PostWithContext(ctx, resetTarget, t)
 		}
 		// reset directly without reset type. HPE server has the behavior
-		return manager.Post(manager.resetTarget, struct{}{})
+		return manager.PostWithContext(ctx, resetTarget, struct{}{})
 	}
 	// Make sure the requested reset type is supported by the manager.
 	valid := false
-	for _, allowed := range manager.SupportedResetTypes {
+	for _, allowed := range supportedResetTypes {
 		if resetType == allowed {
 			valid = true
 			break
@@ -611,19 +559,25 @@ func (manager *Manager) Reset(resetType ResetType) error {
 	t := struct {
 		ResetType ResetType
 	}{ResetType: resetType}
-	return manager.Post(manager.resetTarget, t)
+	return manager.PostWithContext(ctx, resetTarget, t)
 }
 
 // GetSupportedResetToDefaultsTypes returns any reset to defaults
 // types that the Manager declares as supported via either ActionInfo or AllowableValues.
 func (manager *Manager) GetSupportedResetToDefaultsTypes() ([]ResetToDefaultsType, error) {
-	if len(manager.SupportedResetToDefaultsTypes) > 0 {
-		return manager.SupportedResetToDefaultsTypes, nil
+	return manager.GetSupportedResetToDefaultsTypesWithContext(common.ContextOf(manager.GetClient()))
+}
+
+// GetSupportedResetToDefaultsTypesWithContext returns any reset to defaults
+// types that the Manager declares as supported via either ActionInfo or AllowableValues.
+func (manager *Manager) GetSupportedResetToDefaultsTypesWithContext(ctx context.Context) ([]ResetToDefaultsType, error) {
+	if len(manager.Actions.ResetToDefaults.AllowedResetTypes) > 0 {
+		return manager.Actions.ResetToDefaults.AllowedResetTypes, nil
 	}
 
 	// if we don't have ResetTypes, try to get from ActionInfo
-	if manager.resetToDefaultsActionInfoTarget != "" {
-		resetActionInfo, err := manager.ResetToDefaultsActionInfo()
+	if manager.Actions.ResetToDefaults.ActionInfoTarget != "" {
+		resetActionInfo, err := manager.ResetToDefaultsActionInfoWithContext(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -634,58 +588,122 @@ func (manager *Manager) GetSupportedResetToDefaultsTypes() ([]ResetToDefaultsTyp
 		}
 
 		for _, val := range vals {
-			manager.SupportedResetToDefaultsTypes = append(manager.SupportedResetToDefaultsTypes, ResetToDefaultsType(val))
+			manager.Actions.ResetToDefaults.AllowedResetTypes = append(
+				manager.Actions.ResetToDefaults.AllowedResetTypes, ResetToDefaultsType(val),
+			)
 		}
 	}
 
-	return manager.SupportedResetToDefaultsTypes, nil
+	return manager.Actions.ResetToDefaults.AllowedResetTypes, nil
 }
 
 // ResetToDefaultsActionInfo returns the ActionInfo for the Manager ResetToDefaults action if supported
-func (manager *Manager) ResetToDefaultsActionInfo() (*ActionInfo, error) {
-	if manager.resetToDefaultsActionInfoTarget == "" {
-		return nil, errors.New("Manager ResetToDefaults ActionInfo not supported")
+func (manager *Manager) ResetToDefaultsActionInfo(queryOpts ...common.QueryGroupOption) (*ActionInfo, error) {
+	return manager.ResetToDefaultsActionInfoWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// ResetToDefaultsActionInfoWithContext returns the ActionInfo for the Manager ResetToDefaults action if supported
+func (manager *Manager) ResetToDefaultsActionInfoWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*ActionInfo, error) {
+	if manager.Actions.ResetToDefaults.ActionInfoTarget == "" {
+		return nil, ErrActionNotSupported
 	}
 
-	return common.GetObject[ActionInfo](manager.GetClient(), manager.resetToDefaultsActionInfoTarget)
+	return common.GetObjectWithContext[ActionInfo](ctx, manager.GetClient(), manager.Actions.ResetToDefaults.ActionInfoTarget, queryOpts...)
 }
 
 // ResetToDefaults resets the manager settings to factory defaults. This can cause the manager to reset.
 func (manager *Manager) ResetToDefaults(resetType ResetToDefaultsType) error {
+	return manager.ResetToDefaultsWithContext(common.ContextOf(manager.GetClient()), resetType)
+}
+
+// ResetToDefaultsWithContext resets the manager settings to factory defaults. This can cause the manager to reset.
+func (manager *Manager) ResetToDefaultsWithContext(ctx context.Context, resetType ResetToDefaultsType) error {
+	if manager.Actions.ResetToDefaults.Target == "" {
+		return ErrActionNotSupported
+	}
+
 	t := struct {
 		ResetType ResetToDefaultsType
 	}{ResetType: resetType}
-	return manager.Post(manager.resetToDefaultsTarget, t)
+	return manager.PostWithContext(ctx, manager.Actions.ResetToDefaults.Target, t)
 }
 
 // DedicatedNetworkPorts gets the dedicated network ports of the manager.
-func (manager *Manager) DedicatedNetworkPorts() ([]*Port, error) {
-	return ListReferencedPorts(manager.GetClient(), manager.dedicatedNetworkPorts)
+func (manager *Manager) DedicatedNetworkPorts(queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return manager.DedicatedNetworkPortsWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// DedicatedNetworkPortsWithContext gets the dedicated network ports of the manager.
+func (manager *Manager) DedicatedNetworkPortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	if manager.DedicatedNetworkPortsLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedPortsWithContext(ctx, manager.GetClient(), manager.DedicatedNetworkPortsLink.String(), queryOpts...)
 }
 
 // EthernetInterfaces get this manager's ethernet interfaces.
-func (manager *Manager) EthernetInterfaces() ([]*EthernetInterface, error) {
-	return ListReferencedEthernetInterfaces(manager.GetClient(), manager.ethernetInterfaces)
+func (manager *Manager) EthernetInterfaces(queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	return manager.EthernetInterfacesWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// EthernetInterfacesWithContext get this manager's ethernet interfaces.
+func (manager *Manager) EthernetInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*EthernetInterface, error) {
+	if manager.EthernetInterfacesLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedEthernetInterfacesWithContext(ctx, manager.GetClient(), manager.EthernetInterfacesLink.String(), queryOpts...)
 }
 
 // HostInterfaces get this manager's host interfaces.
-func (manager *Manager) HostInterfaces() ([]*HostInterface, error) {
-	return ListReferencedHostInterfaces(manager.GetClient(), manager.hostInterfaces)
+func (manager *Manager) HostInterfaces(queryOpts ...common.QueryGroupOption) ([]*HostInterface, error) {
+	return manager.HostInterfacesWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// HostInterfacesWithContext get this manager's host interfaces.
+func (manager *Manager) HostInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*HostInterface, error) {
+	if manager.HostInterfacesLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedHostInterfacesWithContext(ctx, manager.GetClient(), manager.HostInterfacesLink.String(), queryOpts...)
 }
 
 // LogServices get this manager's log services on this system.
-func (manager *Manager) LogServices() ([]*LogService, error) {
-	return ListReferencedLogServices(manager.GetClient(), manager.logServices)
+func (manager *Manager) LogServices(queryOpts ...common.QueryGroupOption) ([]*LogService, error) {
+	return manager.LogServicesWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// LogServicesWithContext get this manager's log services on this system.
+func (manager *Manager) LogServicesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*LogService, error) {
+	if manager.LogServicesLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedLogServicesWithContext(ctx, manager.GetClient(), manager.LogServicesLink.String(), queryOpts...)
 }
 
 // ManagerDiagnosticData gets the diagnostic data for this manager.
-func (manager *Manager) ManagerDiagnosticData() (*ManagerDiagnosticData, error) {
-	return GetManagerDiagnosticData(manager.GetClient(), manager.managerDiagnosticData)
+func (manager *Manager) ManagerDiagnosticData(queryOpts ...common.QueryGroupOption) (*ManagerDiagnosticData, error) {
+	return manager.ManagerDiagnosticDataWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// ManagerDiagnosticDataWithContext gets the diagnostic data for this manager.
+func (manager *Manager) ManagerDiagnosticDataWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*ManagerDiagnosticData, error) {
+	if manager.ManagerDiagnosticDataLink.IsZero() {
+		return nil, nil
+	}
+	return GetManagerDiagnosticDataWithContext(ctx, manager.GetClient(), manager.ManagerDiagnosticDataLink.String(), queryOpts...)
 }
 
 // NetworkProtocol get this manager's network protocol settings.
-func (manager *Manager) NetworkProtocol() (*NetworkProtocolSettings, error) {
-	return GetNetworkProtocol(manager.GetClient(), manager.networkProtocol)
+func (manager *Manager) NetworkProtocol(queryOpts ...common.QueryGroupOption) (*NetworkProtocolSettings, error) {
+	return manager.NetworkProtocolWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// NetworkProtocolWithContext get this manager's network protocol settings.
+func (manager *Manager) NetworkProtocolWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*NetworkProtocolSettings, error) {
+	if manager.NetworkProtocolLink.IsZero() {
+		return nil, nil
+	}
+	return GetNetworkProtocolWithContext(ctx, manager.GetClient(), manager.NetworkProtocolLink.String(), queryOpts...)
 }
 
 // NetworkProtocolURI returns the URI of this manager's network protocol resource.
@@ -695,73 +713,155 @@ func (manager *Manager) NetworkProtocolURI() string {
 
 // RemoteAccountService gets the account service resource for the remote manager that this resource represents.
 // This property shall only be present when providing aggregation of a remote manager.
-func (manager *Manager) RemoteAccountService() (*AccountService, error) {
-	return GetAccountService(manager.GetClient(), manager.remoteAccountService)
+func (manager *Manager) RemoteAccountService(queryOpts ...common.QueryGroupOption) (*AccountService, error) {
+	return manager.RemoteAccountServiceWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// RemoteAccountServiceWithContext gets the account service resource for the remote manager that this resource represents.
+// This property shall only be present when providing aggregation of a remote manager.
+func (manager *Manager) RemoteAccountServiceWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*AccountService, error) {
+	if manager.RemoteAccountServiceLink.IsZero() {
+		return nil, nil
+	}
+	return GetAccountServiceWithContext(ctx, manager.GetClient(), manager.RemoteAccountServiceLink.String(), queryOpts...)
 }
 
 // SharedNetworkPorts gets the shared network ports of the manager.
-func (manager *Manager) SharedNetworkPorts() ([]*Port, error) {
-	return ListReferencedPorts(manager.GetClient(), manager.sharedNetworkPorts)
+func (manager *Manager) SharedNetworkPorts(queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return manager.SharedNetworkPortsWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// SharedNetworkPortsWithContext gets the shared network ports of the manager.
+func (manager *Manager) SharedNetworkPortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	if manager.SharedNetworkPortsLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedPortsWithContext(ctx, manager.GetClient(), manager.SharedNetworkPortsLink.String(), queryOpts...)
 }
 
 // SerialInterfaces get this manager's serial interfaces.
-func (manager *Manager) SerialInterfaces() ([]*SerialInterface, error) {
-	return ListReferencedSerialInterfaces(manager.GetClient(), manager.serialInterfaces)
+func (manager *Manager) SerialInterfaces(queryOpts ...common.QueryGroupOption) ([]*SerialInterface, error) {
+	return manager.SerialInterfacesWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// SerialInterfacesWithContext get this manager's serial interfaces.
+func (manager *Manager) SerialInterfacesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*SerialInterface, error) {
+	if manager.SerialInterfacesLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedSerialInterfacesWithContext(ctx, manager.GetClient(), manager.SerialInterfacesLink.String(), queryOpts...)
 }
 
 // USBPorts get the USB ports of the manager.
-func (manager *Manager) USBPorts() ([]*Port, error) {
-	return ListReferencedPorts(manager.GetClient(), manager.usbPorts)
+func (manager *Manager) USBPorts(queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	return manager.USBPortsWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// USBPortsWithContext get the USB ports of the manager.
+func (manager *Manager) USBPortsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Port, error) {
+	if manager.USBPortsLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedPortsWithContext(ctx, manager.GetClient(), manager.USBPortsLink.String(), queryOpts...)
 }
 
 // VirtualMedia gets the virtual media associated with this manager.
 // This property has been deprecated in favor of the VirtualMedia property in the ComputerSystem resource.
-func (manager *Manager) VirtualMedia() ([]*VirtualMedia, error) {
-	return ListReferencedVirtualMedias(manager.GetClient(), manager.virtualMedia)
+func (manager *Manager) VirtualMedia(queryOpts ...common.QueryGroupOption) ([]*VirtualMedia, error) {
+	return manager.VirtualMediaWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// VirtualMediaWithContext gets the virtual media associated with this manager.
+// This property has been deprecated in favor of the VirtualMedia property in the ComputerSystem resource.
+func (manager *Manager) VirtualMediaWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*VirtualMedia, error) {
+	if manager.VirtualMediaLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedVirtualMediasWithContext(ctx, manager.GetClient(), manager.VirtualMediaLink.String(), queryOpts...)
 }
 
 // ActiveSoftwareImage gets the software inventory resource that represents the active firmware image for this manager.
-func (manager *Manager) ActiveSoftwareImage() (*SoftwareInventory, error) {
-	if manager.activeSoftwareImage == "" {
+func (manager *Manager) ActiveSoftwareImage(queryOpts ...common.QueryGroupOption) (*SoftwareInventory, error) {
+	return manager.ActiveSoftwareImageWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// ActiveSoftwareImageWithContext gets the software inventory resource that represents the active firmware image for this manager.
+func (manager *Manager) ActiveSoftwareImageWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*SoftwareInventory, error) {
+	if manager.Links.ActiveSoftwareImage.IsZero() {
 		return nil, nil
 	}
-	return GetSoftwareInventory(manager.GetClient(), manager.activeSoftwareImage)
+	return GetSoftwareInventoryWithContext(ctx, manager.GetClient(), manager.Links.ActiveSoftwareImage.String(), queryOpts...)
 }
 
 // ManagedBy gets the managers responsible for managing this manager.
-func (manager *Manager) ManagedBy() ([]*Manager, error) {
-	return common.GetObjects[Manager](manager.GetClient(), manager.managedBy)
+func (manager *Manager) ManagedBy(queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return manager.ManagedByWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// ManagedByWithContext gets the managers responsible for managing this manager.
+func (manager *Manager) ManagedByWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return common.GetObjectsWithContext[Manager](ctx, manager.GetClient(), manager.Links.ManagedBy.ToStrings(), queryOpts...)
 }
 
 // ManagedForChassis gets the the chassis this manager controls.
-func (manager *Manager) ManagedForChassis() ([]*Chassis, error) {
-	return common.GetObjects[Chassis](manager.GetClient(), manager.managerForChassis)
+func (manager *Manager) ManagedForChassis(queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return manager.ManagedForChassisWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// ManagedForChassisWithContext gets the the chassis this manager controls.
+func (manager *Manager) ManagedForChassisWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Chassis, error) {
+	return common.GetObjectsWithContext[Chassis](ctx, manager.GetClient(), manager.Links.ManagerForChassis.ToStrings(), queryOpts...)
 }
 
 // ManagerForManagers gets the managers that are managed by this manager.
-func (manager *Manager) ManagerForManagers() ([]*Manager, error) {
-	return common.GetObjects[Manager](manager.GetClient(), manager.managerForManagers)
+func (manager *Manager) ManagerForManagers(queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return manager.ManagerForManagersWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// ManagerForManagersWithContext gets the managers that are managed by this manager.
+func (manager *Manager) ManagerForManagersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
+	return common.GetObjectsWithContext[Manager](ctx, manager.GetClient(), manager.Links.ManagerForManagers.ToStrings(), queryOpts...)
 }
 
 // ManagerForServers gets the systems that this manager controls.
-func (manager *Manager) ManagerForServers() ([]*ComputerSystem, error) {
-	return common.GetObjects[ComputerSystem](manager.GetClient(), manager.managerForServers)
+func (manager *Manager) ManagerForServers(queryOpts ...common.QueryGroupOption) ([]*ComputerSystem, error) {
+	return manager.ManagerForServersWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// ManagerForServersWithContext gets the systems that this manager controls.
+func (manager *Manager) ManagerForServersWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*ComputerSystem, error) {
+	return common.GetObjectsWithContext[ComputerSystem](ctx, manager.GetClient(), manager.Links.ManagerForServers.ToStrings(), queryOpts...)
 }
 
 // ManagerForSwitches gets the switches that this manager controls.
-func (manager *Manager) ManagerForSwitches() ([]*Switch, error) {
-	return common.GetObjects[Switch](manager.GetClient(), manager.managerForSwitches)
+func (manager *Manager) ManagerForSwitches(queryOpts ...common.QueryGroupOption) ([]*Switch, error) {
+	return manager.ManagerForSwitchesWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// ManagerForSwitchesWithContext gets the switches that this manager controls.
+func (manager *Manager) ManagerForSwitchesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Switch, error) {
+	return common.GetObjectsWithContext[Switch](ctx, manager.GetClient(), manager.Links.ManagerForSwitches.ToStrings(), queryOpts...)
 }
 
 // SelectedNetworkPort gets the current network port used by this manager.
-func (manager *Manager) SelectedNetworkPort() (*Port, error) {
-	if manager.selectedNetworkPort == "" {
+func (manager *Manager) SelectedNetworkPort(queryOpts ...common.QueryGroupOption) (*Port, error) {
+	return manager.SelectedNetworkPortWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// SelectedNetworkPortWithContext gets the current network port used by this manager.
+func (manager *Manager) SelectedNetworkPortWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Port, error) {
+	if manager.Links.SelectedNetworkPort.IsZero() {
 		return nil, nil
 	}
-	return GetPort(manager.GetClient(), manager.selectedNetworkPort)
+	return GetPortWithContext(ctx, manager.GetClient(), manager.Links.SelectedNetworkPort.String(), queryOpts...)
 }
 
 // SoftwareImages gets the firmware images that apply to this manager.
-func (manager *Manager) SoftwareImages() ([]*SoftwareInventory, error) {
-	return common.GetObjects[SoftwareInventory](manager.GetClient(), manager.softwareImages)
+func (manager *Manager) SoftwareImages(queryOpts ...common.QueryGroupOption) ([]*SoftwareInventory, error) {
+	return manager.SoftwareImagesWithContext(common.ContextOf(manager.GetClient()), queryOpts...)
+}
+
+// SoftwareImagesWithContext gets the firmware images that apply to this manager.
+func (manager *Manager) SoftwareImagesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*SoftwareInventory, error) {
+	return common.GetObjectsWithContext[SoftwareInventory](ctx, manager.GetClient(), manager.Links.SoftwareImages.ToStrings(), queryOpts...)
 }
