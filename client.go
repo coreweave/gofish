@@ -67,6 +67,8 @@ type APIClient struct {
 
 	certHashMonitoring bool
 	CertHash           string
+	// Cert stores the first seen certificate. This is stable only if cert hash monitoring is enabled.
+	Cert *x509.Certificate
 }
 
 // Session holds the session ID and auth token needed to identify an
@@ -200,6 +202,12 @@ func setupClientWithConfig(ctx context.Context, config *ClientConfig) (c *APICli
 	// CertHash is populated once when the client is initialized.
 	// After that, it should never change. If monitoring is enabled and it changes, an error is thrown
 	client.CertHash = tlsCertHash(tlsCert)
+	if tlsCert != nil {
+		certClone, err := x509.ParseCertificate(tlsCert.Raw)
+		if err == nil {
+			client.Cert = certClone
+		}
+	}
 
 	// Init default settings
 	if config.AutoExpand && client.Service != nil {

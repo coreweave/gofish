@@ -17,6 +17,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -269,6 +270,9 @@ func TestCertHashMonitoring(t *testing.T) {
 	client.HTTPClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 
 	ts.TLS.Certificates = []tls.Certificate{genTLSCert(t)}
+	if ts.Certificate() == nil || client.Cert == nil || !slices.Equal(ts.Certificate().Raw, client.Cert.Raw) {
+		t.Error("certs not equal")
+	}
 
 	for i := 0; i < 5; i++ {
 		_, err = ServiceRoot(client)
