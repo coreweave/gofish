@@ -142,7 +142,7 @@ type Triggers struct {
 	// Reading property. A value of '0', or if the property is not present in the resource, shall indicate the
 	// threshold is deactivated when the sensor value no longer violates the threshold. The threshold shall not
 	// deactivate until the conditions of both HysteresisReading and HysteresisDuration are met.
-	HysteresisReading float64
+	HysteresisReading *float64 `json:",omitempty"`
 	// MetricIDs shall contain the labels for the metric definitions that contain the property identifiers for this
 	// trigger. This property shall match the value of the Id property of the corresponding metric definitions.
 	MetricIDs []string

@@ -72,7 +72,7 @@ type MemoryExtent struct {
 	ExtentSizeMiB int
 	// SequenceNumber shall contain the sequence number instructing host on the relative order the extents have to be
 	// placed in the host adjacent virtual address space.
-	SequenceNumber int
+	SequenceNumber *int `json:",omitempty"`
 	// Tag shall contain an opaque context attached to each extent to track usage of each extent or map extent to
 	// specific processes, transactions, or workloads on the host.
 	Tag string
@@ -91,7 +91,7 @@ type MemoryRegion struct {
 	// Description provides a description of this resource.
 	Description string
 	// ExtentsCount shall contain the number of extents defined for this memory region.
-	ExtentsCount int
+	ExtentsCount *int `json:",omitempty"`
 	// HardwareManagedCoherencyRegion shall indicate whether the device manages the cache coherency across hosts and
 	// thereby ensures that each host has a consistent view of this memory region content as defined in the 'Flags'
 	// field of 'Device Scoped Memory Affinity Structure' defined in the Coherent Device Attribute Table (CDAT)

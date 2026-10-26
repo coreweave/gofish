@@ -136,16 +136,16 @@ type NVMeControllerProperties struct {
 	ANACharacteristics []ANACharacteristics
 	// AllocatedCompletionQueues shall contain the number of I/O completion queues allocated to this NVMe I/O
 	// controller.
-	AllocatedCompletionQueues int
+	AllocatedCompletionQueues *int `json:",omitempty"`
 	// AllocatedSubmissionQueues shall contain the number of I/O submission queues allocated to this NVMe I/O
 	// controller.
-	AllocatedSubmissionQueues int
+	AllocatedSubmissionQueues *int `json:",omitempty"`
 	// ControllerType shall contain the type of NVMe controller.
 	ControllerType NVMeControllerType
 	// MaxQueueSize shall contain the maximum individual queue entry size supported per queue. This is a zero-based
 	// value, where the minimum value is one, indicating two entries. For PCIe, this applies to both submission and
 	// completion queues. For NVMe-oF, this applies only to submission queues.
-	MaxQueueSize int
+	MaxQueueSize *int `json:",omitempty"`
 	// NVMeControllerAttributes shall contain NVMe controller attributes.
 	NVMeControllerAttributes NVMeControllerAttributes
 	// NVMeSMARTCriticalWarnings shall contain the NVMe SMART Critical Warnings for this storage controller. This
@@ -237,7 +237,7 @@ type StorageController struct {
 	// interface (in Gigabits per second). The interface specified connects the
 	// controller to the storage devices, not the controller to a host (e.g. SAS
 	// bus, not PCIe host bus).
-	SpeedGbps float32
+	SpeedGbps *float32 `json:",omitempty"`
 	// Status shall contain any status or health properties of the resource.
 	Status common.Status
 	// SupportedControllerProtocols shall be the set of protocols this storage

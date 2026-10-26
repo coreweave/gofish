@@ -87,7 +87,7 @@ type License struct {
 	ExpirationDate string
 	// GracePeriodDays shall contain the number of days that the license is still usable after the date and time
 	// specified by the ExpirationDate property.
-	GracePeriodDays int
+	GracePeriodDays *int `json:",omitempty"`
 	// InstallDate shall contain the date and time when the license was installed.
 	InstallDate string
 	// LicenseInfoURI shall contain the URI at which to provide more information about the license. The information
@@ -105,7 +105,7 @@ type License struct {
 	Manufacturer string
 	// MaxAuthorizedDevices shall contain the maximum number of devices that are authorized by the license. This
 	// property shall only be present if the AuthorizationScope property contains the value 'Capacity'.
-	MaxAuthorizedDevices int
+	MaxAuthorizedDevices *int `json:",omitempty"`
 	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
@@ -116,7 +116,7 @@ type License struct {
 	RemainingDuration string
 	// RemainingUseCount shall contain the remaining usage count before the license expires. This property shall only
 	// be present for licenses that are based on usage count.
-	RemainingUseCount int
+	RemainingUseCount *int `json:",omitempty"`
 	// Removable shall indicate whether a user can remove the license with an HTTP DELETE operation.
 	Removable bool
 	// SKU shall contain the SKU number for this license.

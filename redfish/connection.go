@@ -285,7 +285,7 @@ type VolumeInfo struct {
 	AccessState AccessState
 	// LUN shall contain the initiator-visible logical unit number (LUN) assigned to this volume for initiators
 	// referenced by the InitiatorEndpoints or InitiatorEndpointGroups properties.
-	LUN int
+	LUN *int `json:",omitempty"`
 	// Volume shall contain a link to a resource of type Volume. The endpoints referenced by the InitiatorEndpoints or
 	// InitiatorEndpointGroups properties shall be given access to this volume as described by this object. If
 	// TargetEndpoints or TargetEndpointGroups is present, the referenced initiator endpoints shall be required to

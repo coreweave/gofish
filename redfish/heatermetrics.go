@@ -30,10 +30,10 @@ type HeaterMetrics struct {
 	PowerWatts SensorPowerExcerpt
 	// PrePowerOnHeatingTimeSeconds shall contain the total number of seconds the heater was active while the device it
 	// heats was powered off.
-	PrePowerOnHeatingTimeSeconds int
+	PrePowerOnHeatingTimeSeconds *int `json:",omitempty"`
 	// RuntimeHeatingTimeSeconds shall contain the total number of seconds the heater was active while the device it
 	// heats was powered on.
-	RuntimeHeatingTimeSeconds int
+	RuntimeHeatingTimeSeconds *int `json:",omitempty"`
 	// TemperatureReadingsCelsius shall contain the temperatures, in degree Celsius units, for this subsystem. The
 	// value of the DataSourceUri property, if present, shall reference a resource of type Sensor with the ReadingType
 	// property containing the value 'Temperature'.

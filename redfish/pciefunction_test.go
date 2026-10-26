@@ -75,8 +75,10 @@ func TestPCIeFunction(t *testing.T) {
 		t.Errorf("Invalid device class: %s", result.DeviceClass)
 	}
 
-	if result.FunctionID != 10 {
-		t.Errorf("Invalid function ID: %d", result.FunctionID)
+	if result.FunctionID == nil {
+		t.Error("Expected FunctionID to be set")
+	} else if *result.FunctionID != 10 {
+		t.Errorf("Invalid function ID: %d", *result.FunctionID)
 	}
 
 	if result.FunctionType != VirtualFunctionType {

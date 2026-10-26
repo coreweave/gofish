@@ -7,6 +7,7 @@ package redfish
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -298,18 +299,55 @@ func TestMinimumChassis(t *testing.T) {
 	}
 }
 
-// TestChassisZeroMaxPowerWatts ensures a reported 0 is distinguishable from absent.
-func TestChassisZeroMaxPowerWatts(t *testing.T) {
-	var result Chassis
-	err := json.NewDecoder(strings.NewReader(`{"Id": "1", "MaxPowerWatts": 0}`)).Decode(&result)
-	if err != nil {
-		t.Fatalf("Error decoding JSON: %s", err)
+// TestChassisOptionalNumerics ensures an absent field decodes to nil and a reported 0 stays distinct from it.
+func TestChassisOptionalNumerics(t *testing.T) {
+	fields := map[string]func(*Chassis) *float64{
+		"DepthMm":       func(c *Chassis) *float64 { return c.DepthMm },
+		"HeightMm":      func(c *Chassis) *float64 { return c.HeightMm },
+		"MaxPowerWatts": func(c *Chassis) *float64 { return c.MaxPowerWatts },
+		"MinPowerWatts": func(c *Chassis) *float64 { return c.MinPowerWatts },
+		"WeightKg":      func(c *Chassis) *float64 { return c.WeightKg },
+		"WidthMm":       func(c *Chassis) *float64 { return c.WidthMm },
 	}
 
-	if result.MaxPowerWatts == nil {
-		t.Error("Expected max power watts to be set when reported as 0")
-	} else if *result.MaxPowerWatts != 0 {
-		t.Errorf("Received invalid max power watts: %v", *result.MaxPowerWatts)
+	for name, field := range fields {
+		for _, tc := range []struct {
+			body string
+			want *float64
+		}{
+			{body: `{"Id": "1"}`},
+			{body: fmt.Sprintf(`{"Id": "1", %q: 0}`, name), want: new(float64)},
+			{body: fmt.Sprintf(`{"Id": "1", %q: 12.5}`, name), want: func() *float64 { v := 12.5; return &v }()},
+		} {
+			var result Chassis
+			if err := json.NewDecoder(strings.NewReader(tc.body)).Decode(&result); err != nil {
+				t.Fatalf("Error decoding JSON %s: %s", tc.body, err)
+			}
+
+			got := field(&result)
+			switch {
+			case tc.want == nil && got != nil:
+				t.Errorf("%s: expected nil when absent, got %v", name, *got)
+			case tc.want != nil && got == nil:
+				t.Errorf("%s: expected %v, got nil", name, *tc.want)
+			case tc.want != nil && *got != *tc.want:
+				t.Errorf("%s: expected %v, got %v", name, *tc.want, *got)
+			}
+		}
+	}
+}
+
+// TestChassisOptionalNumericsOmitted ensures marshaling leaves absent fields out instead of writing null.
+func TestChassisOptionalNumericsOmitted(t *testing.T) {
+	out, err := json.Marshal(Chassis{})
+	if err != nil {
+		t.Fatalf("Error marshaling: %s", err)
+	}
+
+	for _, name := range []string{"DepthMm", "HeightMm", "MaxPowerWatts", "MinPowerWatts", "WeightKg", "WidthMm"} {
+		if bytes.Contains(out, []byte(`"`+name+`"`)) {
+			t.Errorf("Expected %s to be omitted, got %s", name, out)
+		}
 	}
 }
 

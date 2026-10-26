@@ -76,7 +76,9 @@ func TestOperatingSystem(t *testing.T) {
 	assertEquals(t, "/redfish/v1/Systems/VM1/OperatingSystem/Containers", result.containers)
 	assertEquals(t, "/redfish/v1/UpdateService/SoftwareInventory/ContosoLinux", result.softwareImage)
 
-	if result.UptimeSeconds != 6720 {
-		t.Errorf("Unexpected UptimeSeconds value: %d", result.UptimeSeconds)
+	if result.UptimeSeconds == nil {
+		t.Error("Expected UptimeSeconds to be set")
+	} else if *result.UptimeSeconds != 6720 {
+		t.Errorf("Unexpected UptimeSeconds value: %d", *result.UptimeSeconds)
 	}
 }

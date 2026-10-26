@@ -97,9 +97,9 @@ type HealthData struct {
 	PerformanceDegraded bool
 	// PredictedMediaLifeLeftPercent shall contain an indicator
 	// of the percentage of life remaining in the media.
-	PredictedMediaLifeLeftPercent float32
+	PredictedMediaLifeLeftPercent *float32 `json:",omitempty"`
 	// RemainingSpareBlockPercentage shall be the remaining spare blocks in percentage.
-	RemainingSpareBlockPercentage float32
+	RemainingSpareBlockPercentage *float32 `json:",omitempty"`
 }
 
 // LifeTime shall describe the metrics of the memory since manufacturing.
@@ -143,19 +143,19 @@ type MemoryMetrics struct {
 	// percentage.  When this resource is subordinate to the MemorySummary
 	// object, this property shall be the memory bandwidth utilization over all
 	// memory as a percentage.
-	BandwidthPercent float32
+	BandwidthPercent *float32 `json:",omitempty"`
 	// BlockSizeBytes shall be the block size in bytes of all structure elements.
-	BlockSizeBytes int
+	BlockSizeBytes *int `json:",omitempty"`
 	// CXL shall contain the memory metrics specific to CXL devices.
 	CXL CXLMemoryMetrics
 	// CapacityUtilizationPercent shall contain the memory capacity utilization as a percentage, typically '0' to
 	// '100'. When this resource is subordinate to the MemorySummary object, this property shall be the memory capacity
 	// utilization over all memory as a percentage.
-	CapacityUtilizationPercent float64
+	CapacityUtilizationPercent *float64 `json:",omitempty"`
 	// CorrectedPersistentErrorCount shall contain the number of corrected errors in persistent memory.
-	CorrectedPersistentErrorCount int
+	CorrectedPersistentErrorCount *int `json:",omitempty"`
 	// CorrectedVolatileErrorCount shall contain the number of corrected errors in volatile memory.
-	CorrectedVolatileErrorCount int
+	CorrectedVolatileErrorCount *int `json:",omitempty"`
 	// CurrentPeriod shall contain properties which describe the CurrentPeriod
 	// metrics for the current resource.
 	CurrentPeriod CurrentPeriod
@@ -163,7 +163,7 @@ type MemoryMetrics struct {
 	Description string
 	// DirtyShutdownCount shall contain the number of shutdowns while outstanding writes have not completed to
 	// persistent memory.
-	DirtyShutdownCount int
+	DirtyShutdownCount *int `json:",omitempty"`
 	// HealthData shall contain properties which describe the HealthData metrics
 	// for the current resource.
 	HealthData HealthData
@@ -174,7 +174,7 @@ type MemoryMetrics struct {
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
 	// OperatingSpeedMHz is used by the memory device.
-	OperatingSpeedMHz int
+	OperatingSpeedMHz *int `json:",omitempty"`
 
 	clearCurrentPeriodTarget string
 }

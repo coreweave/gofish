@@ -17,10 +17,10 @@ import (
 type JobServiceCapabilities struct {
 	// MaxJobs shall contain the maximum number of jobs supported by the
 	// implementation.
-	MaxJobs int
+	MaxJobs *int `json:",omitempty"`
 	// MaxSteps shall contain the maximum number of steps supported by a
 	// single job instance.
-	MaxSteps int
+	MaxSteps *int `json:",omitempty"`
 	// Scheduling shall indicate whether the Schedule property within the job
 	// supports scheduling of jobs.
 	Scheduling bool

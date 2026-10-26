@@ -15,10 +15,10 @@ import (
 type HeaterSummary struct {
 	// TotalPrePowerOnHeatingTimeSeconds shall contain the total number of seconds all the heaters in the thermal
 	// subsystem were active while the respective devices they heat were powered off.
-	TotalPrePowerOnHeatingTimeSeconds int
+	TotalPrePowerOnHeatingTimeSeconds *int `json:",omitempty"`
 	// TotalRuntimeHeatingTimeSeconds shall contain the total number of seconds all the heaters in the thermal
 	// subsystem were active while the respective devices they heat were powered on.
-	TotalRuntimeHeatingTimeSeconds int
+	TotalRuntimeHeatingTimeSeconds *int `json:",omitempty"`
 }
 
 // TemperatureSummary shall contain properties that describe temperature sensor for a subsystem.

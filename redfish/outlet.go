@@ -134,7 +134,7 @@ type Outlet struct {
 	PowerControlLocked bool
 	// PowerCycleDelaySeconds shall contain the number of seconds to delay power on after a PowerControl action to
 	// cycle power. The value '0' shall indicate no delay to power on.
-	PowerCycleDelaySeconds float64
+	PowerCycleDelaySeconds *float64 `json:",omitempty"`
 	// PowerEnabled shall indicate the power enable state of the outlet. The value 'true' shall indicate that the
 	// outlet can be powered on, and 'false' shall indicate that the outlet cannot be powered.
 	PowerEnabled bool
@@ -144,13 +144,13 @@ type Outlet struct {
 	PowerLoadPercent SensorExcerpt
 	// PowerOffDelaySeconds shall contain the number of seconds to delay power off after a PowerControl action. The
 	// value '0' shall indicate no delay to power off.
-	PowerOffDelaySeconds float64
+	PowerOffDelaySeconds *float64 `json:",omitempty"`
 	// PowerOnDelaySeconds shall contain the number of seconds to delay power up after a power cycle or a PowerControl
 	// action. The value '0' shall indicate no delay to power up.
-	PowerOnDelaySeconds float64
+	PowerOnDelaySeconds *float64 `json:",omitempty"`
 	// PowerRestoreDelaySeconds shall contain the number of seconds to delay power on after a power fault. The value
 	// '0' shall indicate no delay to power on.
-	PowerRestoreDelaySeconds float64
+	PowerRestoreDelaySeconds *float64 `json:",omitempty"`
 	// PowerRestorePolicy shall contain the desired PowerState of the outlet when power is applied. The value
 	// 'LastState' shall return the outlet to the PowerState it was in when power was lost.
 	PowerRestorePolicy PowerRestorePolicyTypes
@@ -168,7 +168,7 @@ type Outlet struct {
 	PowerWatts SensorPowerExcerpt
 	// RatedCurrentAmps shall contain the rated maximum current for this outlet, in ampere units, after any required
 	// de-rating, due to safety agency or other regulatory requirements, has been applied.
-	RatedCurrentAmps float64
+	RatedCurrentAmps *float64 `json:",omitempty"`
 	// Status shall contain any status or health properties of the resource.
 	Status common.Status
 	// UserLabel shall contain a user-assigned label used to identify this resource. If a value has not been assigned

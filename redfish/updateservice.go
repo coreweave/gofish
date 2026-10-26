@@ -131,7 +131,7 @@ type UpdateService struct {
 	HTTPPushURITargetsBusy bool
 	// MaxImageSizeBytes shall indicate the maximum size of the software update image that clients can send to this
 	// update service.
-	MaxImageSizeBytes int
+	MaxImageSizeBytes *int `json:",omitempty"`
 	// MultipartHTTPPushURI endpoint is used to perform a multipart push (POST) updates
 	MultipartHTTPPushURI string `json:"MultiPartHttpPushUri"`
 	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the

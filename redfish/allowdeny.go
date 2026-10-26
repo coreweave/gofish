@@ -48,15 +48,15 @@ type AllowDeny struct {
 	Description string
 	// DestinationPortLower shall contain the TCP, UDP, or other destination port to which this rule begins
 	// application, inclusive.
-	DestinationPortLower int
+	DestinationPortLower *int `json:",omitempty"`
 	// DestinationPortUpper shall contain the TCP, UDP, or other destination port to which this rule ends application,
 	// inclusive.
-	DestinationPortUpper int
+	DestinationPortUpper *int `json:",omitempty"`
 	// Direction shall indicate the direction of the data to which this permission applies for this network device
 	// function.
 	Direction DataDirection
 	// IANAProtocolNumber shall contain the IANA protocol number to which this permission applies.
-	IANAProtocolNumber int
+	IANAProtocolNumber *int `json:",omitempty"`
 	// IPAddressLower shall contain the lower IP address to which this permission applies.
 	IPAddressLower string
 	// IPAddressType shall contain the type of IP address populated in the IPAddressLower and IPAddressUpper
@@ -66,9 +66,9 @@ type AllowDeny struct {
 	IPAddressUpper string
 	// SourcePortLower shall contain the TCP, UDP, or other source port to which this rule begins application,
 	// inclusive.
-	SourcePortLower int
+	SourcePortLower *int `json:",omitempty"`
 	// SourcePortUpper shall contain the TCP, UDP, or other source port to which this rule ends application, inclusive.
-	SourcePortUpper int
+	SourcePortUpper *int `json:",omitempty"`
 	// StatefulSession shall indicate if this permission only applies to stateful connections, which are those using
 	// SYN, ACK, and FIN.
 	StatefulSession bool

@@ -14,10 +14,10 @@ import (
 // BaseSpeedPrioritySettings shall specify the clock speed for a set of cores.
 type BaseSpeedPrioritySettings struct {
 	// BaseSpeedMHz shall contain the clock speed to configure the set of cores in MHz.
-	BaseSpeedMHz int
+	BaseSpeedMHz *int `json:",omitempty"`
 	// CoreCount shall contain the number of cores to configure with the speed specified by the BaseSpeedMHz property.
 	// The sum of all CoreCount properties shall equal the value of the TotalAvailableCoreCount property.
-	CoreCount int
+	CoreCount *int `json:",omitempty"`
 	// CoreIDs shall contain an array identifying the cores to configure with the speed specified by the BaseSpeedMHz
 	// property. The length of the array shall equal the value of the CoreCount property.
 	CoreIDs []int
@@ -31,23 +31,23 @@ type OperatingConfig struct {
 	// ODataType is the odata type.
 	ODataType string `json:"@odata.type"`
 	// BaseSpeedMHz shall contain the base (nominal) clock speed of the processor in MHz.
-	BaseSpeedMHz int
+	BaseSpeedMHz *int `json:",omitempty"`
 	// BaseSpeedPrioritySettings shall contain an array of objects that specify the clock speed for sets of cores when
 	// the configuration is operational.
 	BaseSpeedPrioritySettings []BaseSpeedPrioritySettings
 	// Description provides a description of this resource.
 	Description string
 	// MaxJunctionTemperatureCelsius shall contain the maximum temperature of the junction in degree Celsius units.
-	MaxJunctionTemperatureCelsius int
+	MaxJunctionTemperatureCelsius *int `json:",omitempty"`
 	// MaxSpeedMHz shall contain the maximum clock speed to which the processor can be configured in MHz.
-	MaxSpeedMHz int
+	MaxSpeedMHz *int `json:",omitempty"`
 	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
 	// Redfish Specification-described requirements.
 	OEM json.RawMessage `json:"Oem"`
 	// TDPWatts shall contain the thermal design point of the processor in watt units.
-	TDPWatts int
+	TDPWatts *int `json:",omitempty"`
 	// TotalAvailableCoreCount shall contain the number of cores in the processor that can be configured.
-	TotalAvailableCoreCount int
+	TotalAvailableCoreCount *int `json:",omitempty"`
 	// TurboProfile shall contain an array of objects that specify the turbo profile for a set of active cores.
 	TurboProfile []TurboProfileDatapoint
 }
@@ -78,7 +78,7 @@ func ListReferencedOperatingConfigsWithContext(ctx context.Context, c common.Cli
 type TurboProfileDatapoint struct {
 	// ActiveCoreCount shall contain the number of cores to be configured with the maximum turbo clock speed. The value
 	// shall be less than or equal to the TotalAvailableCoreCount property.
-	ActiveCoreCount int
+	ActiveCoreCount *int `json:",omitempty"`
 	// MaxSpeedMHz shall contain the maximum turbo clock speed that correspond to the number of active cores in MHz.
-	MaxSpeedMHz int
+	MaxSpeedMHz *int `json:",omitempty"`
 }

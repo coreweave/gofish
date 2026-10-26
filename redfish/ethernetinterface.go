@@ -221,10 +221,10 @@ type EthernetInterface struct {
 	MACAddress string
 	// MTUSize shall be the size in bytes of largest Protocol Data Unit (PDU)
 	// that can be passed in an Ethernet (MAC) frame on this interface.
-	MTUSize int
+	MTUSize *int `json:",omitempty"`
 	// MaxIPv6StaticAddresses shall indicate the number of array items supported
 	// by IPv6StaticAddresses.
-	MaxIPv6StaticAddresses int
+	MaxIPv6StaticAddresses *int `json:",omitempty"`
 	// NameServers used on this interface.
 	NameServers []string
 	// Oem object used on this interface.
@@ -237,7 +237,7 @@ type EthernetInterface struct {
 	// interface belongs to a virtual machine or container.
 	RoutingScope RoutingScope
 	// SpeedMbps shall be the link speed of the interface in Mbps.
-	SpeedMbps int
+	SpeedMbps *int `json:",omitempty"`
 	// StatelessAddressAutoConfig is This object shall contain the IPv4 and
 	// IPv6 Stateless Address Automatic Configuration (SLAAC) properties for
 	// this interface.
@@ -419,10 +419,10 @@ func ListReferencedEthernetInterfacesWithContext(ctx context.Context, c common.C
 type IPv6AddressPolicyEntry struct {
 	// Label shall contain the IPv6 Label value for this table entry as defined
 	// in RFC 6724 section 2.1.
-	Label int
+	Label *int `json:",omitempty"`
 	// Precedence shall contain the IPv6 Precedence value for this table entry
 	// as defined in RFC 6724 section 2.1.
-	Precedence int
+	Precedence *int `json:",omitempty"`
 	// Prefix shall contain the IPv6 Address Prefix for this table entry as
 	// defined in RFC 6724 section 2.1.
 	Prefix string

@@ -72,23 +72,33 @@ func TestOperatingConfig(t *testing.T) {
 	assertEquals(t, "0", result.ID)
 	assertEquals(t, "Processor Profile", result.Name)
 
-	if result.TotalAvailableCoreCount != 28 {
-		t.Errorf("Unexpected TotalAvailableCoreCount value: %d", result.TotalAvailableCoreCount)
+	if result.TotalAvailableCoreCount == nil {
+		t.Error("Expected TotalAvailableCoreCount to be set")
+	} else if *result.TotalAvailableCoreCount != 28 {
+		t.Errorf("Unexpected TotalAvailableCoreCount value: %d", *result.TotalAvailableCoreCount)
 	}
 
-	if result.MaxJunctionTemperatureCelsius != 90 {
-		t.Errorf("Unexpected MaxJunctionTemperatureCelsius value: %d", result.MaxJunctionTemperatureCelsius)
+	if result.MaxJunctionTemperatureCelsius == nil {
+		t.Error("Expected MaxJunctionTemperatureCelsius to be set")
+	} else if *result.MaxJunctionTemperatureCelsius != 90 {
+		t.Errorf("Unexpected MaxJunctionTemperatureCelsius value: %d", *result.MaxJunctionTemperatureCelsius)
 	}
 
-	if result.TurboProfile[0].ActiveCoreCount != 2 {
-		t.Errorf("Unexpected ActiveCoreCount value: %d", result.TurboProfile[0].ActiveCoreCount)
+	if result.TurboProfile[0].ActiveCoreCount == nil {
+		t.Error("Expected TurboProfile[0].ActiveCoreCount to be set")
+	} else if *result.TurboProfile[0].ActiveCoreCount != 2 {
+		t.Errorf("Unexpected ActiveCoreCount value: %d", *result.TurboProfile[0].ActiveCoreCount)
 	}
 
-	if result.TurboProfile[2].MaxSpeedMHz != 3800 {
-		t.Errorf("Unexpected MaxSpeedMHz value: %d", result.TurboProfile[2].MaxSpeedMHz)
+	if result.TurboProfile[2].MaxSpeedMHz == nil {
+		t.Error("Expected TurboProfile[2].MaxSpeedMHz to be set")
+	} else if *result.TurboProfile[2].MaxSpeedMHz != 3800 {
+		t.Errorf("Unexpected MaxSpeedMHz value: %d", *result.TurboProfile[2].MaxSpeedMHz)
 	}
 
-	if result.BaseSpeedPrioritySettings[0].BaseSpeedMHz != 2900 {
-		t.Errorf("Unexpected BaseSpeedMHz value: %d", result.BaseSpeedPrioritySettings[0].BaseSpeedMHz)
+	if result.BaseSpeedPrioritySettings[0].BaseSpeedMHz == nil {
+		t.Error("Expected BaseSpeedPrioritySettings[0].BaseSpeedMHz to be set")
+	} else if *result.BaseSpeedPrioritySettings[0].BaseSpeedMHz != 2900 {
+		t.Errorf("Unexpected BaseSpeedMHz value: %d", *result.BaseSpeedPrioritySettings[0].BaseSpeedMHz)
 	}
 }

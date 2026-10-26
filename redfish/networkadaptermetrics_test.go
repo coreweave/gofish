@@ -42,31 +42,45 @@ func TestNetworkAdapterMetrics(t *testing.T) {
 	assertEquals(t, "NetworkAdapterMetrics", result.ID)
 	assertEquals(t, "Network Adapter Metrics", result.Name)
 
-	if result.HostBusRXPercent != 35.53 {
-		t.Errorf("Unexpected HostBusRXPercent value: %.2f", result.HostBusRXPercent)
+	if result.HostBusRXPercent == nil {
+		t.Error("Expected HostBusRXPercent to be set")
+	} else if *result.HostBusRXPercent != 35.53 {
+		t.Errorf("Unexpected HostBusRXPercent value: %.2f", *result.HostBusRXPercent)
 	}
 
-	if result.HostBusTXPercent != 14.17 {
-		t.Errorf("Unexpected HostBusTXPercent value: %.2f", result.HostBusTXPercent)
+	if result.HostBusTXPercent == nil {
+		t.Error("Expected HostBusTXPercent to be set")
+	} else if *result.HostBusTXPercent != 14.17 {
+		t.Errorf("Unexpected HostBusTXPercent value: %.2f", *result.HostBusTXPercent)
 	}
 
-	if result.CPUCorePercent != 8.35 {
-		t.Errorf("Unexpected CPUCorePercent value: %.2f", result.CPUCorePercent)
+	if result.CPUCorePercent == nil {
+		t.Error("Expected CPUCorePercent to be set")
+	} else if *result.CPUCorePercent != 8.35 {
+		t.Errorf("Unexpected CPUCorePercent value: %.2f", *result.CPUCorePercent)
 	}
 
-	if result.NCSIRXFrames != 0 {
-		t.Errorf("Unexpected NCSIRXFrames value: %d", result.NCSIRXFrames)
+	if result.NCSIRXFrames == nil {
+		t.Error("Expected NCSIRXFrames to be set")
+	} else if *result.NCSIRXFrames != 0 {
+		t.Errorf("Unexpected NCSIRXFrames value: %d", *result.NCSIRXFrames)
 	}
 
-	if result.RXBytes != 7754199970 {
-		t.Errorf("Unexpected RXBytes value: %d", result.RXBytes)
+	if result.RXBytes == nil {
+		t.Error("Expected RXBytes to be set")
+	} else if *result.RXBytes != 7754199970 {
+		t.Errorf("Unexpected RXBytes value: %d", *result.RXBytes)
 	}
 
-	if result.RXMulticastFrames != 1941 {
-		t.Errorf("Unexpected RXMulticastFrames value: %d", result.RXMulticastFrames)
+	if result.RXMulticastFrames == nil {
+		t.Error("Expected RXMulticastFrames to be set")
+	} else if *result.RXMulticastFrames != 1941 {
+		t.Errorf("Unexpected RXMulticastFrames value: %d", *result.RXMulticastFrames)
 	}
 
-	if result.TXUnicastFrames != 18205770 {
-		t.Errorf("Unexpected TXUnicastFrames value: %d", result.TXUnicastFrames)
+	if result.TXUnicastFrames == nil {
+		t.Error("Expected TXUnicastFrames to be set")
+	} else if *result.TXUnicastFrames != 18205770 {
+		t.Errorf("Unexpected TXUnicastFrames value: %d", *result.TXUnicastFrames)
 	}
 }

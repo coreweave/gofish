@@ -46,8 +46,10 @@ func TestContainerImage(t *testing.T) {
 	assertEquals(t, "OCI", string(result.Type))
 	assertEquals(t, "2fbd319a987e5265aae45b7e786dead51d1aae48b7bea42bcfc91a62934ca37f", result.ProgrammaticID)
 
-	if result.SizeBytes != 373293056 {
-		t.Errorf("Unexpected memory size, got %d", result.SizeBytes)
+	if result.SizeBytes == nil {
+		t.Error("Expected SizeBytes to be set")
+	} else if *result.SizeBytes != 373293056 {
+		t.Errorf("Unexpected memory size, got %d", *result.SizeBytes)
 	}
 
 	assertEquals(t, "/redfish/v1/Systems/VM1/OperatingSystem/Containers/WebBusinessLogic", result.containers[0])

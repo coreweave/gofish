@@ -71,7 +71,7 @@ type Pump struct {
 	// SerialNumber shall contain the serial number as defined by the manufacturer for this pump.
 	SerialNumber string
 	// ServiceHours shall contain the number of hours of service that the pump has been in operation.
-	ServiceHours float64
+	ServiceHours *float64 `json:",omitempty"`
 	// setMode shall contain the action target for setting the mode of this pump.
 	setMode string
 	// SparePartNumber shall contain the spare or replacement part number as defined by the manufacturer for this pump.

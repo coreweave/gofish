@@ -532,7 +532,7 @@ type SMTP struct {
 	Password string
 	// Port shall contain the destination port for the SMTP
 	// server.
-	Port int
+	Port *int `json:",omitempty"`
 	// ServerAddress shall contain the address of the SMTP
 	// server for outgoing email.
 	ServerAddress string

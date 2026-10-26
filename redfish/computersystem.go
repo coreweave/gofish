@@ -426,7 +426,7 @@ type HostGraphicalConsole struct {
 	// supports.
 	MaxConcurrentSessions int
 	// Port shall contain the port assigned to the service.
-	Port int
+	Port *int `json:",omitempty"`
 	// ServiceEnabled shall indicate whether the protocol for the service is enabled.
 	ServiceEnabled bool
 }
@@ -448,7 +448,7 @@ type Boot struct {
 	AliasBootOrder []string `json:",omitempty"`
 	// AutomaticRetryAttempts is the number of attempts the system will automatically retry
 	// booting in the event the system enters an error state on boot.
-	AutomaticRetryAttempts int `json:",omitempty"`
+	AutomaticRetryAttempts *int `json:",omitempty"`
 	// AutomaticRetryConfig is how the system retries booting automatically.
 	AutomaticRetryConfig AutomaticRetryConfig `json:",omitempty"`
 	// BootNext shall contain the BootOptionReference of the UEFI boot option for one time boot, as defined by the UEFI
@@ -501,7 +501,7 @@ type Boot struct {
 	// the event the system enters an error state on boot. If '0', the system has no remaining automatic boot retry
 	// attempts and shall not automatically retry booting if the system enters an error state. This property shall be
 	// reset to the value of AutomaticRetryAttempts upon a successful boot attempt.
-	RemainingAutomaticRetryAttempts int `json:",omitempty"`
+	RemainingAutomaticRetryAttempts *int `json:",omitempty"`
 	// StopBootOnFault shall contain the setting if the boot should stop on a fault.
 	StopBootOnFault StopBootOnFault `json:",omitempty"`
 	// TrustedModuleRequiredToBoot shall contain the Trusted Module boot requirement.
@@ -523,7 +523,7 @@ type BootProgress struct {
 	// LastState transitioning to 'OSRunning'. If LastState contains 'OSRunning', this property shall contain the most
 	// recent boot time. For other values of LastState, this property shall contain the boot time for the previous
 	// boot.
-	LastBootTimeSeconds float64
+	LastBootTimeSeconds *float64 `json:",omitempty"`
 	// LastState shall contain the last boot progress state.
 	LastState BootProgressTypes
 	// LastStateTime shall contain the date and time when the last boot state was updated.
@@ -621,7 +621,7 @@ type SerialConsoleProtocol struct {
 	// to exit the serial console session, or, if shared with a manager CLI, to return to the CLI.
 	HotKeySequenceDisplay string
 	// Port shall contain the port assigned to the protocol.
-	Port int
+	Port *int `json:",omitempty"`
 	// ServiceEnabled shall indicate whether the protocol for the service is enabled.
 	ServiceEnabled bool
 	// SharedWithManagerCLI shall indicate whether the serial console service is shared with access to the manager's
@@ -649,18 +649,18 @@ type IdlePowerSaver struct {
 	Enabled bool
 	// EnterDwellTimeSeconds shall contain the duration in seconds the computer system is below the
 	// EnterUtilizationPercent value before the idle power save is activated.
-	EnterDwellTimeSeconds int
+	EnterDwellTimeSeconds *int `json:",omitempty"`
 	// EnterUtilizationPercent shall contain the percentage of utilization, typically '0' to '100', when the computer
 	// system enters idle power save. If the computer system's utilization goes below this value for the duration
 	// specified by EnterDwellTimeSeconds, it shall enter idle power save.
-	EnterUtilizationPercent int
+	EnterUtilizationPercent *int `json:",omitempty"`
 	// ExitDwellTimeSeconds shall contain the duration in seconds the computer system is above the
 	// ExitUtilizationPercent value before the idle power save is stopped.
-	ExitDwellTimeSeconds int
+	ExitDwellTimeSeconds *int `json:",omitempty"`
 	// ExitUtilizationPercent shall contain the percentage of utilization, typically '0' to '100', when the computer
 	// system exits idle power save. If the computer system's utilization goes above this value for the duration
 	// specified by ExitDwellTimeSeconds, it shall exit idle power save.
-	ExitUtilizationPercent int
+	ExitUtilizationPercent *int `json:",omitempty"`
 }
 
 // KMIPServer shall contain the KMIP server settings for a computer system.
@@ -674,7 +674,7 @@ type KMIPServer struct {
 	// Password shall contain the password to access the KMIP server. The value shall be 'null' in responses.
 	Password string
 	// Port shall contain the KMIP server port.
-	Port int
+	Port *int `json:",omitempty"`
 	// Username shall contain the username to access the KMIP server.
 	Username string
 }
@@ -849,15 +849,15 @@ type ComputerSystem struct {
 	PCIeFunctionsLink common.Links `json:"PCIeFunctions"`
 	// PowerCycleDelaySeconds shall contain the number of seconds to delay power on after a 'Reset' action requesting
 	// 'PowerCycle'. The value '0' shall indicate no delay to power on.
-	PowerCycleDelaySeconds float64
+	PowerCycleDelaySeconds *float64 `json:",omitempty"`
 	// PowerMode shall contain the computer system power mode setting.
 	PowerMode PowerMode
 	// PowerOffDelaySeconds shall contain the number of seconds to delay power off during a reset. The value '0' shall
 	// indicate no delay to power off.
-	PowerOffDelaySeconds float64
+	PowerOffDelaySeconds *float64 `json:",omitempty"`
 	// PowerOnDelaySeconds shall contain the number of seconds to delay power on after a power cycle or during a reset.
 	// The value '0' shall indicate no delay to power on.
-	PowerOnDelaySeconds float64
+	PowerOnDelaySeconds *float64 `json:",omitempty"`
 	// PowerRestorePolicy is the desired
 	// PowerState of the system when power is applied to the system. A value
 	// of 'LastState' shall return the system to the PowerState it was in
@@ -1426,10 +1426,10 @@ type MemorySummary struct {
 	Status common.Status
 	// TotalSystemMemoryGiB is the amount of configured system general purpose
 	// volatile (RAM) memory as measured in gibibytes.
-	TotalSystemMemoryGiB float32
+	TotalSystemMemoryGiB *float32 `json:",omitempty"`
 	// TotalSystemPersistentMemoryGiB is the total amount of configured
 	// persistent memory available to the system as measured in gibibytes.
-	TotalSystemPersistentMemoryGiB float32
+	TotalSystemPersistentMemoryGiB *float32 `json:",omitempty"`
 }
 
 func (memorySummary *MemorySummary) UnmarshalJSON(b []byte) error {
@@ -1469,9 +1469,9 @@ func (memorySummary *MemorySummary) MetricsWithContext(ctx context.Context, c co
 // the central processors for a system.
 type ProcessorSummary struct {
 	// Count is the number of physical central processors in the system.
-	Count int
+	Count *int `json:",omitempty"`
 	// LogicalProcessorCount is the number of logical central processors in the system.
-	LogicalProcessorCount int
+	LogicalProcessorCount *int `json:",omitempty"`
 	// Metrics shall be a reference to the Metrics
 	// associated with this ProcessorSummary.
 	metrics string

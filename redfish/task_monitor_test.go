@@ -130,6 +130,7 @@ func TestPostWithTask(t *testing.T) { //nolint: funlen
 func TestWaitForTaskMonitor(t *testing.T) { //nolint: funlen
 	startTime := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 	testTaskMonitorURI := "/TaskService/TaskMonitors/1"
+	percentStarted, percentDone := 0, 100
 
 	tests := map[string]struct {
 		PollRate        time.Duration
@@ -293,8 +294,8 @@ func TestWaitForTaskMonitor(t *testing.T) { //nolint: funlen
 				{StatusCode: 200, Body: io.NopCloser(bytes.NewBufferString(""))},
 			},
 			ExpectedUpdates: []*redfish.Task{
-				{TaskState: "Running", PercentComplete: 0},
-				{TaskState: "Running", PercentComplete: 100},
+				{TaskState: "Running", PercentComplete: &percentStarted},
+				{TaskState: "Running", PercentComplete: &percentDone},
 			},
 			StatusChan: true,
 			EndTime:    startTime.Add(20 * time.Second),

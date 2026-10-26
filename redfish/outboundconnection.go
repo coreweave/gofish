@@ -100,7 +100,7 @@ type OutboundConnection struct {
 	Status common.Status
 	// WebSocketPingIntervalMinutes shall contain the interval for the service to send the WebSocket ping opcode to the
 	// remote client in minutes. If '0', the service shall not send the WebSocket ping opcode to the remote client.
-	WebSocketPingIntervalMinutes int
+	WebSocketPingIntervalMinutes *int `json:",omitempty"`
 	// rawData holds the original serialized JSON so we can compare updates.
 	rawData []byte
 
@@ -217,9 +217,9 @@ type RetryPolicyType struct {
 	ConnectionRetryPolicy OutboundConnectionRetryPolicyType
 	// RetryCount shall contain the number of retries to attempt if the retry policy specifies a maximum number of
 	// retries.
-	RetryCount int
+	RetryCount *int `json:",omitempty"`
 	// RetryIntervalMinutes shall contain the interval for the service to retry connecting to remote client in minutes.
-	RetryIntervalMinutes int
+	RetryIntervalMinutes *int `json:",omitempty"`
 }
 
 // UnmarshalJSON unmarshals a RetryPolicyType object from the raw JSON.

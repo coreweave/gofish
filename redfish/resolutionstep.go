@@ -44,13 +44,13 @@ type ResolutionStep struct {
 	// priority, the execution order of the resolution steps shall be in array order. If a resolution step does not
 	// have a priority assignment, the default is 0. The priority is used to determine the execution order of the
 	// resolution steps.
-	Priority int
+	Priority *int `json:",omitempty"`
 	// ResolutionType shall contain the type of the resolution step.
 	ResolutionType ResolutionType
 	// RetryCount shall contain the number of the retries for a resolution step.
-	RetryCount int
+	RetryCount *int `json:",omitempty"`
 	// RetryIntervalSeconds shall contain the interval, in seconds, between the retries for a resolution step.
-	RetryIntervalSeconds int
+	RetryIntervalSeconds *int `json:",omitempty"`
 	// TargetComponentURI shall contain the target URI of the component for a resolution step. This property shall be
 	// present if the ActionURI property is not supported.
 	TargetComponentURI string

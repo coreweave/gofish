@@ -25,7 +25,7 @@ type LicenseService struct {
 	// LicenseExpirationWarningDays shall contain the number of days prior to a license expiration that the service
 	// shall send the 'DaysBeforeExpiration' message from the License Message Registry at least once. A value of zero
 	// shall indicate that no warning messages are sent prior to license expiration.
-	LicenseExpirationWarningDays int
+	LicenseExpirationWarningDays *int `json:",omitempty"`
 	// Licenses shall contain a link to a resource collection of type LicenseCollection. When installing a license with
 	// a POST operation to this collection, the service may update an existing License resource instead of creating a
 	// new resource. In these cases, the service shall respond with the HTTP '200 OK' status code or HTTP '204 No

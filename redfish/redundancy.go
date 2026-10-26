@@ -44,14 +44,14 @@ type Redundancy struct {
 
 	// MaxNumSupported shall contain the maximum number of members allowed in
 	// the redundancy group.
-	MaxNumSupported int
+	MaxNumSupported *int `json:",omitempty"`
 	// MemberID value of this string shall uniquely identify the member within
 	// the collection.
 	MemberID string `json:"MemberId"`
 	// MinNumNeeded shall contain the minimum
 	// number of members allowed in the redundancy group for the current
 	// redundancy mode to still be fault tolerant.
-	MinNumNeeded int
+	MinNumNeeded *int `json:",omitempty"`
 	// Mode shall contain the information about the redundancy mode of this
 	// subsystem.
 	Mode RedundancyMode
@@ -148,9 +148,9 @@ const (
 // The redundancy information for the devices in a redundancy group.
 type RedundantGroup struct {
 	// The maximum number of devices supported in this redundancy group.
-	MaxSupportedInGroup int64
+	MaxSupportedInGroup *int64 `json:",omitempty"`
 	// The minimum number of devices needed for this group to be redundant.
-	MinNeededInGroup int64
+	MinNeededInGroup *int64 `json:",omitempty"`
 	// The links to the devices included in this redundancy group.
 	redundancyGroup []string
 	// RedundancyGroupCount is the number of redundancy groups in this group.

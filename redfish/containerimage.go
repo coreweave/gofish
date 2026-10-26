@@ -37,7 +37,7 @@ type ContainerImage struct {
 	// string that represents the identifier of this container image.
 	ProgrammaticID string
 	// SizeBytes shall contain the size of this container image in bytes.
-	SizeBytes int
+	SizeBytes *int `json:",omitempty"`
 	// Status shall contain any status or health properties of the resource.
 	Status common.Status
 	// Type shall contain the supported image types for this container engine.

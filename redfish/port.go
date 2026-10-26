@@ -14,17 +14,17 @@ import (
 
 type Congestion struct {
 	// The CXL Specification-defined 'Backpressure Sample Interval' in nanoseconds.
-	BackpressureSampleInterval int
+	BackpressureSampleInterval *int `json:",omitempty"`
 	// The CXL Specification-defined 'Completion Collection Interval' in nanoseconds.
-	CompletionCollectionInterval int
+	CompletionCollectionInterval *int `json:",omitempty"`
 	// Indicates whether congestion telemetry collection is enabled for this port.
 	CongestionTelemetryEnabled bool
 	// The threshold for moderate egress port congestion as a percentage.
-	EgressModeratePercentage int
+	EgressModeratePercentage *int `json:",omitempty"`
 	// The threshold for severe egress port congestion as a percentage.
-	EgressSeverePercentage int
+	EgressSeverePercentage *int `json:",omitempty"`
 	// The CXL Specification-defined 'ReqCmpBasis'.
-	MaxSustainedRequestCmpBias int
+	MaxSustainedRequestCmpBias *int `json:",omitempty"`
 }
 
 type ConnectedDeviceMode string
@@ -238,7 +238,7 @@ type CXLPort struct {
 	// The current port configuration state.
 	CurrentPortConfigurationState CurrentPortConfigurationState
 	// The maximum number of logical devices supported.
-	MaxLogicalDeviceCount int
+	MaxLogicalDeviceCount *int `json:",omitempty"`
 	// The quality of service telemetry capabilities for this CXL port.
 	QoSTelemetryCapabilities QoSTelemetryCapabilities
 	// Indicates whether temporary throughput reduction is enabled.
@@ -249,10 +249,10 @@ type CXLPort struct {
 type ConfiguredNetworkLink struct {
 	// ConfiguredLinkSpeedGbps shall contain the network link speed per lane this port is configured to allow for
 	// autonegotiation purposes. This value includes overhead associated with the protocol.
-	ConfiguredLinkSpeedGbps float64
+	ConfiguredLinkSpeedGbps *float64 `json:",omitempty"`
 	// ConfiguredWidth shall contain the network link width this port is configured to use for autonegotiation
 	// purposes.
-	ConfiguredWidth int
+	ConfiguredWidth *int `json:",omitempty"`
 }
 
 // EthernetProperties shall contain Ethernet-specific properties for a port.
@@ -289,7 +289,7 @@ type FibreChannelProperties struct {
 	FabricName string
 	// NumberDiscoveredRemotePorts shall contain the number of ports not on this associated device that this port has
 	// discovered.
-	NumberDiscoveredRemotePorts int
+	NumberDiscoveredRemotePorts *int `json:",omitempty"`
 	// PortConnectionType shall contain the connection type for this port.
 	PortConnectionType PortConnectionType
 }
@@ -297,7 +297,7 @@ type FibreChannelProperties struct {
 type FunctionMaxBandwidth struct {
 	// AllocationPercent shall contain the maximum bandwidth percentage allocation, '0' to '100', for the associated
 	// network device function.
-	AllocationPercent int
+	AllocationPercent *int `json:",omitempty"`
 	// NetworkDeviceFunction shall contain a link to a resource of type NetworkDeviceFunction that represents the
 	// network device function associated with this bandwidth setting of this network port.
 	networkDeviceFunction common.Link //nolint:unused
@@ -308,7 +308,7 @@ type FunctionMaxBandwidth struct {
 type FunctionMinBandwidth struct {
 	// AllocationPercent shall contain the minimum bandwidth percentage allocation, '0' to '100', for the associated
 	// network device function. The sum of all minimum percentages shall not exceed '100'.
-	AllocationPercent int
+	AllocationPercent *int `json:",omitempty"`
 	// NetworkDeviceFunction shall contain a link to a resource of type NetworkDeviceFunction that represents the
 	// network device function associated with this bandwidth setting of this network port.
 	networkDeviceFunction common.Link //nolint:unused
@@ -349,7 +349,7 @@ type LLDPReceive struct {
 	ManagementAddressMAC string
 	// ManagementVlanID shall contain the management VLAN ID received from the remote partner across this link. If no
 	// such management VLAN ID has been received, this property should not be present.
-	ManagementVlanID int
+	ManagementVlanID *int `json:",omitempty"`
 	// PortID shall contain a colon-delimited string of hexadecimal octets identifying the port received from the
 	// remote partner across this link. If no such port ID has been received, this property should not be present.
 	PortID string
@@ -387,7 +387,7 @@ type LLDPTransmit struct {
 	ManagementAddressMAC string
 	// ManagementVlanID shall contain the management VLAN ID to be transmitted from this endpoint. If no such port ID
 	// is to be transmitted, this value shall be '4095'.
-	ManagementVlanID int
+	ManagementVlanID *int `json:",omitempty"`
 	// PortID shall contain a colon-delimited string of hexadecimal octets identifying the port for an LLDP endpoint.
 	// If no such port ID is to be transmitted, this value shall be an empty string.
 	PortID string
@@ -683,7 +683,7 @@ type Port struct {
 	// The protocol version being sent over this port.
 	CurrentProtocolVersion string
 	// The current speed of this port.
-	CurrentSpeedGbps float32
+	CurrentSpeedGbps *float32 `json:",omitempty"`
 	// CXL properties for this port.
 	CXL CXLPort
 	// Description provides a description of this resource.
@@ -728,9 +728,9 @@ type Port struct {
 	// An indicator allowing an operator to physically locate this resource.
 	LocationIndicatorActive *bool
 	// The maximum frame size supported by the port (bytes).
-	MaxFrameSize int
+	MaxFrameSize *int `json:",omitempty"`
 	// The maximum speed of this port as currently configured.
-	MaxSpeedGbps float32
+	MaxSpeedGbps *float32 `json:",omitempty"`
 	// The link to the metrics associated with this port.
 	metrics string
 	// The label of this port on the physical package for this port.
@@ -750,7 +750,7 @@ type Port struct {
 	// The status and health of the resource and its subordinate or dependent resources.
 	Status common.Status
 	// The number of lanes, phys, or other physical transport links that this port contains.
-	Width int
+	Width *int `json:",omitempty"`
 
 	associatedEndpoints []string
 	// AssociatedEndpointsCount gets the number of endpoints on the other end of the link.

@@ -78,12 +78,16 @@ func TestOutletGroup(t *testing.T) {
 		t.Error("Expected power to be enabled")
 	}
 
-	if result.PowerOnDelaySeconds != 4 {
-		t.Errorf("Unexpected PowerOnDelaySeconds value: %.2f", result.PowerOnDelaySeconds)
+	if result.PowerOnDelaySeconds == nil {
+		t.Error("Expected PowerOnDelaySeconds to be set")
+	} else if *result.PowerOnDelaySeconds != 4 {
+		t.Errorf("Unexpected PowerOnDelaySeconds value: %.2f", *result.PowerOnDelaySeconds)
 	}
 
-	if result.PowerOffDelaySeconds != 0 {
-		t.Errorf("Unexpected PowerOffDelaySeconds value: %.2f", result.PowerOffDelaySeconds)
+	if result.PowerOffDelaySeconds == nil {
+		t.Error("Expected PowerOffDelaySeconds to be set")
+	} else if *result.PowerOffDelaySeconds != 0 {
+		t.Errorf("Unexpected PowerOffDelaySeconds value: %.2f", *result.PowerOffDelaySeconds)
 	}
 
 	if *result.PowerWatts.Reading != 412.36 {
