@@ -205,14 +205,14 @@ type GenerateCSRRequest struct {
 }
 
 // MarshalJSON encodes the collection URI as an OData reference.
-func (request GenerateCSRRequest) MarshalJSON() ([]byte, error) {
+func (request *GenerateCSRRequest) MarshalJSON() ([]byte, error) {
 	type alias GenerateCSRRequest
 
 	return json.Marshal(struct {
-		alias
+		*alias
 		CertificateCollection common.Link `json:"CertificateCollection"`
 	}{
-		alias:                 alias(request),
+		alias:                 (*alias)(request),
 		CertificateCollection: common.Link(request.CertificateCollection),
 	})
 }
