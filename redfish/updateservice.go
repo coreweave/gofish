@@ -82,23 +82,29 @@ type UpdateParameters struct {
 	Targets []string
 }
 
+type UpdateServiceActions struct {
+	GenerateSSHIdentityKeyPair common.ActionTarget `json:"#UpdateService.GenerateSSHIdentityKeyPair"`
+	RemoveSSHIdentityKeyPair   common.ActionTarget `json:"#UpdateService.RemoveSSHIdentityKeyPair"`
+	SimpleUpdate               struct {
+		AllowableValues []string `json:"TransferProtocol@Redfish.AllowableValues"`
+		Target          string
+	} `json:"#UpdateService.SimpleUpdate"`
+	StartUpdate common.ActionTarget `json:"#UpdateService.StartUpdate"`
+
+	Oem json.RawMessage // OEM actions will be stored here
+}
+
 // UpdateService is used to represent the update service offered by the redfish API
 type UpdateService struct {
-	common.Entity
+	common.Resource
+	Actions UpdateServiceActions
 
-	// ODataContext is the odata context.
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the odata type.
-	ODataType string `json:"@odata.type"`
 	// ClientCertificates shall contain a link to a resource collection of type CertificateCollection that represents
 	// the client identity certificates that are provided to the server referenced by the ImageURI property in
 	// SimpleUpdate as part of TLS handshaking.
-	clientCertificates []string
-	// Description provides a description of this resource.
-	// Description provides a description of this resource.
-	Description string
+	ClientCertificates common.LinksCollection
 	// FirmwareInventory points towards the firmware store endpoint
-	firmwareInventory string
+	FirmwareInventory common.Link `json:"FirmwareInventory"`
 	// HTTPPushURI endpoint is used to push (POST) firmware updates
 	HTTPPushURI string `json:"HttpPushUri"`
 	// HTTPPushURIOptions shall contain options and requirements of the service for HttpPushUri-provided software
@@ -134,13 +140,10 @@ type UpdateService struct {
 	MaxImageSizeBytes *int `json:",omitempty"`
 	// MultipartHTTPPushURI endpoint is used to perform a multipart push (POST) updates
 	MultipartHTTPPushURI string `json:"MultiPartHttpPushUri"`
-	// Oem shall contain the OEM extensions. All values for properties that this object contains shall conform to the
-	// Redfish Specification-described requirements.
-	OEM json.RawMessage `json:"Oem"`
 	// PublicIdentitySSHKey shall contain a link to a resource of type Key that represents the public key that is used
 	// with the SimpleUpdate action for the key-based authentication. This property shall not be present if a key-pair
 	// is not available.
-	publicIdentitySSHKey string
+	PublicIdentitySSHKeyLink common.Link `json:"PublicIdentitySSHKey"`
 	// RemoteServerCertificates shall contain a link to a resource collection of type CertificateCollection that
 	// represents the server certificates for the server referenced by the ImageURI property in SimpleUpdate. If
 	// VerifyRemoteServerCertificate is 'true', services shall compare the certificates in this collection with the
@@ -150,18 +153,18 @@ type UpdateService struct {
 	// verification with certificates in this collection. Regardless of the contents of this collection, services may
 	// perform additional verification based on other factors, such as the configuration of the SecurityPolicy
 	// resource.
-	remoteServerCertificates []string
+	RemoteServerCertificatesLink common.Link `json:"RemoteServerCertificates"`
 	// RemoteServerSSHKeys shall contain a link to a resource collection of type KeyCollection that represents the
 	// server SSH keys for the server referenced by the ImageURI property in SimpleUpdate. If VerifyRemoteServerSSHKey
 	// is 'true', services shall compare the keys in this collection with the key obtained during handshaking with the
 	// image server in order to verify the identity of the image server prior to transferring the image. If the server
 	// cannot be verified, the service shall not send the transfer request. If VerifyRemoteServerSSHKey is 'false', the
 	// service shall not perform key verification with keys in this collection.
-	remoteServerSSHKeys []string
+	RemoteServerSSHKeysLink common.Link `json:"RemoteServerSSHKeys"`
 	// ServiceEnabled indicates whether this service isenabled.
 	ServiceEnabled bool
 	// SoftwareInventory points towards the firmware store endpoint
-	softwareInventory string
+	SoftwareInventory common.Link
 	// Status describes the status and health of a resource and its children.
 	Status common.Status
 	// SupportedUpdateImageFormats shall contain the image format types supported by the service.
@@ -180,20 +183,6 @@ type UpdateService struct {
 	// older clients.
 	VerifyRemoteServerSSHKey bool
 
-	// TransferProtocol is an optional list of network protocols used by the UpdateService
-	// to retrieve the software image file.
-	TransferProtocol                 []string
-	generateSSHIdentityKeyPairTarget string
-	removeSSHIdentityKeyPairTarget   string
-	simpleUpdateTarget               string
-	startUpdateTarget                string
-
-	// OemActions contains all the vendor specific actions. It is vendor responsibility to parse this field accordingly
-	OemActions json.RawMessage
-	// Oem shall contain the OEM extensions. All values for properties that
-	// this object contains shall conform to the Redfish Specification
-	// described requirements.
-	Oem json.RawMessage
 	// RawData holds the original serialized JSON so we can compare updates.
 	RawData []byte
 }
@@ -201,26 +190,8 @@ type UpdateService struct {
 // UnmarshalJSON unmarshals a UpdateService object from the raw JSON.
 func (updateService *UpdateService) UnmarshalJSON(b []byte) error {
 	type temp UpdateService
-	type actions struct {
-		GenerateSSHIdentityKeyPair common.ActionTarget `json:"#UpdateService.GenerateSSHIdentityKeyPair"`
-		RemoveSSHIdentityKeyPair   common.ActionTarget `json:"#UpdateService.RemoveSSHIdentityKeyPair"`
-		SimpleUpdate               struct {
-			AllowableValues []string `json:"TransferProtocol@Redfish.AllowableValues"`
-			Target          string
-		} `json:"#UpdateService.SimpleUpdate"`
-		StartUpdate common.ActionTarget `json:"#UpdateService.StartUpdate"`
-
-		Oem json.RawMessage // OEM actions will be stored here
-	}
 	var t struct {
 		temp
-		Actions                  actions
-		ClientCertificates       common.LinksCollection
-		FirmwareInventory        common.Link
-		PublicIdentitySSHKey     common.Link
-		RemoteServerCertificates common.LinksCollection
-		RemoteServerSSHKeys      common.LinksCollection
-		SoftwareInventory        common.Link
 	}
 
 	err := json.Unmarshal(b, &t)
@@ -230,20 +201,6 @@ func (updateService *UpdateService) UnmarshalJSON(b []byte) error {
 
 	// Extract the links to other entities for later
 	*updateService = UpdateService(t.temp)
-	updateService.clientCertificates = t.ClientCertificates.ToStrings()
-	updateService.firmwareInventory = t.FirmwareInventory.String()
-	updateService.publicIdentitySSHKey = t.PublicIdentitySSHKey.String()
-	updateService.remoteServerCertificates = t.RemoteServerCertificates.ToStrings()
-	updateService.remoteServerSSHKeys = t.RemoteServerSSHKeys.ToStrings()
-	updateService.softwareInventory = t.SoftwareInventory.String()
-
-	updateService.generateSSHIdentityKeyPairTarget = t.Actions.GenerateSSHIdentityKeyPair.Target
-	updateService.removeSSHIdentityKeyPairTarget = t.Actions.RemoveSSHIdentityKeyPair.Target
-	updateService.startUpdateTarget = t.Actions.StartUpdate.Target
-	updateService.simpleUpdateTarget = t.Actions.SimpleUpdate.Target
-	updateService.TransferProtocol = t.Actions.SimpleUpdate.AllowableValues
-	updateService.OemActions = t.Actions.Oem
-
 	updateService.RawData = b
 
 	return nil
@@ -262,6 +219,10 @@ func (updateService *UpdateService) GenerateSSHIdentityKeyPair(curve ECDSACurveT
 // referenced by the PublicIdentitySSHKey property. Any existing key-pair is deleted
 // and replaced by the new key-pair.
 func (updateService *UpdateService) GenerateSSHIdentityKeyPairWithContext(ctx context.Context, curve ECDSACurveType, keyLength int, keyType SSHAlgoKeyType) error {
+	if updateService.Actions.GenerateSSHIdentityKeyPair.Target == "" {
+		return ErrActionNotSupported
+	}
+
 	t := struct {
 		Curve     ECDSACurveType
 		KeyLength int
@@ -271,7 +232,7 @@ func (updateService *UpdateService) GenerateSSHIdentityKeyPairWithContext(ctx co
 		KeyLength: keyLength,
 		KeyType:   keyType,
 	}
-	return updateService.PostWithContext(ctx, updateService.generateSSHIdentityKeyPairTarget, t)
+	return updateService.PostWithContext(ctx, updateService.Actions.GenerateSSHIdentityKeyPair.Target, t)
 }
 
 // RemoveSSHIdentityKeyPair removes the SSH identity key-pair used with the UpdateService resource.
@@ -281,7 +242,10 @@ func (updateService *UpdateService) RemoveSSHIdentityKeyPair() error {
 
 // RemoveSSHIdentityKeyPairWithContext removes the SSH identity key-pair used with the UpdateService resource.
 func (updateService *UpdateService) RemoveSSHIdentityKeyPairWithContext(ctx context.Context) error {
-	return updateService.PostWithContext(ctx, updateService.generateSSHIdentityKeyPairTarget, nil)
+	if updateService.Actions.RemoveSSHIdentityKeyPair.Target == "" {
+		return ErrActionNotSupported
+	}
+	return updateService.PostWithContext(ctx, updateService.Actions.RemoveSSHIdentityKeyPair.Target, nil)
 }
 
 // SimpleUpdateParameters contains the parameters for the SimpleUpdate action.
@@ -326,8 +290,11 @@ func (updateService *UpdateService) SimpleUpdate(parameters *SimpleUpdateParamet
 // located at an ImageURI parameter-specified URI.
 // It returns TaskMonitorInfo for tracking the async operation if the service returns HTTP 202 Accepted.
 func (updateService *UpdateService) SimpleUpdateWithContext(ctx context.Context, parameters *SimpleUpdateParameters) (*TaskMonitorInfo, error) {
+	if updateService.Actions.SimpleUpdate.Target == "" {
+		return nil, ErrActionNotSupported
+	}
 	resp, taskInfo, err := PostWithTaskWithContext(ctx, updateService.GetClient(),
-		updateService.simpleUpdateTarget, parameters, updateService.Headers(), false)
+		updateService.Actions.SimpleUpdate.Target, parameters, updateService.Headers(), false)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	return taskInfo, err
 }
@@ -341,7 +308,10 @@ func (updateService *UpdateService) StartUpdate() error {
 // StartUpdateWithContext starts updating all images that have been previously invoked using an
 // OperationApplyTime value of `OnStartUpdateRequest`.
 func (updateService *UpdateService) StartUpdateWithContext(ctx context.Context) error {
-	return updateService.PostWithContext(ctx, updateService.startUpdateTarget, nil)
+	if updateService.Actions.StartUpdate.Target == "" {
+		return ErrActionNotSupported
+	}
+	return updateService.PostWithContext(ctx, updateService.Actions.StartUpdate.Target, nil)
 }
 
 // FirmwareInventories gets the collection of firmware inventories of this update service
@@ -351,7 +321,10 @@ func (updateService *UpdateService) FirmwareInventories(queryOpts ...common.Quer
 
 // FirmwareInventoriesWithContext gets the collection of firmware inventories of this update service
 func (updateService *UpdateService) FirmwareInventoriesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*SoftwareInventory, error) {
-	return ListReferencedSoftwareInventoriesWithContext(ctx, updateService.GetClient(), updateService.firmwareInventory, queryOpts...)
+	if updateService.FirmwareInventory.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedSoftwareInventoriesWithContext(ctx, updateService.GetClient(), updateService.FirmwareInventory.String(), queryOpts...)
 }
 
 // PublicIdentitySSHKey get the public key that is used with the SimpleUpdate action
@@ -367,10 +340,10 @@ func (updateService *UpdateService) PublicIdentitySSHKey(queryOpts ...common.Que
 // are used to update the key for the SimpleUpdate action.
 // This property shall not be present if a key-pair is not available.
 func (updateService *UpdateService) PublicIdentitySSHKeyWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) (*Key, error) {
-	if updateService.publicIdentitySSHKey == "" {
+	if updateService.PublicIdentitySSHKeyLink.IsZero() {
 		return nil, nil
 	}
-	return GetKeyWithContext(ctx, updateService.GetClient(), updateService.publicIdentitySSHKey, queryOpts...)
+	return GetKeyWithContext(ctx, updateService.GetClient(), updateService.PublicIdentitySSHKeyLink.String(), queryOpts...)
 }
 
 // RemoteServerCertificates gets the server certificates for the server referenced by the
@@ -396,7 +369,10 @@ func (updateService *UpdateService) RemoteServerCertificates(queryOpts ...common
 // the contents of this collection, services may perform additional verification based on
 // other factors, such as the configuration of the SecurityPolicy resource.
 func (updateService *UpdateService) RemoteServerCertificatesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Certificate, error) {
-	return common.GetObjectsWithContext[Certificate](ctx, updateService.GetClient(), updateService.remoteServerCertificates, queryOpts...)
+	if updateService.RemoteServerCertificatesLink.IsZero() {
+		return nil, nil
+	}
+	return common.GetCollectionObjectsWithContext[Certificate](ctx, updateService.GetClient(), updateService.RemoteServerCertificatesLink.String(), queryOpts...)
 }
 
 // RemoteServerSSHKeys gets the server SSH keys for the server referenced by the ImageURI
@@ -418,7 +394,10 @@ func (updateService *UpdateService) RemoteServerSSHKeys(queryOpts ...common.Quer
 // If VerifyRemoteServerSSHKey is `false`, the service shall not perform key verification
 // with keys in this collection.
 func (updateService *UpdateService) RemoteServerSSHKeysWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Key, error) {
-	return common.GetObjectsWithContext[Key](ctx, updateService.GetClient(), updateService.remoteServerSSHKeys, queryOpts...)
+	if updateService.RemoteServerSSHKeysLink.IsZero() {
+		return nil, nil
+	}
+	return common.GetCollectionObjectsWithContext[Key](ctx, updateService.GetClient(), updateService.RemoteServerSSHKeysLink.String(), queryOpts...)
 }
 
 // SoftwareInventories gets the collection of software inventories of this update service
@@ -428,7 +407,10 @@ func (updateService *UpdateService) SoftwareInventories(queryOpts ...common.Quer
 
 // SoftwareInventoriesWithContext gets the collection of software inventories of this update service
 func (updateService *UpdateService) SoftwareInventoriesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*SoftwareInventory, error) {
-	return ListReferencedSoftwareInventoriesWithContext(ctx, updateService.GetClient(), updateService.softwareInventory, queryOpts...)
+	if updateService.SoftwareInventory.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedSoftwareInventoriesWithContext(ctx, updateService.GetClient(), updateService.SoftwareInventory.String(), queryOpts...)
 }
 
 // GetUpdateService will get a UpdateService instance from the service.

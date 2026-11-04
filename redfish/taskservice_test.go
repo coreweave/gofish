@@ -47,8 +47,8 @@ func TestTaskService(t *testing.T) {
 		t.Errorf("Received invalid name: %s", result.Name)
 	}
 
-	if result.tasks != "/redfish/v1/TaskService/Tasks" {
-		t.Errorf("Received invalid tasks link: %s", result.tasks)
+	if result.TasksLink != "/redfish/v1/TaskService/Tasks" {
+		t.Errorf("Received invalid tasks link: %s", result.TasksLink)
 	}
 
 	if result.CompletedTaskOverWritePolicy != "Oldest" {
