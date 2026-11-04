@@ -76,6 +76,15 @@ func (l *Link) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalJSON encodes a Link as an OData reference.
+func (l Link) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		ODataID string `json:"@odata.id"`
+	}{
+		ODataID: l.String(),
+	})
+}
+
 func (l Link) String() string {
 	return string(l)
 }

@@ -159,7 +159,7 @@ type GenerateCSRRequest struct {
 	AlternativeNames []string `json:",omitempty"`
 	// CertificateCollection is a link to a resource collection of type CertificateCollection where the certificate is
 	// installed after the certificate authority (CA) signs the certificate.
-	CertificateCollection string
+	CertificateCollection common.Link
 	// ChallengePassword is the challenge password to apply to the certificate for revocation requests as defined by
 	// the RFC2985 'challengePassword' attribute.
 	ChallengePassword string `json:",omitempty"`
@@ -217,6 +217,9 @@ func (certificateservice *CertificateService) GenerateCSR(request *GenerateCSRRe
 // installation of the certificate.
 // WARNING: this has not been fully tested and is subject to change.
 func (certificateservice *CertificateService) GenerateCSRWithContext(ctx context.Context, request *GenerateCSRRequest) (*GenerateCSRResponse, error) {
+	if certificateservice.generateCSRTarget == "" {
+		return nil, ErrActionNotSupported
+	}
 	resp, err := certificateservice.PostWithResponseWithContext(ctx, certificateservice.generateCSRTarget, request)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil {
