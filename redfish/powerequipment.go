@@ -11,89 +11,33 @@ import (
 	"github.com/coreweave/gofish/common"
 )
 
+type PowerEquipmentLinks struct {
+	ManagedBy      common.Links
+	ManagedByCount int `json:"ManagedBy@odata.count"`
+	Oem            json.RawMessage
+}
+
+type PowerEquipmentActions struct {
+	Oem json.RawMessage // OEM actions will be stored here
+}
+
 // PowerEquipment shall be used to represent
 // the set of power equipment for a Redfish implementation.
 type PowerEquipment struct {
-	common.Entity
+	common.Resource
 
-	// ODataContext is the odata context.
-	ODataContext string `json:"@odata.context"`
-	// ODataType is the odata type.
-	ODataType string `json:"@odata.type"`
-	// Description provides a description of this resource.
-	Description string
-
-	// A link to a collection of electrical buses.
-	electricalBuses string
-	// A link to a collection of floor power distribution units.
-	floorPDUs string
-	// A link to a collection of power shelves.
-	powerShelves string
-	// A link to a collection of rack-level power distribution units.
-	rackPDUs string
 	// The status and health of the resource and its subordinate or dependent resources.
 	Status common.Status
-	// A link to a collection of switchgear.
-	switchgear string
-	// A link to a collection of transfer switches.
-	transferSwitches string
 
-	// Links section
-	// An array of links to the managers responsible for managing this power equipment.
-	managedBy      []string
-	ManagedByCount int
-	// OemLinks are all OEM data under link section
-	OemLinks json.RawMessage
+	ElectricalBusesLink  common.Link `json:"ElectricalBuses"`
+	FloorPDUsLink        common.Link `json:"FloorPDUs"`
+	PowerShelvesLink     common.Link `json:"PowerShelves"`
+	RackPDUsLink         common.Link `json:"RackPDUs"`
+	SwitchgearLink       common.Link `json:"Switchgear"`
+	TransferSwitchesLink common.Link `json:"TransferSwitches"`
 
-	// Actions section
-	// OemActions contains all the vendor specific actions.
-	// It is vendor responsibility to parse this field accordingly
-	OemActions json.RawMessage
-}
-
-// UnmarshalJSON unmarshals a PowerEquipment object from the raw JSON.
-func (powerEquipment *PowerEquipment) UnmarshalJSON(b []byte) error {
-	type temp PowerEquipment
-	type linkReference struct {
-		ManagedBy      common.Links
-		ManagedByCount int `json:"ManagedBy@odata.count"`
-		Oem            json.RawMessage
-	}
-	type actions struct {
-		Oem json.RawMessage // OEM actions will be stored here
-	}
-	var t struct {
-		temp
-		ElectricalBuses  common.Link
-		FloorPDUs        common.Link
-		PowerShelves     common.Link
-		RackPDUs         common.Link
-		Switchgear       common.Link
-		TransferSwitches common.Link
-		Links            linkReference
-		Actions          actions
-	}
-
-	if err := json.Unmarshal(b, &t); err != nil {
-		return err
-	}
-
-	// Extract the links to other entities for later
-	*powerEquipment = PowerEquipment(t.temp)
-	powerEquipment.electricalBuses = t.ElectricalBuses.String()
-	powerEquipment.floorPDUs = t.FloorPDUs.String()
-	powerEquipment.powerShelves = t.PowerShelves.String()
-	powerEquipment.rackPDUs = t.RackPDUs.String()
-	powerEquipment.switchgear = t.Switchgear.String()
-	powerEquipment.transferSwitches = t.TransferSwitches.String()
-
-	powerEquipment.managedBy = t.Links.ManagedBy.ToStrings()
-	powerEquipment.ManagedByCount = t.Links.ManagedByCount
-	powerEquipment.OemLinks = t.Links.Oem
-
-	powerEquipment.OemActions = t.Actions.Oem
-
-	return nil
+	Links   PowerEquipmentLinks   `json:"Links"`
+	Actions PowerEquipmentActions `json:"Actions"`
 }
 
 // GetPowerEquipment will get a PowerEquipment instance from the Redfish service.
@@ -113,7 +57,11 @@ func (powerEquipment *PowerEquipment) ManagedBy(queryOpts ...common.QueryGroupOp
 
 // ManagedByWithContext gets the collection of managers of this PowerEquipment
 func (powerEquipment *PowerEquipment) ManagedByWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Manager, error) {
-	return common.GetObjectsWithContext[Manager](ctx, powerEquipment.GetClient(), powerEquipment.managedBy, queryOpts...)
+	if len(powerEquipment.Links.ManagedBy) == 0 {
+		return nil, nil
+	}
+
+	return common.GetObjectsWithContext[Manager](ctx, powerEquipment.GetClient(), powerEquipment.Links.ManagedBy.ToStrings(), queryOpts...)
 }
 
 // ElectricalBuses gets the collection that contains a set of electrical bus units.
@@ -123,7 +71,10 @@ func (powerEquipment *PowerEquipment) ElectricalBuses(queryOpts ...common.QueryG
 
 // ElectricalBusesWithContext gets the collection that contains a set of electrical bus units.
 func (powerEquipment *PowerEquipment) ElectricalBusesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PowerDistribution, error) {
-	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.electricalBuses, queryOpts...)
+	if powerEquipment.ElectricalBusesLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.ElectricalBusesLink.String(), queryOpts...)
 }
 
 // FloorPDUs gets the collection that contains a set of floor power distribution units.
@@ -133,7 +84,10 @@ func (powerEquipment *PowerEquipment) FloorPDUs(queryOpts ...common.QueryGroupOp
 
 // FloorPDUsWithContext gets the collection that contains a set of floor power distribution units.
 func (powerEquipment *PowerEquipment) FloorPDUsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PowerDistribution, error) {
-	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.floorPDUs, queryOpts...)
+	if powerEquipment.FloorPDUsLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.FloorPDUsLink.String(), queryOpts...)
 }
 
 // PowerShelves gets the collection that contains a set of power shelves.
@@ -143,7 +97,10 @@ func (powerEquipment *PowerEquipment) PowerShelves(queryOpts ...common.QueryGrou
 
 // PowerShelvesWithContext gets the collection that contains a set of power shelves.
 func (powerEquipment *PowerEquipment) PowerShelvesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PowerDistribution, error) {
-	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.powerShelves, queryOpts...)
+	if powerEquipment.PowerShelvesLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.PowerShelvesLink.String(), queryOpts...)
 }
 
 // RackPDUs gets the collection that contains a set of rack-level power distribution units.
@@ -153,7 +110,10 @@ func (powerEquipment *PowerEquipment) RackPDUs(queryOpts ...common.QueryGroupOpt
 
 // RackPDUsWithContext gets the collection that contains a set of rack-level power distribution units.
 func (powerEquipment *PowerEquipment) RackPDUsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PowerDistribution, error) {
-	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.rackPDUs, queryOpts...)
+	if powerEquipment.RackPDUsLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.RackPDUsLink.String(), queryOpts...)
 }
 
 // Switchgear gets the collection that contains a set of switchgear.
@@ -163,7 +123,10 @@ func (powerEquipment *PowerEquipment) Switchgear(queryOpts ...common.QueryGroupO
 
 // SwitchgearWithContext gets the collection that contains a set of switchgear.
 func (powerEquipment *PowerEquipment) SwitchgearWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PowerDistribution, error) {
-	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.switchgear, queryOpts...)
+	if powerEquipment.SwitchgearLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.SwitchgearLink.String(), queryOpts...)
 }
 
 // TransferSwitches gets the collection that contains a set of transfer switches.
@@ -173,5 +136,8 @@ func (powerEquipment *PowerEquipment) TransferSwitches(queryOpts ...common.Query
 
 // TransferSwitchesWithContext gets the collection that contains a set of transfer switches.
 func (powerEquipment *PowerEquipment) TransferSwitchesWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*PowerDistribution, error) {
-	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.transferSwitches, queryOpts...)
+	if powerEquipment.TransferSwitchesLink.IsZero() {
+		return nil, nil
+	}
+	return ListReferencedPowerDistributionUnitsWithContext(ctx, powerEquipment.GetClient(), powerEquipment.TransferSwitchesLink.String(), queryOpts...)
 }

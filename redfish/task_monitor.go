@@ -23,25 +23,25 @@ type TaskMonitorInfo struct {
 
 func PostObject[T any,
 	PT common.GenericSchemaObjectPointer[T],
-](c common.Client, uri string, payload any, headers map[string]string) (*T, *TaskMonitorInfo, error) {
+](c common.Client, uri string, payload any, headers map[string]string) (PT, *TaskMonitorInfo, error) {
 	return PostObjectWithContext[T, PT](common.ContextOf(c), c, uri, payload, headers)
 }
 
 func PostObjectWithContext[T any,
 	PT common.GenericSchemaObjectPointer[T],
-](ctx context.Context, c common.Client, uri string, payload any, headers map[string]string) (*T, *TaskMonitorInfo, error) {
+](ctx context.Context, c common.Client, uri string, payload any, headers map[string]string) (PT, *TaskMonitorInfo, error) {
 	return postObjectWithTaskWithContext[T, PT](ctx, c, uri, payload, headers, false)
 }
 
 func PostObjecMultipart[T any,
 	PT common.GenericSchemaObjectPointer[T],
-](c common.Client, uri string, payload map[string]io.Reader, headers map[string]string) (*T, *TaskMonitorInfo, error) {
+](c common.Client, uri string, payload map[string]io.Reader, headers map[string]string) (PT, *TaskMonitorInfo, error) {
 	return PostObjecMultipartWithContext[T, PT](common.ContextOf(c), c, uri, payload, headers)
 }
 
 func PostObjecMultipartWithContext[T any,
 	PT common.GenericSchemaObjectPointer[T],
-](ctx context.Context, c common.Client, uri string, payload map[string]io.Reader, headers map[string]string) (*T, *TaskMonitorInfo, error) {
+](ctx context.Context, c common.Client, uri string, payload map[string]io.Reader, headers map[string]string) (PT, *TaskMonitorInfo, error) {
 	return postObjectWithTaskWithContext[T, PT](ctx, c, uri, payload, headers, true)
 }
 
@@ -72,7 +72,7 @@ func PostWithTaskWithContext(ctx context.Context, c common.Client, uri string, p
 
 func postObjectWithTaskWithContext[T any,
 	PT common.GenericSchemaObjectPointer[T],
-](ctx context.Context, c common.Client, uri string, payload any, headers map[string]string, isMMultipart bool) (*T, *TaskMonitorInfo, error) {
+](ctx context.Context, c common.Client, uri string, payload any, headers map[string]string, isMMultipart bool) (PT, *TaskMonitorInfo, error) {
 	resp, taskMonitor, err := PostWithTaskWithContext(ctx, c, uri, payload, headers, isMMultipart)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if taskMonitor != nil {
@@ -176,7 +176,7 @@ func WaitForTaskMonitor(ctx context.Context, c common.Client, defaultPollRate ti
 
 func WaitForTaskMonitorObject[T any,
 	PT common.GenericSchemaObjectPointer[T],
-](ctx context.Context, c common.Client, defaultPollRate time.Duration, taskMonitor *TaskMonitorInfo, taskChan chan<- *Task) (*T, http.Header, error) {
+](ctx context.Context, c common.Client, defaultPollRate time.Duration, taskMonitor *TaskMonitorInfo, taskChan chan<- *Task) (PT, http.Header, error) {
 	resp, err := WaitForTaskMonitor(ctx, c, defaultPollRate, taskMonitor, taskChan)
 	defer common.DeferredCleanupHTTPResponse(resp)
 	if err != nil {

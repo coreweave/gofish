@@ -507,13 +507,13 @@ type GenericSchemaObjectPointer[T any] interface {
 }
 
 // GetObject retrieves a single API object from the service using the client's cached context.
-func GetObject[T any, PT GenericSchemaObjectPointer[T]](c Client, uri string, opts ...QueryGroupOption) (*T, error) {
+func GetObject[T any, PT GenericSchemaObjectPointer[T]](c Client, uri string, opts ...QueryGroupOption) (PT, error) {
 	return GetObjectWithContext[T, PT](ContextOf(c), c, uri, opts...)
 }
 
 // GetObjectWithContext retrieves a single API object from the service. On an error status it also returns the
 // object when the body still holds one, since some services return a full resource with a 500.
-func GetObjectWithContext[T any, PT GenericSchemaObjectPointer[T]](ctx context.Context, c Client, uri string, opts ...QueryGroupOption) (*T, error) {
+func GetObjectWithContext[T any, PT GenericSchemaObjectPointer[T]](ctx context.Context, c Client, uri string, opts ...QueryGroupOption) (PT, error) {
 	uri = BuildQuery(c, uri, false, opts...)
 
 	resp, err := c.GetWithContext(ctx, uri)
@@ -526,7 +526,7 @@ func GetObjectWithContext[T any, PT GenericSchemaObjectPointer[T]](ctx context.C
 }
 
 // decodeErrorBody decodes the object in an error response's body, or returns nil if the body has none.
-func decodeErrorBody[T any, PT GenericSchemaObjectPointer[T]](c Client, err error) *T {
+func decodeErrorBody[T any, PT GenericSchemaObjectPointer[T]](c Client, err error) PT {
 	var rfErr *Error
 	if !errors.As(err, &rfErr) {
 		return nil
@@ -541,7 +541,7 @@ func decodeErrorBody[T any, PT GenericSchemaObjectPointer[T]](c Client, err erro
 }
 
 // DecodeGenericEntity attempts to decode an HTTP response into an Entity struct
-func DecodeGenericEntity[T any, PT GenericSchemaObjectPointer[T]](c Client, resp *http.Response) (*T, error) {
+func DecodeGenericEntity[T any, PT GenericSchemaObjectPointer[T]](c Client, resp *http.Response) (PT, error) {
 	entity := PT(new(T))
 	if err := json.NewDecoder(resp.Body).Decode(entity); err != nil {
 		return nil, err
@@ -558,7 +558,7 @@ func DecodeGenericEntity[T any, PT GenericSchemaObjectPointer[T]](c Client, resp
 func GetObjects[T any, PT interface {
 	*T
 	SchemaObject
-}](c Client, uris []string, opts ...QueryGroupOption) ([]*T, error) {
+}](c Client, uris []string, opts ...QueryGroupOption) ([]PT, error) {
 	return GetObjectsWithContext[T, PT](ContextOf(c), c, uris, opts...)
 }
 
@@ -566,14 +566,14 @@ func GetObjects[T any, PT interface {
 func GetObjectsWithContext[T any, PT interface {
 	*T
 	SchemaObject
-}](ctx context.Context, c Client, uris []string, opts ...QueryGroupOption) ([]*T, error) {
-	var result []*T
+}](ctx context.Context, c Client, uris []string, opts ...QueryGroupOption) ([]PT, error) {
+	var result []PT
 	if len(uris) == 0 {
 		return result, nil
 	}
 
 	type GetResult struct {
-		Item  *T
+		Item  PT
 		Link  string
 		Error error
 	}
