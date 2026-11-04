@@ -204,6 +204,19 @@ type GenerateCSRRequest struct {
 	UnstructuredName string `json:",omitempty"`
 }
 
+// MarshalJSON encodes the collection URI as an OData reference.
+func (request GenerateCSRRequest) MarshalJSON() ([]byte, error) {
+	type alias GenerateCSRRequest
+
+	return json.Marshal(struct {
+		alias
+		CertificateCollection common.Link `json:"CertificateCollection"`
+	}{
+		alias:                 alias(request),
+		CertificateCollection: common.Link(request.CertificateCollection),
+	})
+}
+
 // GenerateCSR makes a certificate signing request. The response shall contain a signing request that a certificate
 // authority (CA) will sign. The service should retain the private key that was generated during this request for
 // installation of the certificate.
