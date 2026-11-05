@@ -101,13 +101,25 @@ type CoolingUnit struct {
 	Version string
 	// rawData holds the original serialized JSON so we can compare updates.
 	rawData []byte
-	chassis []string
-	// ChassisCount is the number of physical containers that contain this equipment.
-	ChassisCount int
-	facility     string
-	managedBy    []string
-	// ManagedByCount is the number of managers that manage this equipment.
-	ManagedByCount int
+	// Links shall contain links to resources that are related to, but not contained by, this resource.
+	Links CoolingUnitLinks
+}
+
+// CoolingUnitLinks are the resources a CoolingUnit links to.
+type CoolingUnitLinks struct {
+	// Chassis shall contain an array of links to resources of type Chassis that represent the physical containers that
+	// contain this equipment.
+	Chassis common.Links
+	// Chassis@odata.count
+	ChassisCount int `json:"Chassis@odata.count"`
+	// Facility shall contain a link to a resource of type Facility that represents the facility that contains this
+	// equipment.
+	Facility common.Link
+	// ManagedBy shall contain an array of links to resources of type Manager that represent the managers that manage
+	// this equipment.
+	ManagedBy common.Links
+	// ManagedBy@odata.count
+	ManagedByCount int `json:"ManagedBy@odata.count"`
 }
 
 type CoolingUnitMode string
@@ -120,21 +132,6 @@ const (
 // UnmarshalJSON unmarshals a CoolingUnit object from the raw JSON.
 func (coolingunit *CoolingUnit) UnmarshalJSON(b []byte) error {
 	type temp CoolingUnit
-	type Links struct {
-		// Chassis shall contain an array of links to resources of type Chassis that represent the physical containers that
-		// contain this equipment.
-		Chassis common.Links
-		// Chassis@odata.count
-		ChassisCount int `json:"Chassis@odata.count"`
-		// Facility shall contain a link to a resource of type Facility that represents the facility that contains this
-		// equipment.
-		Facility common.Link
-		// ManagedBy shall contain an array of links to resources of type Manager that represent the managers that manage
-		// this equipment.
-		ManagedBy common.Links
-		// ManagedBy@odata.count
-		ManagedByCount int `json:"ManagedBy@odata.count"`
-	}
 	type CoolingUnitActions struct {
 		SetMode struct {
 			AllowedCoolingUnitModes []CoolingUnitMode `json:"Mode@Redfish.AllowableValues"`
@@ -154,7 +151,6 @@ func (coolingunit *CoolingUnit) UnmarshalJSON(b []byte) error {
 		Pumps                      common.Link
 		Reservoirs                 common.Link
 		SecondaryCoolantConnectors common.Link
-		Links                      Links
 	}
 
 	err := json.Unmarshal(b, &t)
@@ -174,11 +170,6 @@ func (coolingunit *CoolingUnit) UnmarshalJSON(b []byte) error {
 	coolingunit.pumps = t.Pumps.String()
 	coolingunit.reservoirs = t.Reservoirs.String()
 	coolingunit.secondaryCoolantConnectors = t.SecondaryCoolantConnectors.String()
-	coolingunit.chassis = t.Links.Chassis.ToStrings()
-	coolingunit.ChassisCount = t.Links.ChassisCount
-	coolingunit.facility = t.Links.Facility.String()
-	coolingunit.managedBy = t.Links.ManagedBy.ToStrings()
-	coolingunit.ManagedByCount = t.Links.ManagedByCount
 	coolingunit.AllowedCoolingUnitModes = t.Actions.SetMode.AllowedCoolingUnitModes
 	coolingunit.setMode = t.Actions.SetMode.Target
 

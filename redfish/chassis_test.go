@@ -208,8 +208,8 @@ func TestChassis(t *testing.T) {
 		t.Errorf("Received invalid assembly reference: %s", result.assembly)
 	}
 
-	if result.controls != "/redfish/v1/Chassis/Chassis-1/Controls" {
-		t.Errorf("Received invalid controls reference: %s", result.controls)
+	if result.ControlsLink.String() != "/redfish/v1/Chassis/Chassis-1/Controls" {
+		t.Errorf("Received invalid controls reference: %s", result.ControlsLink)
 	}
 
 	if result.drives != "/redfish/v1/Chassis/Chassis-1/Drives" {

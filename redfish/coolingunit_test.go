@@ -51,6 +51,7 @@ var coolingUnitBody = `{
 	  "@odata.id": "/redfish/v1/ThermalEquipment/CDUs/1/LeakDetection"
 	},
 	"Links": {
+	  "Chassis": [{"@odata.id": "/redfish/v1/Chassis/1"}],
 	  "Facility": {
 		"@odata.id": "/redfish/v1/Facilities/Room237"
 	  }
@@ -80,5 +81,6 @@ func TestCoolingUnit(t *testing.T) {
 	assertEquals(t, "/redfish/v1/ThermalEquipment/CDUs/1/Filters", result.filters)
 	assertEquals(t, "/redfish/v1/ThermalEquipment/CDUs/1/EnvironmentMetrics", result.environmentMetrics)
 	assertEquals(t, "/redfish/v1/ThermalEquipment/CDUs/1/LeakDetection", result.leakDetection)
-	assertEquals(t, "/redfish/v1/Facilities/Room237", result.facility)
+	assertEquals(t, "/redfish/v1/Facilities/Room237", result.Links.Facility.String())
+	assertEquals(t, "/redfish/v1/Chassis/1", strings.Join(result.Links.Chassis.ToStrings(), ","))
 }

@@ -215,7 +215,8 @@ type Chassis struct {
 	// ChassisType shall indicate the physical form factor
 	// for the type of chassis.
 	ChassisType ChassisType
-	controls    string
+	// ControlsLink shall contain a link to a resource collection of type ControlCollection.
+	ControlsLink common.Link `json:"Controls"`
 	// DepthMm shall represent the depth (length) of the
 	// chassis, in millimeters, as specified by the manufacturer.
 	DepthMm *float64 `json:",omitempty"`
@@ -478,7 +479,6 @@ func (chassis *Chassis) UnmarshalJSON(b []byte) error {
 		temp
 		Assembly           common.Link
 		Certificates       common.Link
-		Controls           common.Link
 		Drives             common.Link
 		EnvironmentMetrics common.Link
 		FabricAdapters     common.Link
@@ -509,7 +509,6 @@ func (chassis *Chassis) UnmarshalJSON(b []byte) error {
 	// Extract the links to other entities for later
 	chassis.assembly = t.Assembly.String()
 	chassis.certificates = t.Certificates.String()
-	chassis.controls = t.Controls.String()
 	chassis.drives = t.Drives.String()
 	chassis.environmentMetrics = t.EnvironmentMetrics.String()
 	chassis.fabricAdapters = t.FabricAdapters.String()
@@ -630,7 +629,7 @@ func (chassis *Chassis) Controls(queryOpts ...common.QueryGroupOption) ([]*Contr
 
 // ControlsWithContext returns controls in this Chassis.
 func (chassis *Chassis) ControlsWithContext(ctx context.Context, queryOpts ...common.QueryGroupOption) ([]*Control, error) {
-	return ListReferencedControlsWithContext(ctx, chassis.GetClient(), chassis.controls, queryOpts...)
+	return ListReferencedControlsWithContext(ctx, chassis.GetClient(), chassis.ControlsLink.String(), queryOpts...)
 }
 
 // ConnectedCoolingLoops returns a collection of CoolingLoops associated with this Chassis.
