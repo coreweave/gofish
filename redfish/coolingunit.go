@@ -188,6 +188,11 @@ func (coolingunit *CoolingUnit) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// ChassisURIs returns the URIs of the chassis that contain this equipment.
+func (coolingunit *CoolingUnit) ChassisURIs() []string {
+	return coolingunit.chassis
+}
+
 func (coolingunit *CoolingUnit) SetMode(mode CoolingUnitMode) error {
 	return coolingunit.SetModeWithContext(common.ContextOf(coolingunit.GetClient()), mode)
 }

@@ -633,6 +633,11 @@ func (chassis *Chassis) ControlsWithContext(ctx context.Context, queryOpts ...co
 	return ListReferencedControlsWithContext(ctx, chassis.GetClient(), chassis.controls, queryOpts...)
 }
 
+// ControlsURI returns the URI of this chassis's control collection.
+func (chassis *Chassis) ControlsURI() string {
+	return chassis.controls
+}
+
 // ConnectedCoolingLoops returns a collection of CoolingLoops associated with this Chassis.
 func (chassis *Chassis) ConnectedCoolingLoops(queryOpts ...common.QueryGroupOption) ([]*CoolingLoop, error) {
 	return chassis.ConnectedCoolingLoopsWithContext(common.ContextOf(chassis.GetClient()), queryOpts...)

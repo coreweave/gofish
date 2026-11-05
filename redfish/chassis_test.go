@@ -190,6 +190,8 @@ func TestChassis(t *testing.T) {
 		t.Errorf("Received invalid asset tag: %s", result.AssetTag)
 	}
 
+	assertEquals(t, "/redfish/v1/Chassis/Chassis-1/Controls", result.ControlsURI())
+
 	if result.ChassisType != RackMountChassisType {
 		t.Errorf("Received invalid chassis type: %s", result.ChassisType)
 	}
