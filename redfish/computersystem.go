@@ -554,7 +554,7 @@ type BootOption struct {
 	// boot order array on the computer system contains is skipped. In the
 	// UEFI context, this property shall influence the load option active
 	// flag for the boot option.
-	BootOptionEnabled bool
+	BootOptionEnabled *bool
 	// BootOptionReference is the unique identifier seen in Boot.BootOrder.
 	BootOptionReference string
 	// DisplayName is the user-readable display name of the boot option
