@@ -54,8 +54,8 @@ func asRedfishError(t *testing.T, err error) *Error {
 
 func messageIDs(infos []ErrExtendedInfo) []string {
 	ids := make([]string, 0, len(infos))
-	for _, info := range infos {
-		ids = append(ids, info.MessageID)
+	for i := range infos {
+		ids = append(ids, infos[i].MessageID)
 	}
 	return ids
 }

@@ -82,6 +82,8 @@ type Task struct {
 	Description string
 	// EndTime shall indicate the time the task was completed.
 	EndTime string
+	// EstimatedDuration shall contain the estimated total time to complete the task, as an ISO 8601 duration.
+	EstimatedDuration string
 	// HidePayload shall be set to True if the Payload object shall not be
 	// returned on GET operations, and set to False if the contents can be
 	// returned normally. If this property is not specified when the Task is
