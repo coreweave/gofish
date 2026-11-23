@@ -336,8 +336,8 @@ func GetCollectionObjectsWithContext[T any, PT interface {
 			extendedInfo := entity.GetExtendedInfo()
 			if len(extendedInfo) > 0 {
 				errE := &Error{}
-				for _, info := range extendedInfo {
-					errE.ExtendedInfos = append(errE.ExtendedInfos, ErrExtendedInfo(info))
+				for i := range extendedInfo {
+					errE.ExtendedInfos = append(errE.ExtendedInfos, ErrExtendedInfo(extendedInfo[i]))
 				}
 				err = errE
 			}

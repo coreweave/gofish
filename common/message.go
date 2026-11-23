@@ -24,6 +24,8 @@ type MessageExtendedInfo struct {
 	// Severity is The value of this property shall be the severity of the
 	// error, as defined in the Status section of the Redfish specification.
 	Severity string
+	// MessageSeverity shall contain the severity of the message. It replaces the deprecated Severity.
+	MessageSeverity Health `json:"MessageSeverity,omitempty"`
 	// Resolution shall contain an override of the
 	// Resolution of the message in message registry, if present.
 	Resolution string

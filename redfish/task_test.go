@@ -21,6 +21,7 @@ var taskBody = strings.NewReader(
 		"Name": "TaskOne",
 		"Description": "Task One",
 		"EndTime": "2012-03-07T14:44+06:00",
+		"EstimatedDuration": "PT2M30S",
 		"HidePayload": false,
 		"Messages": [{
             "Resolution": "None",
@@ -90,8 +91,16 @@ func TestTask(t *testing.T) {
 		t.Errorf("Invalid TaskStatus: %s", result.TaskStatus)
 	}
 
+	if result.EstimatedDuration != "PT2M30S" {
+		t.Errorf("Invalid EstimatedDuration: %s", result.EstimatedDuration)
+	}
+
 	if len(result.Messages) != 1 {
 		t.Errorf("Incorrect number of task messages: %d", len(result.Messages))
+	}
+
+	if result.Messages[0].MessageSeverity != common.OKHealth {
+		t.Errorf("Invalid MessageSeverity: %s", result.Messages[0].MessageSeverity)
 	}
 
 	if len(result.Oem) == 0 {
